@@ -1,0 +1,10 @@
+^C:\USERS\FRANZ\DESKTOP\POLYHEDRA_DECOMPOSITION\CMAKELISTS.TXT
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/franz/Desktop/polyhedra_decomposition -BC:/Users/franz/Desktop/polyhedra_decomposition/build-msvc --check-stamp-file C:/Users/franz/Desktop/polyhedra_decomposition/build-msvc/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

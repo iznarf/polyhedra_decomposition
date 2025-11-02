@@ -1,0 +1,34 @@
+# Build directories
+/build/
+/build-msvc/
+/out/
+/bin/
+/obj/
+
+# Dependency sources
+*_deps/
+**/_deps/
+
+# Visual Studio files
+.vs/
+*.vcxproj
+*.vcxproj.filters
+*.sln
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# CMake
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+
+# Logs and temp files
+*.log
+*.tmp
+
+# Python virtual envs (if any)
+venv/

@@ -1,0 +1,10 @@
+^C:\USERS\FRANZ\DESKTOP\POLYHEDRA_DECOMPOSITION\BUILD-MSVC\CMAKEFILES\4D33439954E23737F34040C5B79DD16F\GENERATE.STAMP.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/franz/Desktop/polyhedra_decomposition -BC:/Users/franz/Desktop/polyhedra_decomposition/build-msvc --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file C:/Users/franz/Desktop/polyhedra_decomposition/build-msvc/polyhedra_decomposition.sln
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

@@ -1,0 +1,443 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
+  </PropertyGroup>
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="MinSizeRel|x64">
+      <Configuration>MinSizeRel</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="RelWithDebInfo|x64">
+      <Configuration>RelWithDebInfo</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{B5730DA9-0546-358D-BDBF-570287F137A0}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <VcpkgEnabled>false</VcpkgEnabled>
+    <WindowsTargetPlatformVersion>10.0.26100.0</WindowsTargetPlatformVersion>
+    <Platform>x64</Platform>
+    <ProjectName>main</ProjectName>
+    <VCProjectUpgraderObjectName>NoUpgrade</VCProjectUpgraderObjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="do_not_import_user.props" Condition="exists('do_not_import_user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\Debug\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">main.dir\Debug\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">main</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.exe</TargetExt>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</LinkIncremental>
+    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</GenerateManifest>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\Release\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">main.dir\Release\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">main</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.exe</TargetExt>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkIncremental>
+    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</GenerateManifest>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\MinSizeRel\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">main.dir\MinSizeRel\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">main</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">.exe</TargetExt>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkIncremental>
+    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">true</GenerateManifest>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\RelWithDebInfo\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">main.dir\RelWithDebInfo\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">main</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">.exe</TargetExt>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">true</LinkIncremental>
+    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">true</GenerateManifest>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\portable-file-dialogs-src;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\src\..\include;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\deps\imgui\imgui;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\deps\imgui\implot;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\deps\glm;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\deps\glfw\include;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\deps\glad\src\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /external:I "C:/Users/franz/vcpkg/installed/x64-windows/include" /bigobj</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
+      <FloatingPointExceptions>false</FloatingPointExceptions>
+      <FloatingPointModel>Strict</FloatingPointModel>
+      <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <MinimalRebuild></MinimalRebuild>
+      <Optimization>Disabled</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <SupportJustMyCode></SupportJustMyCode>
+      <UseFullPaths>false</UseFullPaths>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;_SCL_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;GLM_ENABLE_EXPERIMENTAL;CGAL_USE_GMPXX=1;CMAKE_INTDIR="Debug"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_DEBUG;_WINDOWS;_SCL_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;GLM_ENABLE_EXPERIMENTAL;CGAL_USE_GMPXX=1;CMAKE_INTDIR=\"Debug\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\portable-file-dialogs-src;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\src\..\include;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\deps\imgui\imgui;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\deps\imgui\implot;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\deps\glm;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\deps\glfw\include;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\deps\glad\src\..\include;C:\Users\franz\vcpkg\installed\x64-windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\portable-file-dialogs-src;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\src\..\include;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\deps\imgui\imgui;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\deps\imgui\implot;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\deps\glm;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\deps\glfw\include;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\deps\glad\src\..\include;C:\Users\franz\vcpkg\installed\x64-windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <PostBuildEvent>
+      <Message></Message>
+      <Command>setlocal
+C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -noprofile -executionpolicy Bypass -file C:/Users/franz/vcpkg/scripts/buildsystems/msbuild/applocal.ps1 -targetBinary C:/Users/franz/Desktop/polyhedra_decomposition/build-msvc/Debug/main.exe -installedDir C:/Users/franz/vcpkg/installed/x64-windows/debug/bin -OutVariable out
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+    </PostBuildEvent>
+    <Link>
+      <AdditionalDependencies>_deps\polyscope-build\src\Debug\polyscope.lib;_deps\polyscope-build\deps\imgui\Debug\imgui.lib;_deps\polyscope-build\deps\glm\glm\Debug\glm.lib;_deps\polyscope-build\deps\glfw\src\Debug\glfw3.lib;_deps\polyscope-build\deps\glad\src\Debug\glad.lib;_deps\polyscope-build\deps\stb\Debug\stb.lib;C:\Users\franz\vcpkg\installed\x64-windows\debug\lib\gmpxx.lib;C:\Users\franz\vcpkg\installed\x64-windows\debug\lib\mpfr.lib;C:\Users\franz\vcpkg\installed\x64-windows\debug\lib\gmp.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImportLibrary>C:/Users/franz/Desktop/polyhedra_decomposition/build-msvc/Debug/main.lib</ImportLibrary>
+      <ProgramDataBaseFile>C:/Users/franz/Desktop/polyhedra_decomposition/build-msvc/Debug/main.pdb</ProgramDataBaseFile>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\portable-file-dialogs-src;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\src\..\include;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\deps\imgui\imgui;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\deps\imgui\implot;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\deps\glm;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\deps\glfw\include;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\deps\glad\src\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /external:I "C:/Users/franz/vcpkg/installed/x64-windows/include" /bigobj</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
+      <FloatingPointExceptions>false</FloatingPointExceptions>
+      <FloatingPointModel>Strict</FloatingPointModel>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <MinimalRebuild></MinimalRebuild>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <SupportJustMyCode></SupportJustMyCode>
+      <UseFullPaths>false</UseFullPaths>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_SCL_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;GLM_ENABLE_EXPERIMENTAL;CGAL_USE_GMPXX=1;CMAKE_INTDIR="Release"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
+      <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_SCL_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;GLM_ENABLE_EXPERIMENTAL;CGAL_USE_GMPXX=1;CMAKE_INTDIR=\"Release\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\portable-file-dialogs-src;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\src\..\include;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\deps\imgui\imgui;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\deps\imgui\implot;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\deps\glm;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\deps\glfw\include;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\deps\glad\src\..\include;C:\Users\franz\vcpkg\installed\x64-windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\portable-file-dialogs-src;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\src\..\include;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\deps\imgui\imgui;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\deps\imgui\implot;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\deps\glm;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\deps\glfw\include;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\deps\glad\src\..\include;C:\Users\franz\vcpkg\installed\x64-windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <PostBuildEvent>
+      <Message></Message>
+      <Command>setlocal
+C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -noprofile -executionpolicy Bypass -file C:/Users/franz/vcpkg/scripts/buildsystems/msbuild/applocal.ps1 -targetBinary C:/Users/franz/Desktop/polyhedra_decomposition/build-msvc/Release/main.exe -installedDir C:/Users/franz/vcpkg/installed/x64-windows/bin -OutVariable out
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+    </PostBuildEvent>
+    <Link>
+      <AdditionalDependencies>_deps\polyscope-build\src\Release\polyscope.lib;_deps\polyscope-build\deps\imgui\Release\imgui.lib;_deps\polyscope-build\deps\glm\glm\Release\glm.lib;_deps\polyscope-build\deps\glfw\src\Release\glfw3.lib;_deps\polyscope-build\deps\glad\src\Release\glad.lib;_deps\polyscope-build\deps\stb\Release\stb.lib;C:\Users\franz\vcpkg\installed\x64-windows\debug\lib\gmpxx.lib;C:\Users\franz\vcpkg\installed\x64-windows\debug\lib\mpfr.lib;C:\Users\franz\vcpkg\installed\x64-windows\debug\lib\gmp.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImportLibrary>C:/Users/franz/Desktop/polyhedra_decomposition/build-msvc/Release/main.lib</ImportLibrary>
+      <ProgramDataBaseFile>C:/Users/franz/Desktop/polyhedra_decomposition/build-msvc/Release/main.pdb</ProgramDataBaseFile>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\portable-file-dialogs-src;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\src\..\include;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\deps\imgui\imgui;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\deps\imgui\implot;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\deps\glm;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\deps\glfw\include;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\deps\glad\src\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /external:I "C:/Users/franz/vcpkg/installed/x64-windows/include" /bigobj</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
+      <FloatingPointExceptions>false</FloatingPointExceptions>
+      <FloatingPointModel>Strict</FloatingPointModel>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <MinimalRebuild></MinimalRebuild>
+      <Optimization>MinSpace</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <SupportJustMyCode></SupportJustMyCode>
+      <UseFullPaths>false</UseFullPaths>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_SCL_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;GLM_ENABLE_EXPERIMENTAL;CGAL_USE_GMPXX=1;CMAKE_INTDIR="MinSizeRel"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
+      <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_SCL_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;GLM_ENABLE_EXPERIMENTAL;CGAL_USE_GMPXX=1;CMAKE_INTDIR=\"MinSizeRel\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\portable-file-dialogs-src;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\src\..\include;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\deps\imgui\imgui;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\deps\imgui\implot;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\deps\glm;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\deps\glfw\include;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\deps\glad\src\..\include;C:\Users\franz\vcpkg\installed\x64-windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\portable-file-dialogs-src;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\src\..\include;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\deps\imgui\imgui;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\deps\imgui\implot;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\deps\glm;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\deps\glfw\include;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\deps\glad\src\..\include;C:\Users\franz\vcpkg\installed\x64-windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <PostBuildEvent>
+      <Message></Message>
+      <Command>setlocal
+C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -noprofile -executionpolicy Bypass -file C:/Users/franz/vcpkg/scripts/buildsystems/msbuild/applocal.ps1 -targetBinary C:/Users/franz/Desktop/polyhedra_decomposition/build-msvc/MinSizeRel/main.exe -installedDir C:/Users/franz/vcpkg/installed/x64-windows/bin -OutVariable out
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+    </PostBuildEvent>
+    <Link>
+      <AdditionalDependencies>_deps\polyscope-build\src\MinSizeRel\polyscope.lib;_deps\polyscope-build\deps\imgui\MinSizeRel\imgui.lib;_deps\polyscope-build\deps\glm\glm\MinSizeRel\glm.lib;_deps\polyscope-build\deps\glfw\src\MinSizeRel\glfw3.lib;_deps\polyscope-build\deps\glad\src\MinSizeRel\glad.lib;_deps\polyscope-build\deps\stb\MinSizeRel\stb.lib;C:\Users\franz\vcpkg\installed\x64-windows\debug\lib\gmpxx.lib;C:\Users\franz\vcpkg\installed\x64-windows\debug\lib\mpfr.lib;C:\Users\franz\vcpkg\installed\x64-windows\debug\lib\gmp.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImportLibrary>C:/Users/franz/Desktop/polyhedra_decomposition/build-msvc/MinSizeRel/main.lib</ImportLibrary>
+      <ProgramDataBaseFile>C:/Users/franz/Desktop/polyhedra_decomposition/build-msvc/MinSizeRel/main.pdb</ProgramDataBaseFile>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\portable-file-dialogs-src;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\src\..\include;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\deps\imgui\imgui;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\deps\imgui\implot;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\deps\glm;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\deps\glfw\include;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\deps\glad\src\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /external:I "C:/Users/franz/vcpkg/installed/x64-windows/include" /bigobj</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
+      <FloatingPointExceptions>false</FloatingPointExceptions>
+      <FloatingPointModel>Strict</FloatingPointModel>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <MinimalRebuild></MinimalRebuild>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <SupportJustMyCode></SupportJustMyCode>
+      <UseFullPaths>false</UseFullPaths>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_SCL_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;GLM_ENABLE_EXPERIMENTAL;CGAL_USE_GMPXX=1;CMAKE_INTDIR="RelWithDebInfo"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_SCL_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;GLM_ENABLE_EXPERIMENTAL;CGAL_USE_GMPXX=1;CMAKE_INTDIR=\"RelWithDebInfo\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\portable-file-dialogs-src;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\src\..\include;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\deps\imgui\imgui;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\deps\imgui\implot;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\deps\glm;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\deps\glfw\include;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\deps\glad\src\..\include;C:\Users\franz\vcpkg\installed\x64-windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\portable-file-dialogs-src;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\src\..\include;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\deps\imgui\imgui;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\deps\imgui\implot;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\deps\glm;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\deps\glfw\include;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-src\deps\glad\src\..\include;C:\Users\franz\vcpkg\installed\x64-windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <PostBuildEvent>
+      <Message></Message>
+      <Command>setlocal
+C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -noprofile -executionpolicy Bypass -file C:/Users/franz/vcpkg/scripts/buildsystems/msbuild/applocal.ps1 -targetBinary C:/Users/franz/Desktop/polyhedra_decomposition/build-msvc/RelWithDebInfo/main.exe -installedDir C:/Users/franz/vcpkg/installed/x64-windows/bin -OutVariable out
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+    </PostBuildEvent>
+    <Link>
+      <AdditionalDependencies>_deps\polyscope-build\src\RelWithDebInfo\polyscope.lib;_deps\polyscope-build\deps\imgui\RelWithDebInfo\imgui.lib;_deps\polyscope-build\deps\glm\glm\RelWithDebInfo\glm.lib;_deps\polyscope-build\deps\glfw\src\RelWithDebInfo\glfw3.lib;_deps\polyscope-build\deps\glad\src\RelWithDebInfo\glad.lib;_deps\polyscope-build\deps\stb\RelWithDebInfo\stb.lib;C:\Users\franz\vcpkg\installed\x64-windows\debug\lib\gmpxx.lib;C:\Users\franz\vcpkg\installed\x64-windows\debug\lib\mpfr.lib;C:\Users\franz\vcpkg\installed\x64-windows\debug\lib\gmp.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImportLibrary>C:/Users/franz/Desktop/polyhedra_decomposition/build-msvc/RelWithDebInfo/main.lib</ImportLibrary>
+      <ProgramDataBaseFile>C:/Users/franz/Desktop/polyhedra_decomposition/build-msvc/RelWithDebInfo/main.pdb</ProgramDataBaseFile>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\franz\Desktop\polyhedra_decomposition\CMakeLists.txt">
+      <UseUtf8Encoding>Always</UseUtf8Encoding>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule C:/Users/franz/Desktop/polyhedra_decomposition/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/franz/Desktop/polyhedra_decomposition -BC:/Users/franz/Desktop/polyhedra_decomposition/build-msvc --check-stamp-file C:/Users/franz/Desktop/polyhedra_decomposition/build-msvc/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Program Files\CMake\share\cmake-3.30\Modules\CMakeCInformation.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\CMakeCXXInformation.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\CMakeDependentOption.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\CMakeGenericSystem.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\CMakeInitializeConfigs.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\CMakeLanguageInformation.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\CMakeParseArguments.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\CMakeRCInformation.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\CMakeSystemSpecificInitialize.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\CheckCSourceCompiles.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\CheckIncludeFile.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\CheckLibraryExists.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\Compiler\MSVC-C.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\Compiler\MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\Compiler\MSVC.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\ExternalProject\shared_internal_commands.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\FetchContent.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\FetchContent\CMakeLists.cmake.in;C:\Program Files\CMake\share\cmake-3.30\Modules\FindBoost.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\FindGit.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\FindPackageMessage.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\FindThreads.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\Platform\Windows-Initialize.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\Platform\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\Platform\Windows.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\Platform\WindowsPaths.cmake;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\CMakeFiles\3.30.5\CMakeCCompiler.cmake;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\CMakeFiles\3.30.5\CMakeCXXCompiler.cmake;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\CMakeFiles\3.30.5\CMakeRCCompiler.cmake;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\CMakeFiles\3.30.5\CMakeSystem.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\boost\BoostConfig.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\boost\BoostConfigVersion.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\boost\vcpkg-cmake-wrapper.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\boost_headers\boost_headers-config-version.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\boost_headers\boost_headers-config.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\boost_headers\boost_headers-targets.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGALConfig-installation-dirs.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGALConfig.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGALConfigBuildVersion.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGALConfigVersion.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGAL_Common.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGAL_CreateSingleSourceCGALProgram.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGAL_GeneratorSpecificSettings.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGAL_Macros.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGAL_SCM.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGAL_SetupBoost.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGAL_SetupCGALDependencies.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGAL_SetupGMP.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGAL_SetupVLD.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGAL_TweakFindBoost.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGAL_VersionUtils.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGAL_add_test.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGAL_enable_end_of_configuration_hook.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGAL_setup_target_dependencies.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGAL_target_use_TBB.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\FindGMP.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\FindGMPXX.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\FindMPFR.cmake;C:\Users\franz\vcpkg\scripts\buildsystems\vcpkg.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule C:/Users/franz/Desktop/polyhedra_decomposition/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/franz/Desktop/polyhedra_decomposition -BC:/Users/franz/Desktop/polyhedra_decomposition/build-msvc --check-stamp-file C:/Users/franz/Desktop/polyhedra_decomposition/build-msvc/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Program Files\CMake\share\cmake-3.30\Modules\CMakeCInformation.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\CMakeCXXInformation.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\CMakeDependentOption.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\CMakeGenericSystem.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\CMakeInitializeConfigs.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\CMakeLanguageInformation.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\CMakeParseArguments.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\CMakeRCInformation.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\CMakeSystemSpecificInitialize.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\CheckCSourceCompiles.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\CheckIncludeFile.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\CheckLibraryExists.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\Compiler\MSVC-C.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\Compiler\MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\Compiler\MSVC.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\ExternalProject\shared_internal_commands.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\FetchContent.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\FetchContent\CMakeLists.cmake.in;C:\Program Files\CMake\share\cmake-3.30\Modules\FindBoost.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\FindGit.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\FindPackageMessage.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\FindThreads.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\Platform\Windows-Initialize.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\Platform\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\Platform\Windows.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\Platform\WindowsPaths.cmake;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\CMakeFiles\3.30.5\CMakeCCompiler.cmake;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\CMakeFiles\3.30.5\CMakeCXXCompiler.cmake;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\CMakeFiles\3.30.5\CMakeRCCompiler.cmake;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\CMakeFiles\3.30.5\CMakeSystem.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\boost\BoostConfig.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\boost\BoostConfigVersion.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\boost\vcpkg-cmake-wrapper.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\boost_headers\boost_headers-config-version.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\boost_headers\boost_headers-config.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\boost_headers\boost_headers-targets.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGALConfig-installation-dirs.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGALConfig.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGALConfigBuildVersion.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGALConfigVersion.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGAL_Common.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGAL_CreateSingleSourceCGALProgram.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGAL_GeneratorSpecificSettings.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGAL_Macros.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGAL_SCM.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGAL_SetupBoost.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGAL_SetupCGALDependencies.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGAL_SetupGMP.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGAL_SetupVLD.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGAL_TweakFindBoost.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGAL_VersionUtils.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGAL_add_test.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGAL_enable_end_of_configuration_hook.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGAL_setup_target_dependencies.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGAL_target_use_TBB.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\FindGMP.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\FindGMPXX.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\FindMPFR.cmake;C:\Users\franz\vcpkg\scripts\buildsystems\vcpkg.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Building Custom Rule C:/Users/franz/Desktop/polyhedra_decomposition/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/franz/Desktop/polyhedra_decomposition -BC:/Users/franz/Desktop/polyhedra_decomposition/build-msvc --check-stamp-file C:/Users/franz/Desktop/polyhedra_decomposition/build-msvc/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Program Files\CMake\share\cmake-3.30\Modules\CMakeCInformation.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\CMakeCXXInformation.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\CMakeDependentOption.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\CMakeGenericSystem.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\CMakeInitializeConfigs.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\CMakeLanguageInformation.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\CMakeParseArguments.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\CMakeRCInformation.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\CMakeSystemSpecificInitialize.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\CheckCSourceCompiles.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\CheckIncludeFile.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\CheckLibraryExists.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\Compiler\MSVC-C.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\Compiler\MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\Compiler\MSVC.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\ExternalProject\shared_internal_commands.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\FetchContent.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\FetchContent\CMakeLists.cmake.in;C:\Program Files\CMake\share\cmake-3.30\Modules\FindBoost.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\FindGit.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\FindPackageMessage.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\FindThreads.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\Platform\Windows-Initialize.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\Platform\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\Platform\Windows.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\Platform\WindowsPaths.cmake;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\CMakeFiles\3.30.5\CMakeCCompiler.cmake;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\CMakeFiles\3.30.5\CMakeCXXCompiler.cmake;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\CMakeFiles\3.30.5\CMakeRCCompiler.cmake;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\CMakeFiles\3.30.5\CMakeSystem.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\boost\BoostConfig.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\boost\BoostConfigVersion.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\boost\vcpkg-cmake-wrapper.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\boost_headers\boost_headers-config-version.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\boost_headers\boost_headers-config.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\boost_headers\boost_headers-targets.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGALConfig-installation-dirs.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGALConfig.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGALConfigBuildVersion.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGALConfigVersion.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGAL_Common.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGAL_CreateSingleSourceCGALProgram.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGAL_GeneratorSpecificSettings.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGAL_Macros.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGAL_SCM.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGAL_SetupBoost.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGAL_SetupCGALDependencies.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGAL_SetupGMP.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGAL_SetupVLD.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGAL_TweakFindBoost.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGAL_VersionUtils.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGAL_add_test.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGAL_enable_end_of_configuration_hook.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGAL_setup_target_dependencies.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGAL_target_use_TBB.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\FindGMP.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\FindGMPXX.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\FindMPFR.cmake;C:\Users\franz\vcpkg\scripts\buildsystems\vcpkg.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Building Custom Rule C:/Users/franz/Desktop/polyhedra_decomposition/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/franz/Desktop/polyhedra_decomposition -BC:/Users/franz/Desktop/polyhedra_decomposition/build-msvc --check-stamp-file C:/Users/franz/Desktop/polyhedra_decomposition/build-msvc/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Program Files\CMake\share\cmake-3.30\Modules\CMakeCInformation.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\CMakeCXXInformation.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\CMakeDependentOption.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\CMakeGenericSystem.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\CMakeInitializeConfigs.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\CMakeLanguageInformation.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\CMakeParseArguments.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\CMakeRCInformation.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\CMakeSystemSpecificInitialize.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\CheckCSourceCompiles.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\CheckIncludeFile.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\CheckLibraryExists.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\Compiler\MSVC-C.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\Compiler\MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\Compiler\MSVC.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\ExternalProject\shared_internal_commands.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\FetchContent.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\FetchContent\CMakeLists.cmake.in;C:\Program Files\CMake\share\cmake-3.30\Modules\FindBoost.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\FindGit.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\FindPackageMessage.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\FindThreads.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\Platform\Windows-Initialize.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\Platform\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\Platform\Windows.cmake;C:\Program Files\CMake\share\cmake-3.30\Modules\Platform\WindowsPaths.cmake;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\CMakeFiles\3.30.5\CMakeCCompiler.cmake;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\CMakeFiles\3.30.5\CMakeCXXCompiler.cmake;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\CMakeFiles\3.30.5\CMakeRCCompiler.cmake;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\CMakeFiles\3.30.5\CMakeSystem.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\boost\BoostConfig.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\boost\BoostConfigVersion.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\boost\vcpkg-cmake-wrapper.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\boost_headers\boost_headers-config-version.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\boost_headers\boost_headers-config.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\boost_headers\boost_headers-targets.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGALConfig-installation-dirs.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGALConfig.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGALConfigBuildVersion.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGALConfigVersion.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGAL_Common.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGAL_CreateSingleSourceCGALProgram.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGAL_GeneratorSpecificSettings.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGAL_Macros.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGAL_SCM.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGAL_SetupBoost.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGAL_SetupCGALDependencies.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGAL_SetupGMP.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGAL_SetupVLD.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGAL_TweakFindBoost.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGAL_VersionUtils.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGAL_add_test.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGAL_enable_end_of_configuration_hook.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGAL_setup_target_dependencies.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\CGAL_target_use_TBB.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\FindGMP.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\FindGMPXX.cmake;C:\Users\franz\vcpkg\installed\x64-windows\share\cgal\FindMPFR.cmake;C:\Users\franz\vcpkg\scripts\buildsystems\vcpkg.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\main.cpp" />
+    <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\input.cpp" />
+    <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\visualization.cpp" />
+    <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\callback.cpp" />
+    <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\regularity_check.cpp" />
+    <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\candidates.cpp" />
+    <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\target_edges.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\ZERO_CHECK.vcxproj">
+      <Project>{86E61014-4097-39A2-8621-F04DE55E2248}</Project>
+      <Name>ZERO_CHECK</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-build\deps\glad\src\glad.vcxproj">
+      <Project>{9B8D6C96-0F42-3DA5-A981-9ED8CFCEE965}</Project>
+      <Name>glad</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-build\deps\glfw\src\glfw.vcxproj">
+      <Project>{B6607E31-B00B-3737-B80F-FF28F606A6B3}</Project>
+      <Name>glfw</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-build\deps\glm\glm\glm.vcxproj">
+      <Project>{B0F9358E-A8EE-3F97-9869-B6EEF1753B92}</Project>
+      <Name>glm</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-build\deps\imgui\imgui.vcxproj">
+      <Project>{0F42B9CD-91A1-31BC-B116-7517C06BFE21}</Project>
+      <Name>imgui</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-build\src\polyscope.vcxproj">
+      <Project>{CCEA5DD8-2439-3EEF-8563-7DEF6F782E4A}</Project>
+      <Name>polyscope</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-build\deps\stb\stb.vcxproj">
+      <Project>{55709114-271F-326C-A8B0-AFDA4C6E9F2F}</Project>
+      <Name>stb</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

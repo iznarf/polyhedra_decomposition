@@ -1,0 +1,67 @@
+# CMake generation dependency list for this directory.
+C:/Program Files/CMake/share/cmake-3.30/Modules/CMakeCInformation.cmake
+C:/Program Files/CMake/share/cmake-3.30/Modules/CMakeCXXInformation.cmake
+C:/Program Files/CMake/share/cmake-3.30/Modules/CMakeCommonLanguageInclude.cmake
+C:/Program Files/CMake/share/cmake-3.30/Modules/CMakeDependentOption.cmake
+C:/Program Files/CMake/share/cmake-3.30/Modules/CMakeGenericSystem.cmake
+C:/Program Files/CMake/share/cmake-3.30/Modules/CMakeInitializeConfigs.cmake
+C:/Program Files/CMake/share/cmake-3.30/Modules/CMakeLanguageInformation.cmake
+C:/Program Files/CMake/share/cmake-3.30/Modules/CMakeParseArguments.cmake
+C:/Program Files/CMake/share/cmake-3.30/Modules/CMakeRCInformation.cmake
+C:/Program Files/CMake/share/cmake-3.30/Modules/CMakeSystemSpecificInformation.cmake
+C:/Program Files/CMake/share/cmake-3.30/Modules/CMakeSystemSpecificInitialize.cmake
+C:/Program Files/CMake/share/cmake-3.30/Modules/CheckCSourceCompiles.cmake
+C:/Program Files/CMake/share/cmake-3.30/Modules/CheckIncludeFile.cmake
+C:/Program Files/CMake/share/cmake-3.30/Modules/CheckLibraryExists.cmake
+C:/Program Files/CMake/share/cmake-3.30/Modules/Compiler/CMakeCommonCompilerMacros.cmake
+C:/Program Files/CMake/share/cmake-3.30/Modules/Compiler/MSVC-C.cmake
+C:/Program Files/CMake/share/cmake-3.30/Modules/Compiler/MSVC-CXX.cmake
+C:/Program Files/CMake/share/cmake-3.30/Modules/Compiler/MSVC.cmake
+C:/Program Files/CMake/share/cmake-3.30/Modules/ExternalProject/shared_internal_commands.cmake
+C:/Program Files/CMake/share/cmake-3.30/Modules/FetchContent.cmake
+C:/Program Files/CMake/share/cmake-3.30/Modules/FetchContent/CMakeLists.cmake.in
+C:/Program Files/CMake/share/cmake-3.30/Modules/FindBoost.cmake
+C:/Program Files/CMake/share/cmake-3.30/Modules/FindGit.cmake
+C:/Program Files/CMake/share/cmake-3.30/Modules/FindPackageHandleStandardArgs.cmake
+C:/Program Files/CMake/share/cmake-3.30/Modules/FindPackageMessage.cmake
+C:/Program Files/CMake/share/cmake-3.30/Modules/FindThreads.cmake
+C:/Program Files/CMake/share/cmake-3.30/Modules/Platform/Windows-Initialize.cmake
+C:/Program Files/CMake/share/cmake-3.30/Modules/Platform/Windows-MSVC-C.cmake
+C:/Program Files/CMake/share/cmake-3.30/Modules/Platform/Windows-MSVC-CXX.cmake
+C:/Program Files/CMake/share/cmake-3.30/Modules/Platform/Windows-MSVC.cmake
+C:/Program Files/CMake/share/cmake-3.30/Modules/Platform/Windows.cmake
+C:/Program Files/CMake/share/cmake-3.30/Modules/Platform/WindowsPaths.cmake
+C:/Users/franz/Desktop/polyhedra_decomposition/CMakeLists.txt
+C:/Users/franz/Desktop/polyhedra_decomposition/build-msvc/CMakeFiles/3.30.5/CMakeCCompiler.cmake
+C:/Users/franz/Desktop/polyhedra_decomposition/build-msvc/CMakeFiles/3.30.5/CMakeCXXCompiler.cmake
+C:/Users/franz/Desktop/polyhedra_decomposition/build-msvc/CMakeFiles/3.30.5/CMakeRCCompiler.cmake
+C:/Users/franz/Desktop/polyhedra_decomposition/build-msvc/CMakeFiles/3.30.5/CMakeSystem.cmake
+C:/Users/franz/vcpkg/installed/x64-windows/share/boost/BoostConfig.cmake
+C:/Users/franz/vcpkg/installed/x64-windows/share/boost/BoostConfigVersion.cmake
+C:/Users/franz/vcpkg/installed/x64-windows/share/boost/vcpkg-cmake-wrapper.cmake
+C:/Users/franz/vcpkg/installed/x64-windows/share/boost_headers/boost_headers-config-version.cmake
+C:/Users/franz/vcpkg/installed/x64-windows/share/boost_headers/boost_headers-config.cmake
+C:/Users/franz/vcpkg/installed/x64-windows/share/boost_headers/boost_headers-targets.cmake
+C:/Users/franz/vcpkg/installed/x64-windows/share/cgal/CGALConfig-installation-dirs.cmake
+C:/Users/franz/vcpkg/installed/x64-windows/share/cgal/CGALConfig.cmake
+C:/Users/franz/vcpkg/installed/x64-windows/share/cgal/CGALConfigBuildVersion.cmake
+C:/Users/franz/vcpkg/installed/x64-windows/share/cgal/CGALConfigVersion.cmake
+C:/Users/franz/vcpkg/installed/x64-windows/share/cgal/CGAL_Common.cmake
+C:/Users/franz/vcpkg/installed/x64-windows/share/cgal/CGAL_CreateSingleSourceCGALProgram.cmake
+C:/Users/franz/vcpkg/installed/x64-windows/share/cgal/CGAL_GeneratorSpecificSettings.cmake
+C:/Users/franz/vcpkg/installed/x64-windows/share/cgal/CGAL_Macros.cmake
+C:/Users/franz/vcpkg/installed/x64-windows/share/cgal/CGAL_SCM.cmake
+C:/Users/franz/vcpkg/installed/x64-windows/share/cgal/CGAL_SetupBoost.cmake
+C:/Users/franz/vcpkg/installed/x64-windows/share/cgal/CGAL_SetupCGALDependencies.cmake
+C:/Users/franz/vcpkg/installed/x64-windows/share/cgal/CGAL_SetupGMP.cmake
+C:/Users/franz/vcpkg/installed/x64-windows/share/cgal/CGAL_SetupVLD.cmake
+C:/Users/franz/vcpkg/installed/x64-windows/share/cgal/CGAL_TweakFindBoost.cmake
+C:/Users/franz/vcpkg/installed/x64-windows/share/cgal/CGAL_VersionUtils.cmake
+C:/Users/franz/vcpkg/installed/x64-windows/share/cgal/CGAL_add_test.cmake
+C:/Users/franz/vcpkg/installed/x64-windows/share/cgal/CGAL_enable_end_of_configuration_hook.cmake
+C:/Users/franz/vcpkg/installed/x64-windows/share/cgal/CGAL_setup_target_dependencies.cmake
+C:/Users/franz/vcpkg/installed/x64-windows/share/cgal/CGAL_target_use_TBB.cmake
+C:/Users/franz/vcpkg/installed/x64-windows/share/cgal/FindGMP.cmake
+C:/Users/franz/vcpkg/installed/x64-windows/share/cgal/FindGMPXX.cmake
+C:/Users/franz/vcpkg/installed/x64-windows/share/cgal/FindMPFR.cmake
+C:/Users/franz/vcpkg/scripts/buildsystems/vcpkg.cmake
