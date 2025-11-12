@@ -1,57 +1,123 @@
 #include <polyscope/polyscope.h>
 #include <CGAL/Simple_cartesian.h>
-#include <portable-file-dialogs.h>
+
+#include <iostream>
+#include <iomanip>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
+#include <array>
+#include <cstdint>
+#include <sstream>
 
 typedef CGAL::Simple_cartesian<double> Kernel;
 
-#include "input.h"             // generate input
-#include "visualization.h"     // Polyscope visualization
-#include "callback.h"          // callback interface
-#include "regularity_check.h"  // regularity checks for edges
+#include "input.h"
+#include "visualization.h"
+#include "check_edges.h"
+#include "conforming.h"
+#include "flip.h"
 
-// NEW: target-edge set + candidate filtering
-#include "target_edges.h"
-#include "candidates.h"
 
 int main() {
-  // build input polyhedron with 22 vertices
-  df::InputData in = df::make_random_input(22, 50);
+    polyscope::init();
 
-  // start from upper triangultion (source triangulation) which is the convex hull of input points
-  df::Tri2& curr = in.tri_upper;
+    // build input
+    df::InputData in = df::make_random_input(21, 48);
 
-  // target triangulation is the lower one (all points)
-  const df::Tri2& Tv = in.tri_lower;
+    // triangulations 
+    const df::Tri2& source_triangulation  = in.tri_upper;
+    const df::Tri2& target_triangulation  = in.tri_lower;
+    df::Tri2&       current_triangulation = in.tri_current;
 
-  // initialize Polyscope
-  viz::init();
+    // visualize (keeps Polyscope indices consistent)
+    viz::show_four_meshes(in);
 
-  // polyhedron is union of lifted triangulations at height omega
-  // visualize polyhedron
-  viz::register_lifted_triangulation(in.tri_lower, in.omega, "lower");
-  viz::register_lifted_triangulation(in.tri_upper, in.omega, "upper");
+    // global vertex_id -> local polyscope index of current triangulation
+    std::unordered_map<df::vertex_id, int> id2local_current;
+    id2local_current.reserve(current_triangulation.number_of_vertices());
+    int loc = 0;
+    for (auto v = current_triangulation.finite_vertices_begin();
+        v != current_triangulation.finite_vertices_end(); ++v) {
+        id2local_current[v->info()] = loc++;
+    }
 
-  // show planar triangulations of upper and lower boundary 
-  viz::register_planar_triangulation(in.tri_upper, "planar, upper boundary");
-  viz::register_planar_triangulation(in.tri_lower, "planar, lower boundary");
+    // global vertex_id -> local polyscope index of target triangulation
+    std::unordered_map<df::vertex_id, int> id2local_lower;
+    id2local_lower.reserve(target_triangulation.number_of_vertices());
+    loc = 0;
+    for (auto v = target_triangulation.finite_vertices_begin();
+        v != target_triangulation.finite_vertices_end(); ++v) {
+        id2local_lower[v->info()] = loc++;
+    }
 
-  
-  //df::reg::print_triangulation_summary(curr);
-  // print all internal edges for local regularity
-  df::reg::print_flippable_edges_table_ids(curr, in.omega);
+    // dump the mapping once
+    #ifdef DF_DEBUG_CONFORMING
+    std::cerr << "[main] id2local map (global -> local):\n";
+    for (const auto& kv : id2local_current) {
+        std::cerr << "  " << kv.first << " -> " << kv.second << "\n";
+    }
+    #endif
 
-  // 
-  const auto target_edges = df::target::build_edge_set_from_triangulation(Tv);
+    
+    // collect locally non-regular (down-flippable) edges from the current triangulation
+    std::vector<std::array<df::vertex_id,2>> down_flip_edges = df::reg::find_locally_non_regular_edges(current_triangulation);
 
-  // --- Filter: keep only DOWN, non-degenerate, and NOT already in Tv
-  auto cand = df::cand::down_not_in_target(curr, in.omega, target_edges);
+    // for storing flippable edges which are NOT in the target triangulation and conforming 
 
-  // Print concise shortlist for cross-checking in Polyscope
-  df::cand::print_candidates(cand);
+    std::unordered_set<std::pair<df::vertex_id, df::vertex_id>, boost::hash<std::pair<df::vertex_id, df::vertex_id>>> flippable_edges;
+    flippable_edges.reserve(down_flip_edges.size() * 2 + 1);
 
-  // NOTE: We are NOT flipping yet. After you confirm the shortlist matches
-  // what you expect visually, we’ll call the flip and then recompute/print again.
+    std::cout << "\n=== Locally non-regular (down-flippable) edges ===\n";
+    std::cout << "count: " << down_flip_edges.size() << "\n";
+    std::cout << "global indices -> local indices  in target  conforming \n";
 
-  viz::show();
+    // iterate over all down-flippable edges
+    for (size_t k = 0; k < down_flip_edges.size(); ++k) {
+        const auto [ia, ib] = down_flip_edges[k];
+
+        // local indices for polyscope
+        int local_index_a = id2local_current.at(ia);
+        int local_index_b = id2local_current.at(ib);
+        std::ostringstream oss;
+        oss << "(" << local_index_a << "," << local_index_b << ")";
+        std::string pl = oss.str();
+
+        // compute flags
+        bool in_target = df::reg::edge_in_target(ia, ib, in);
+
+        bool conf = df::reg::is_flip_conforming(ia, ib, in, id2local_current, id2local_lower);
+
+        // in_target is false and conf is true -> we can flip this edge -> add it to the set 
+        if (!in_target && conf) {
+            flippable_edges.insert({ia, ib});
+        }
+
+        // visualize the flip tetrahedra 
+        viz::show_flip_tetra(in, ia, ib, std::to_string(k));
+
+        // print one line per edge
+        std::cout << std::setw(3) << k << " (" << ia << "," << ib << ")->"
+                << std::setw(8) << pl << "  "
+                << (in_target ? "T" : "F") << "         "
+                << (conf ? "T" : "F") << "\n";
+    }
+
+    // now apply an edge flip to the first element in the list of flippable edges
+    std::cout << "\n=== Applying conforming flip ===\n";
+
+    if (!flippable_edges.empty()) {
+        const auto [ia, ib] = *flippable_edges.begin();
+        // we have to print the local polyscope indices here
+        int local_index_a = id2local_current.at(ia);
+        int local_index_b = id2local_current.at(ib);
+        std::cout << "flipping edge (" << local_index_a << "," << local_index_b << ")\n";
+        df::apply_edge_flip(ia, ib, in);
+        // update the visualization
+    }
+
+  polyscope::show();
+  return 0;
 }
+
 

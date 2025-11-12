@@ -1,136 +1,150 @@
 #include "visualization.h"
+#include "input.h"
 
 #include <polyscope/polyscope.h>
 #include <polyscope/surface_mesh.h>
+
 #include <glm/glm.hpp>
-
-#include <CGAL/Triangulation_2.h>
 #include <unordered_map>
-
-namespace viz {
-
-using SurfaceMesh = polyscope::SurfaceMesh;
+#include <vector>
+#include <array>
 
 
-namespace {
+using df::vertex_id;
+using glm::vec3;
+
+namespace  {
 
 
-// takes CGAL 2D triangulation and optional height (omega) function
-// it produces a vertex list V and face list F for polyscope
-template <typename Tri2, typename OmegaOrNull>
-void extract_mesh(const Tri2& tri,  
-                  const OmegaOrNull* omega, // pointer to omega function or nullptr
-                  std::vector<glm::vec3>& V, // vertex positions
-                  std::vector<std::array<size_t,3>>& F) // face indices, one face consists of 3 vertex indices
-{
-  // prepare look up table vidx (vertex_handle, index in vertex list)
-  // maps CGAL vertex handles (pointers inside that CGAL object) to index in V (vertex list)
-  std::unordered_map<typename Tri2::Vertex_handle, size_t> vidx;
-  // allocate space for vertex indices
-  vidx.reserve(static_cast<size_t>(std::distance(tri.finite_vertices_begin(),
-                                                 tri.finite_vertices_end())));
-  V.clear(); F.clear();
-
-  // iterate over all finite vertices to extract positions
-  for (auto vit = tri.finite_vertices_begin(); vit != tri.finite_vertices_end(); ++vit) {
-    const auto& p = vit->point();
-    float x = static_cast<float>(p.x());
-    float z = static_cast<float>(p.y());
-    float y = 0.0f;
-    // lift z if omega is provided
-    if constexpr (!std::is_same<OmegaOrNull, void>::value) {
-      if (omega) y = static_cast<float>((*omega)(p));
-    } 
-    size_t idx = V.size();
-    // store position
-    V.emplace_back(x, y, z);
-    // store index in lookup table
-    vidx.emplace(vit, idx);
-  }
-
-  // iterate over all finite faces to extract connectivity
-  // each face is a triangle 
-  // each triangle face has 3 vertex handles
-  for (auto fit = tri.finite_faces_begin(); fit != tri.finite_faces_end(); ++fit) {
-    size_t i0 = vidx.at(fit->vertex(0));
-    size_t i1 = vidx.at(fit->vertex(1));
-    size_t i2 = vidx.at(fit->vertex(2));
-    F.push_back({i0, i1, i2});
-  }
+// vertcies for planar triangulation z = 0
+std::vector<vec3> points_planar(const std::vector<vertex_id>& ids, const std::vector<df::P2>& P) {
+    std::vector<vec3> V; V.reserve(ids.size());
+    for (auto id : ids) {
+        const auto& p = P[id];
+        V.push_back(vec3((float)p.x(), 0.0f, (float)p.y()));
+    }
+    return V;
 }
 
-// get or register a SurfaceMesh in Polyscope with given name, vertex positions V and faces F
-// if the mesh already exists, return the existing one
-SurfaceMesh* get_or_register(const std::string& name,
-                             const std::vector<glm::vec3>& V,
-                             const std::vector<std::array<size_t,3>>& F) {
-  SurfaceMesh* M = nullptr;
-  if (polyscope::hasSurfaceMesh(name)) {
-    M = polyscope::getSurfaceMesh(name);
-  } else {
-    M = polyscope::registerSurfaceMesh(name, V, F);
-    if (M) M->setSmoothShade(false);
-  }
-  return M;
+// vertices for lifted triangulation z = x^2 + y^2 
+std::vector<vec3> points_lifted(const std::vector<vertex_id>& ids, const std::vector<df::P2>& P) {
+    std::vector<vec3> V; V.reserve(ids.size());
+    for (auto id : ids) {
+        const auto& p = P[id];
+        float z = (float)(p.x()*p.x() + p.y()*p.y());
+        V.push_back(vec3((float)p.x(), z, (float)p.y()));
+    }
+    return V;
 }
 
+// faces as local index triples
+std::vector<std::array<int,3>> faces_from_triangles(const df::Tri2& t, const std::unordered_map<vertex_id,int>& to_local) {
+    std::vector<std::array<int,3>> F;
+    F.reserve(t.number_of_faces());
+    for (auto f = t.finite_faces_begin(); f != t.finite_faces_end(); ++f) {
+        int a = to_local.at(f->vertex(0)->info());
+        int b = to_local.at(f->vertex(1)->info());
+        int c = to_local.at(f->vertex(2)->info());
+        F.push_back({a,b,c});
+    }
+    return F;
+}
+
+// register one triangulation as (2D mesh + lifted mesh)
+void register_triangulation_as_mesh(const df::Tri2& tri,
+                         const std::vector<df::P2>& points2d,
+                         const std::string& name_planar,
+                         const std::string& name_lifted) {
+    auto ids   = viz::present_ids(tri); // which vertices does the triangulation contain -> global indices
+    auto to_local = viz::make_local_index(ids); // map to local indices for polyscope
+
+    auto vertices_2d = points_planar(ids, points2d); // coordinates of points in 2D
+    auto faces  = faces_from_triangles(tri, to_local); // faces as local index triples
+    polyscope::registerSurfaceMesh(name_planar, vertices_2d, faces); // planar mesh 
+
+    auto vertices_3d = points_lifted(ids, points2d); // coordinates of lifted points 
+    auto mesh = polyscope::registerSurfaceMesh(name_lifted, vertices_3d, faces); // lifted mesh
+    mesh->setTransparency(0.5); 
+}
 
 } // anon
 
-// initialize polyscope
-void init() {
-  polyscope::init();
+namespace viz {
+
+static inline glm::vec3 lift_paraboloid(const df::P2& p) {
+  double x = CGAL::to_double(p.x());
+  double y = CGAL::to_double(p.y());
+  return glm::vec3((float)x, (float)(x*x + y*y), (float)y); // y-up
 }
 
-// this is for visualizing the planar triangulation, therefore omega is nullptr
-void register_planar_triangulation(const df::Tri2& tri, const std::string& name) {
-  std::vector<glm::vec3> V;
-  std::vector<std::array<size_t,3>> F;
-  extract_mesh<df::Tri2, void>(tri, nullptr, V, F);
-  auto* M = get_or_register(name, V, F);
-  (void)M;
-}
+void show_flip_tetra(const df::InputData& D, df::vertex_id ia, df::vertex_id ib,  const std::string& label) {
 
-// this is for visualizing the lifted triangulation, therefore omega is provided
-void register_lifted_triangulation(const df::Tri2& tri,
-                                   const df::OmegaQuad& omega,
-                                   const std::string& name) {
-  std::vector<glm::vec3> V;
-  std::vector<std::array<size_t,3>> F;
-  extract_mesh(tri, &omega, V, F);
-  auto* M = get_or_register(name, V, F);
-  (void)M;
-}
+    // map global id -> handle
+    auto& tri = D.tri_current;
+    auto& index_to_vertex_handle = D.index_to_vertex_handle_current;
+
+    // use the global id -> vertex handle map to get vertex handles
+    df::Tri2::Vertex_handle va = index_to_vertex_handle[ia];
+    df::Tri2::Vertex_handle vb = index_to_vertex_handle[ib];
+
+    // find opposite vertices c,d for edge (va,vb)
+    df::Tri2::Face_handle f; int i = -1;
+    if (!tri.is_edge(va, vb, f, i)) return;
+    if (tri.is_infinite(f)) return;
+
+    auto g = f->neighbor(i);
+    int mi = tri.mirror_index(f, i);
+
+    auto vc = f->vertex(i);
+    auto vd = g->vertex(mi);
 
 
-// these functions are then for updating existing meshes in Polyscope after we performed a flip i think
-void update_planar_triangulation(const df::Tri2& tri, const std::string& name) {
-  std::vector<glm::vec3> V;
-  std::vector<std::array<size_t,3>> F;
-  extract_mesh<df::Tri2, void>(tri, nullptr, V, F);
+    const df::P2& A2 = va->point();
+    const df::P2& B2 = vb->point();
+    const df::P2& C2 = vc->point();
+    const df::P2& D2 = vd->point();
 
-  if (polyscope::hasSurfaceMesh(name)) {
-    polyscope::removeSurfaceMesh(name, /*errorIfAbsent=*/false);
-  }
-  auto* M = polyscope::registerSurfaceMesh(name, V, F);
-  if (M) M->setSmoothShade(false);
-}
+    std::vector<glm::vec3> V = {
+        lift_paraboloid(A2), lift_paraboloid(B2),
+        lift_paraboloid(C2), lift_paraboloid(D2)
+    };
+    std::vector<std::array<size_t,3>> F = { {0,1,2}, {0,3,1}, {1,3,2}, {0,2,3} };
 
-void update_lifted_triangulation(const df::Tri2& tri,
-                                 const df::OmegaQuad& omega,
-                                 const std::string& name) {
-  std::vector<glm::vec3> V;
-  std::vector<std::array<size_t,3>> F;
-  extract_mesh(tri, &omega, V, F);
+    auto mesh = polyscope::registerSurfaceMesh(label, V, F);
 
-  if (polyscope::hasSurfaceMesh(name)) {
-    polyscope::removeSurfaceMesh(name, /*errorIfAbsent=*/false);
-  }
-  auto* M = polyscope::registerSurfaceMesh(name, V, F);
-  if (M) M->setSmoothShade(false);
+    mesh->setTransparency(0.5); 
+
+
 }
 
 
-void show() { polyscope::show(); }
+// collect the global indices present in a triangulation
+std::vector<vertex_id> present_ids(const df::Tri2& t) {
+    std::vector<vertex_id> ids;
+    ids.reserve(t.number_of_vertices());
+    for (auto v = t.finite_vertices_begin(); v != t.finite_vertices_end(); ++v)
+        ids.push_back(v->info());
+    return ids;
+}
+
+// map global index to local compact index [0,..,V-1] for polyscope
+std::unordered_map<vertex_id,int> make_local_index(const std::vector<vertex_id>& ids) {
+  std::unordered_map<vertex_id,int> m;
+  m.reserve(ids.size());
+  for (int i = 0; i < (int)ids.size(); ++i) m[ids[i]] = i;
+  return m;
+}
+
+void show_four_meshes(const df::InputData& D) {
+
+  // lower (all points) as planar & lifted
+  register_triangulation_as_mesh(D.tri_lower, D.points2d, "lower 2D", "lower lifted");
+
+  // upper (hull) as planar & lifted
+  register_triangulation_as_mesh(D.tri_upper, D.points2d, "upper 2D", "upper lifted");
+
+}
 
 } // namespace viz
+
+

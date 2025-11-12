@@ -1,0 +1,160 @@
+#include "conforming.h"
+
+#include <CGAL/Segment_3.h>
+#include <CGAL/intersections.h>
+#include <CGAL/Object.h>
+#include <algorithm>
+#include <limits>
+#include <optional>
+#include <variant>
+#include <vector>
+
+
+// fixes for conforming check:
+// for every tetrahedron (flip) the whole target triangulation is checked for intersection, could be optimized using spatial data structure
+
+
+namespace df { namespace reg {
+
+using K   = df::K;    
+using P2  = df::P2;
+using P3  = df::P3;
+using Tri = df::Tri2;
+
+using Tetra = CGAL::Tetrahedron_3<K>;
+using Tri3  = CGAL::Triangle_3<K>;
+using Seg3  = CGAL::Segment_3<K>;
+
+
+static inline P3 lift(const P2& p) {
+  return P3(p.x(), p.y(), p.x()*p.x() + p.y()*p.y());
+}
+
+// we check if flipping the edge with endpoints ia, ib is conforming to the target triangulation
+// conforming to the target triangulation means that the tetrahedron formed by the lifted points a,b,c,d does not intersect the faces of the target triangulation
+
+
+bool is_flip_conforming(df::vertex_id ia,
+                        df::vertex_id ib,
+                        const df::InputData& D,
+                        const std::unordered_map<df::vertex_id,int>& li_current,
+                        const std::unordered_map<df::vertex_id,int>& li_lower)
+{
+    auto idxStr = [](const auto& M, df::vertex_id g)->std::string {
+        auto it = M.find(g);
+        return (it == M.end()) ? "nc" : std::to_string(it->second); // "nc" = not contained
+    };
+    auto Lcur = [&](df::vertex_id g){ return idxStr(li_current, g); };
+    auto Llow = [&](df::vertex_id g){ return idxStr(li_lower,   g); };
+
+    if (ib < ia) std::swap(ia, ib);
+
+    // (a,b) from current triangulation
+    const auto& id_to_vh = D.index_to_vertex_handle_current;
+    auto va = id_to_vh.at(ia);
+    auto vb = id_to_vh.at(ib);
+
+    // find opposite vertices c,d in current
+    df::Tri2::Face_handle fh; int i = -1;
+    D.tri_current.is_edge(va, vb, fh, i);
+    auto gh = fh->neighbor(i);
+    auto vc = fh->vertex(i);
+    int  j  = D.tri_current.mirror_index(fh, i);
+    auto vd = gh->vertex(j);
+
+    df::vertex_id ic = vc->info();
+    df::vertex_id id = vd->info();
+
+    std::cout << "[conform] flip (a,b)=(" << ia << "," << ib << ")"
+              << "  local_cur=(" << Lcur(ia) << "," << Lcur(ib) << ")\n";
+    std::cout << "[conform] quad c=" << ic << "[" << Lcur(ic)
+              << "], d=" << id << "[" << Lcur(id) << "]\n";
+
+    // candidate (c,d) segment in 2D (current)
+    const P2& pc = vc->point();
+    const P2& pd = vd->point();
+    const CGAL::Segment_2<K> edge_cd_2d(pc, pd);
+
+    // scan edges in LOWER triangulation
+    for (auto e = D.tri_lower.finite_edges_begin(); e != D.tri_lower.finite_edges_end(); ++e) {
+        auto f  = e->first;
+        int  ei = e->second;
+
+        auto vu = f->vertex(D.tri_lower.cw(ei));
+        auto vv = f->vertex(D.tri_lower.ccw(ei));
+        df::vertex_id iu = vu->info(), iv = vv->info();
+
+        // skip same as (a,b)
+        if ((iu == ia && iv == ib) || (iu == ib && iv == ia)) continue;
+
+        // already in target → OK, print only lower indices
+        if (((iu == ic) && (iv == id)) || ((iu == id) && (iv == ic))) {
+            std::cout << "[conform] (c,d)=(" << ic << "," << id << ") is already in lower -> OK\n";
+            return true;
+        }
+
+        // share endpoint with (c,d) → boundary touch, skip
+        if (iu == ic || iu == id || iv == ic || iv == id) continue;
+
+        // 2D intersection (lower)
+        const P2& pu = vu->point();
+        const P2& pv = vv->point();
+        const CGAL::Segment_2<K> edge_uv_2d(pu, pv);
+
+        auto inter = CGAL::intersection(edge_cd_2d, edge_uv_2d);
+        if (!inter) continue;
+
+        P2 x;
+        if (const P2* p = std::get_if<P2>(&*inter)) {
+            x = *p;
+        } else if (const CGAL::Segment_2<K>* s = std::get_if<CGAL::Segment_2<K>>(&*inter)) {
+            const P2& x0 = s->source(); const P2& x1 = s->target();
+            const double dx = CGAL::to_double(x1.x() - x0.x());
+            const double dy = CGAL::to_double(x1.y() - x0.y());
+            if (dx*dx + dy*dy < 1e-24) x = x0; else continue; // overlapping segment -> ignore
+        } else continue;
+
+        auto param = [](const P2& p0, const P2& p1, const P2& x) {
+            auto dx = p1.x() - p0.x(), dy = p1.y() - p0.y();
+            if (CGAL::abs(dx) >= CGAL::abs(dy)) return (dx != 0) ? CGAL::to_double((x.x() - p0.x()) / dx) : 0.5;
+            else                                 return (dy != 0) ? CGAL::to_double((x.y() - p0.y()) / dy) : 0.5;
+        };
+
+        double t_cd = param(pc, pd, x);
+        double t_uv = param(pu, pv, x);
+        const double eps_t = 1e-12;
+        if (!(t_cd > eps_t && t_cd < 1.0 - eps_t && t_uv > eps_t && t_uv < 1.0 - eps_t)) continue;
+
+        // 3D check & height compare
+        const P3 c3 = lift(pc), d3 = lift(pd), u3 = lift(pu), v3 = lift(pv);
+        if (CGAL::do_intersect(Seg3(c3, d3), Seg3(u3, v3))) {
+            std::cout << "[conform] BLOCK seg-seg 3D with lower (u,v)=(" << iu << "," << iv
+                      << ") local_low=(" << Llow(iu) << "," << Llow(iv) << ")\n";
+            return false;
+        }
+
+        const double z_cd = (1.0 - t_cd) * CGAL::to_double(c3.z()) + t_cd * CGAL::to_double(d3.z());
+        const double z_uv = (1.0 - t_uv) * CGAL::to_double(u3.z()) + t_uv * CGAL::to_double(v3.z());
+        const double eps_z = 1e-12 * std::max({1.0, std::fabs(z_cd), std::fabs(z_uv)});
+
+        if (z_cd < z_uv - eps_z) {
+            std::cout << "[conform] BLOCK z_cd<z_uv at x; z_cd=" << std::setprecision(15) << z_cd
+                      << " z_uv=" << z_uv
+                      << "  lower (u,v)=(" << iu << "," << iv << ") local_low=("
+                      << Llow(iu) << "," << Llow(iv) << ")\n";
+            return false;
+        } else {
+            std::cout << "[conform] pass at x; z_cd=" << std::setprecision(15) << z_cd
+                      << " z_uv=" << z_uv
+                      << "  lower (u,v)=(" << iu << "," << iv << ") local_low=("
+                      << Llow(iu) << "," << Llow(iv) << ")\n";
+        }
+    }
+
+    std::cout << "[conform] OK: flip (a,b)=(" << ia << "," << ib << ") → (c,d)=("
+              << ic << "," << id << ") is conforming\n";
+    return true;
+}
+
+} } // namespace df::reg
+

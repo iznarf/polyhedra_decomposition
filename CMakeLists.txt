@@ -26,10 +26,9 @@ add_executable(main
     main.cpp
     input.cpp
     visualization.cpp
-    callback.cpp
-    regularity_check.cpp
-    candidates.cpp
-    target_edges.cpp
+    check_edges.cpp
+    conforming.cpp
+    flip.cpp
 )
 
 target_include_directories(main PRIVATE ${portable-file-dialogs_SOURCE_DIR})

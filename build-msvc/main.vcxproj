@@ -400,10 +400,9 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\main.cpp" />
     <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\input.cpp" />
     <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\visualization.cpp" />
-    <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\callback.cpp" />
-    <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\regularity_check.cpp" />
-    <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\candidates.cpp" />
-    <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\target_edges.cpp" />
+    <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\check_edges.cpp" />
+    <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\conforming.cpp" />
+    <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\flip.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\ZERO_CHECK.vcxproj">

@@ -1,7 +1,6 @@
 C:\Users\franz\Desktop\polyhedra_decomposition\main.cpp;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\main.dir\Release\main.obj
 C:\Users\franz\Desktop\polyhedra_decomposition\input.cpp;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\main.dir\Release\input.obj
 C:\Users\franz\Desktop\polyhedra_decomposition\visualization.cpp;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\main.dir\Release\visualization.obj
-C:\Users\franz\Desktop\polyhedra_decomposition\callback.cpp;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\main.dir\Release\callback.obj
-C:\Users\franz\Desktop\polyhedra_decomposition\regularity_check.cpp;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\main.dir\Release\regularity_check.obj
-C:\Users\franz\Desktop\polyhedra_decomposition\candidates.cpp;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\main.dir\Release\candidates.obj
-C:\Users\franz\Desktop\polyhedra_decomposition\target_edges.cpp;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\main.dir\Release\target_edges.obj
+C:\Users\franz\Desktop\polyhedra_decomposition\check_edges.cpp;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\main.dir\Release\check_edges.obj
+C:\Users\franz\Desktop\polyhedra_decomposition\conforming.cpp;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\main.dir\Release\conforming.obj
+C:\Users\franz\Desktop\polyhedra_decomposition\flip.cpp;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\main.dir\Release\flip.obj

@@ -1,36 +1,25 @@
 #pragma once
-#include <string>
-#include <vector>
-#include <array>
 #include "input.h"
+#include <vector>
+#include <unordered_map>
 
 namespace viz {
 
-// Initialize Polyscope (call once)
-// Optional title is used to set polyscope's programName before initialization.
-void init();
+// Registers 4 meshes 
+void show_four_meshes(const df::InputData& D);
 
-// Register (or re-register) the planar triangulation at z=0.
-// It extracts vertices/faces from the given CGAL triangulation.
-void register_planar_triangulation(const df::Tri2& tri,
-                                   const std::string& name = "planar");
+// Collect global vertex IDs in the same order as used for Polyscope registration
+std::vector<df::vertex_id> present_ids(const df::Tri2& t);
 
-// Register (or re-register) the lifted triangulation at z=ω(x,y).
-void register_lifted_triangulation(const df::Tri2& tri,
-                                   const df::OmegaQuad& omega,
-                                   const std::string& name = "lifted");
+// Map global vertex ID -> local compact index [0..V-1] in Polyscope arrays
+std::unordered_map<df::vertex_id,int> make_local_index(const std::vector<df::vertex_id>& ids);
 
-// Update the planar mesh faces/vertices from the current triangulation.
-// (Safe to call even if the mesh wasn't registered yet; it will register.)
-void update_planar_triangulation(const df::Tri2& tri,
-                                 const std::string& name = "planar");
-
-// Update the lifted mesh faces/vertices from the current triangulation + ω.
-void update_lifted_triangulation(const df::Tri2& tri,
-                                 const df::OmegaQuad& omega,
-                                 const std::string& name = "lifted");
-
-// Launch Polyscope UI (blocking).
-void show();
-
+// visualizes one tetrahedron
+void show_flip_tetra(const df::InputData& D, df::vertex_id ia, df::vertex_id ib, const std::string& label);
 } // namespace viz
+
+
+
+
+
+

@@ -1,5 +1,10 @@
 #pragma once
+#include <CGAL/Simple_cartesian.h>
+#include <CGAL/Triangulation_vertex_base_with_info_2.h>
+#include <CGAL/Triangulation_face_base_2.h>
+#include <CGAL/Triangulation_data_structure_2.h>
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+
 #include <CGAL/Triangulation_2.h>
 #include <CGAL/convex_hull_2.h>
 #include <vector>
@@ -7,34 +12,36 @@
 
 namespace df {
 
-  using K  = CGAL::Exact_predicates_inexact_constructions_kernel; // change to cartesian kernel
-  using P2 = K::Point_2;
-  using P3 = K::Point_3;
-  using Tri2 = CGAL::Triangulation_2<K>;
+    //using K  = CGAL::Simple_cartesian<double>; // cartesian kernel
+    using K  = CGAL::Exact_predicates_inexact_constructions_kernel;
+    using P2 = K::Point_2;
+    using P3 = K::Point_3;
+    using vertex_id = std::size_t;  // global vertex id
+    using vertex_base = CGAL::Triangulation_vertex_base_with_info_2<vertex_id, K>;
+    using face_base  = CGAL::Triangulation_face_base_2<K>;
+    using Tri_ds = CGAL::Triangulation_data_structure_2<vertex_base, face_base>;
+    using Tri2 = CGAL::Triangulation_2<K, Tri_ds>;
 
-  inline constexpr double PI = 3.14159265358979323846;
 
-  struct OmegaQuad {
-    // omega(x,y) = a x^2 + b x y + c y^2 + d x + e y + f
-    double a, b, c, d, e, f;
-    double operator()(const P2& p) const {
-      const double x = p.x(), y = p.y();
-      return a*x*x + b*x*y + c*y*y + d*x + e*y + f;
-    }
-  };
 
+    inline constexpr double PI = 3.14159265358979323846;
 
     struct InputData {
-    std::vector<P2> points2d;   // all random points of planar point set A
-    std::vector<P2> hull2d;     // convex hull of A (CCW)
-    OmegaQuad       omega;      // height
-    Tri2            tri_lower;  // source: triangulation using hull only (no interior vertices)
-    Tri2            tri_upper;  // target: triangulation using all points (includes interior)
-    
-    std::vector<P3> lifted() const; // (you can keep this if you use it elsewhere)
-    };
+        std::vector<P2> points2d;   // all random points of planar point set A
+        Tri2            tri_upper;  // source: triangulation using hull only (no interior vertices)
+        Tri2            tri_lower;  // target: triangulation using all points (includes interior)
+        Tri2           tri_current;  // triangulation of the current state in the algorithm
+ 
 
-  // Create random input: points, hull triangulation, full triangulation
+        // global indices to vertex handles map for both triangulations
+        std::vector<Tri2::Vertex_handle> index_to_vertex_handle_lower;
+        std::vector<Tri2::Vertex_handle> index_to_vertex_handle_upper;
+        std::vector<Tri2::Vertex_handle> index_to_vertex_handle_current;
+
+ 
+    };
+  
+  // create random input points, hull triangulation, full triangulation
   InputData make_random_input(int n_points = 10, unsigned seed = 42);
 
 } // namespace df
