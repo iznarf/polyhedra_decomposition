@@ -99,21 +99,25 @@ namespace reg {
 
 // function 2
 bool edge_in_target(const df::vertex_id ia, const df::vertex_id ib, const df::InputData& D) {
-    const df::Tri2& target = D.tri_lower;
+    // iterate over all finite edges in the target triangulation
+    const df::Tri2& target = D.tri_lower;  
+    for (auto e = target.finite_edges_begin(); e != target.finite_edges_end(); ++e) {
+        auto f = e->first;
+        int  i = e->second;
 
-    const auto& id_to_vh = D.index_to_vertex_handle_lower;  // global index to vertex handle of target triangulation
+        auto va = f->vertex(target.cw(i));
+        auto vb = f->vertex(target.ccw(i));
 
-    auto va = id_to_vh.at(ia);
-    auto vb = id_to_vh.at(ib);
+        df::vertex_id ja = va->info();
+        df::vertex_id jb = vb->info();
 
-    // check if the edge is present in the target triangulation already
-    if (target.is_edge(va, vb)) {
-        return true;  // keep only edges NOT in target
-    } else {
-        return false;
+        // undirected edge comparison
+        if ((ja == ia && jb == ib) || (ja == ib && jb == ia)) {
+            return true;
+        }
     }
+    return false;
 }
-
 } // namespace reg
 } // namespace df
 

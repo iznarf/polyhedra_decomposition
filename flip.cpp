@@ -11,22 +11,49 @@ namespace df {
 
 
     void apply_edge_flip(df::vertex_id ia,
-                    df::vertex_id ib,
-                    df::InputData& D)
-    {
-        // get vertex handles from global indices
-        auto va = D.index_to_vertex_handle_current.at(ia);
-        auto vb = D.index_to_vertex_handle_current.at(ib);
+                     df::vertex_id ib,
+                     df::InputData& D)
+{
+    df::Tri2& tri = D.tri_current;
 
-        // perform the edge flip in the current triangulation
-        df::Tri2::Face_handle fh; int i = -1;
-        // we need the face handle and index of the edge to flip
-        D.tri_current.is_edge(va, vb, fh, i); 
+    // Find the edge (ia, ib) in the current triangulation by vertex ids
+    df::Tri2::Face_handle fh;
+    int ei = -1;
+    bool found = false;
 
-        // flip the edge
-        D.tri_current.flip(fh, i);
+    for (auto e = tri.finite_edges_begin(); e != tri.finite_edges_end(); ++e) {
+        auto f  = e->first;
+        int  i  = e->second;
 
-        // do we have to update the index_to_vertex_handle_current map?
-        // no, since vertex handles remain the same after the flip
+        auto va = f->vertex(tri.cw(i));
+        auto vb = f->vertex(tri.ccw(i));
+
+        df::vertex_id ja = va->info();
+        df::vertex_id jb = vb->info();
+
+        if ((ja == ia && jb == ib) || (ja == ib && jb == ia)) {
+            fh    = f;
+            ei    = i;
+            found = true;
+            break;
+        }
     }
+
+    if (!found) {
+        std::cerr << "[flip] ERROR: edge (" << ia << "," << ib
+                  << ") not found in tri_current\n";
+        return; // or assert(false);
+    }
+
+    // Optional: check we’re not on the boundary
+    if (tri.is_infinite(fh) || tri.is_infinite(fh->neighbor(ei))) {
+        std::cerr << "[flip] WARNING: edge (" << ia << "," << ib
+                  << ") is on boundary / infinite, not flipping\n";
+        return;
+    }
+
+    // Perform the edge flip
+    tri.flip(fh, ei);
+}
+
 } // namespace df

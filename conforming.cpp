@@ -9,11 +9,6 @@
 #include <variant>
 #include <vector>
 
-
-// fixes for conforming check:
-// for every tetrahedron (flip) the whole target triangulation is checked for intersection, could be optimized using spatial data structure
-
-
 namespace df { namespace reg {
 
 using K   = df::K;    
@@ -44,14 +39,48 @@ bool is_flip_conforming(df::vertex_id ia,
     auto Lcur = [&](df::vertex_id g){ return idxStr(li_current, g); };
     auto Llow = [&](df::vertex_id g){ return idxStr(li_lower,   g); };
 
+    // --- NEW: find the edge (ia, ib) in the *current* triangulation by vertex ids ---
+    Tri::Face_handle fh;
+    int i = -1;
+    bool found = false;
 
-    const auto& id_to_vh = D.index_to_vertex_handle_current;
-    auto va = id_to_vh.at(ia);
-    auto vb = id_to_vh.at(ib);
+    for (auto e = D.tri_current.finite_edges_begin();
+         e != D.tri_current.finite_edges_end(); ++e)
+    {
+        auto f  = e->first;
+        int ei  = e->second;
 
-    df::Tri2::Face_handle fh; int i = -1;
-    D.tri_current.is_edge(va, vb, fh, i);
+        auto va = f->vertex(D.tri_current.cw(ei));
+        auto vb = f->vertex(D.tri_current.ccw(ei));
+
+        df::vertex_id ja = va->info();
+        df::vertex_id jb = vb->info();
+
+        if ((ja == ia && jb == ib) || (ja == ib && jb == ia)) {
+            fh    = f;
+            i     = ei;
+            found = true;
+            break;
+        }
+    }
+
+    if (!found) {
+        std::cout << "[conform] ERROR: edge (" << ia << "," << ib
+                  << ") not found in tri_current\n";
+        return false; // or whatever makes sense in your pipeline
+    }
+
+    // neighbor across the edge
     auto gh = fh->neighbor(i);
+
+    // safety: if we somehow hit a boundary edge, bail out
+    if (D.tri_current.is_infinite(fh) || D.tri_current.is_infinite(gh)) {
+        std::cout << "[conform] WARNING: edge (" << ia << "," << ib
+                  << ") is on boundary / infinite, treating as non-conforming\n";
+        return false; 
+    }
+
+    // opposite vertices c (in fh) and d (in gh)
     auto vc = fh->vertex(i);
     int  j  = D.tri_current.mirror_index(fh, i);
     auto vd = gh->vertex(j);
@@ -60,11 +89,11 @@ bool is_flip_conforming(df::vertex_id ia,
     df::vertex_id id = vd->info();
 
     std::cout << "[conform] flip (a,b)=(" << ia << "," << ib << ")"
-              << "  local_cur=(" << Lcur(ia) << "," << Lcur(ib) << ")\n";
+              << "  polyscope indices =(" << Lcur(ia) << "," << Lcur(ib) << ")\n";
     std::cout << "[conform] quad c=" << ic << "[" << Lcur(ic)
               << "], d=" << id << "[" << Lcur(id) << "]\n";
 
-    // candidate (c,d) in 2D/3D — canonicalize by 2D order
+    // candidate (c,d)
     P2 c2 = vc->point();
     P2 d2 = vd->point();
     const CGAL::Segment_2<K> edge_cd_2d(c2, d2);

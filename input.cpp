@@ -60,38 +60,6 @@ static std::vector<P2> sample_points_in_disk(int n, double R, std::mt19937& rng)
     return pts;
 }
 
-// function to build edge list from triangulation
-static std::vector<std::array<df::vertex_id, 2>>
-build_edge_list(const df::Tri2& tri)
-{
-    std::vector<std::array<df::vertex_id, 2>> edges;
-    edges.reserve(3 * tri.number_of_faces()); // upper bound
-
-    for (auto e = tri.finite_edges_begin(); e != tri.finite_edges_end(); ++e) {
-        auto fh = e->first;
-        int i   = e->second; // edge opposite vertex i
-        auto a = fh->vertex(tri.cw(i))->info();
-        auto b = fh->vertex(tri.ccw(i))->info();
-        edges.push_back({a, b});   
-    }
-
-    return edges;
-}
-
-// function to build face list from triangulation
-static std::vector<std::array<df::vertex_id, 3>> build_face_list(const df::Tri2& tri) {
-    std::vector<std::array<df::vertex_id, 3>> F;
-    F.reserve(tri.number_of_faces());
-    for (auto f = tri.finite_faces_begin(); f != tri.finite_faces_end(); ++f) {
-        auto v0 = f->vertex(0)->info();
-        auto v1 = f->vertex(1)->info();
-        auto v2 = f->vertex(2)->info();
-        // enforce a canonical ordering
-        F.push_back({ v0, v1, v2 });
-    }
-    return F;
-}
-
 
 // create random input: points, hull triangulation, full triangulation
 // n_points: number of vertices 
@@ -142,18 +110,6 @@ InputData make_random_input(int n_points, unsigned seed) {
 
   
     using vertex_handle = Tri2::Vertex_handle;
-
-    // global index -> vertex handle map for upper triangulation
-    D.index_to_vertex_handle_upper.assign(D.points2d.size(), vertex_handle{});
-    for (auto v = D.tri_upper.finite_vertices_begin();
-        v != D.tri_upper.finite_vertices_end(); ++v)
-    D.index_to_vertex_handle_upper[v->info()] = v; 
-
-    // global index -> vertex handle map for current triangulation
-    D.index_to_vertex_handle_current.assign(D.points2d.size(), vertex_handle{});
-    for (auto v = D.tri_current.finite_vertices_begin();
-        v != D.tri_current.finite_vertices_end(); ++v)
-    D.index_to_vertex_handle_current[v->info()] = v;
     
     // indices of all points for shuffling
     // we shuffle the order of insertion to generate random triangulations
@@ -171,13 +127,6 @@ InputData make_random_input(int n_points, unsigned seed) {
 
     D.tri_lower.clear();
     D.tri_lower.insert(shuffled_pairs.begin(), shuffled_pairs.end());
- 
-    // global index -> vertex handle map for lower triangulation
-    D.index_to_vertex_handle_lower.assign(D.points2d.size(), vertex_handle{});
-    for (auto v = D.tri_lower.finite_vertices_begin();
-        v != D.tri_lower.finite_vertices_end(); ++v)
-    D.index_to_vertex_handle_lower[v->info()] = v; 
-
 
     return D;
 }

@@ -31,14 +31,7 @@ namespace df {
         Tri2            tri_upper;  // source: triangulation using hull only (no interior vertices)
         Tri2            tri_lower;  // target: triangulation using all points (includes interior)
         Tri2           tri_current;  // triangulation of the current state in the algorithm
- 
-
-        // global indices to vertex handles map for both triangulations
-        std::vector<Tri2::Vertex_handle> index_to_vertex_handle_lower;
-        std::vector<Tri2::Vertex_handle> index_to_vertex_handle_upper;
-        std::vector<Tri2::Vertex_handle> index_to_vertex_handle_current;
-
- 
+  
     };
   
   // create random input points, hull triangulation, full triangulation

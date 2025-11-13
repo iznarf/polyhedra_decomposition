@@ -79,43 +79,64 @@ static inline glm::vec3 lift_paraboloid(const df::P2& p) {
 
 void show_flip_tetra(const df::InputData& D, df::vertex_id ia, df::vertex_id ib,  const std::string& label) {
 
-    // map global id -> handle
-    auto& tri = D.tri_current;
-    auto& index_to_vertex_handle = D.index_to_vertex_handle_current;
+    const auto& tri = D.tri_current;
 
-    // use the global id -> vertex handle map to get vertex handles
-    df::Tri2::Vertex_handle va = index_to_vertex_handle[ia];
-    df::Tri2::Vertex_handle vb = index_to_vertex_handle[ib];
+    // find the edge (ia, ib) in the current triangulation by vertex ids
+    df::Tri2::Face_handle f;
+    int i = -1;
+    bool found = false;
 
-    // find opposite vertices c,d for edge (va,vb)
-    df::Tri2::Face_handle f; int i = -1;
-    if (!tri.is_edge(va, vb, f, i)) return;
-    if (tri.is_infinite(f)) return;
+    for (auto e = tri.finite_edges_begin(); e != tri.finite_edges_end(); ++e) {
+        auto fe = e->first;
+        int  ei = e->second;
 
-    auto g = f->neighbor(i);
-    int mi = tri.mirror_index(f, i);
+        auto va = fe->vertex(tri.cw(ei));
+        auto vb = fe->vertex(tri.ccw(ei));
 
-    auto vc = f->vertex(i);
-    auto vd = g->vertex(mi);
+        df::vertex_id ja = va->info();
+        df::vertex_id jb = vb->info();
 
+        if ((ja == ia && jb == ib) || (ja == ib && jb == ia)) {
+            f     = fe;
+            i     = ei;
+            found = true;
+            break;
+        }
+    }
 
-    const df::P2& A2 = va->point();
-    const df::P2& B2 = vb->point();
-    const df::P2& C2 = vc->point();
-    const df::P2& D2 = vd->point();
+        if (!found) {
+            std::cout << "[viz] show_flip_tetra: edge (" << ia << "," << ib
+                    << ") not found in tri_current\n";
+            return;
+        }
 
-    std::vector<glm::vec3> V = {
-        lift_paraboloid(A2), lift_paraboloid(B2),
-        lift_paraboloid(C2), lift_paraboloid(D2)
-    };
-    std::vector<std::array<size_t,3>> F = { {0,1,2}, {0,3,1}, {1,3,2}, {0,2,3} };
+        // if the incident face or its neighbor is infinite, just bail out
+        if (tri.is_infinite(f)) return;
+        auto g = f->neighbor(i);
+        if (tri.is_infinite(g)) return;
 
-    auto mesh = polyscope::registerSurfaceMesh(label, V, F);
+        // endpoints of the edge and the two opposite vertices
+        auto va = f->vertex(tri.cw(i));
+        auto vb = f->vertex(tri.ccw(i));
+        auto vc = f->vertex(i);
+        int  mi = tri.mirror_index(f, i);
+        auto vd = g->vertex(mi);
 
-    mesh->setTransparency(0.5); 
+        const df::P2& A2 = va->point();
+        const df::P2& B2 = vb->point();
+        const df::P2& C2 = vc->point();
+        const df::P2& D2 = vd->point();
 
+        std::vector<glm::vec3> V = {
+            lift_paraboloid(A2), lift_paraboloid(B2),
+            lift_paraboloid(C2), lift_paraboloid(D2)
+        };
+        std::vector<std::array<size_t,3>> F = { {0,1,2}, {0,3,1}, {1,3,2}, {0,2,3} };
 
+        auto mesh = polyscope::registerSurfaceMesh(label, V, F);
+        mesh->setTransparency(0.5f);
 }
+
 
 
 // collect the global indices present in a triangulation
@@ -129,10 +150,10 @@ std::vector<vertex_id> present_ids(const df::Tri2& t) {
 
 // map global index to local compact index [0,..,V-1] for polyscope
 std::unordered_map<vertex_id,int> make_local_index(const std::vector<vertex_id>& ids) {
-  std::unordered_map<vertex_id,int> m;
-  m.reserve(ids.size());
-  for (int i = 0; i < (int)ids.size(); ++i) m[ids[i]] = i;
-  return m;
+    std::unordered_map<vertex_id,int> m;
+    m.reserve(ids.size());
+    for (int i = 0; i < (int)ids.size(); ++i) m[ids[i]] = i;
+    return m;
 }
 
 void show_four_meshes(const df::InputData& D) {
@@ -144,6 +165,33 @@ void show_four_meshes(const df::InputData& D) {
   register_triangulation_as_mesh(D.tri_upper, D.points2d, "upper 2D", "upper lifted");
 
 }
+
+
+void show_or_update_current(const df::InputData& D) {
+  // build fresh buffers from the current triangulation
+  const auto& tri = D.tri_current;
+
+  const auto ids      = present_ids(tri);
+  const auto to_local = make_local_index(ids);
+  const auto V2       = points_planar(ids,  D.points2d);
+  const auto V3       = points_lifted(ids,  D.points2d);
+  const auto F        = faces_from_triangles(tri, to_local);
+
+  // remove old meshes only if they exist
+  if (polyscope::hasSurfaceMesh("current 2D")) {
+    polyscope::getSurfaceMesh("current 2D")->remove();
+  }
+  if (polyscope::hasSurfaceMesh("current lifted")) {
+    polyscope::getSurfaceMesh("current lifted")->remove();
+  }
+
+  // (re)register meshes
+  polyscope::registerSurfaceMesh("current 2D", V2, F);
+  auto* m3 = polyscope::registerSurfaceMesh("current lifted", V3, F);
+  m3->setTransparency(0.5f);
+}
+
+
 
 } // namespace viz
 
