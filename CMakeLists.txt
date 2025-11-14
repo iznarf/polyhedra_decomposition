@@ -29,6 +29,7 @@ add_executable(main
     check_edges.cpp
     conforming.cpp
     flip.cpp
+    insertion.cpp
 )
 
 target_include_directories(main PRIVATE ${portable-file-dialogs_SOURCE_DIR})

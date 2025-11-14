@@ -1,5 +1,4 @@
 #include <polyscope/polyscope.h>
-#include <CGAL/Simple_cartesian.h>
 
 #include <iostream>
 #include <iomanip>
@@ -15,6 +14,7 @@
 #include "check_edges.h"
 #include "conforming.h"
 #include "flip.h"
+#include "insertion.h"
 
 
 int main() {
@@ -33,7 +33,7 @@ int main() {
     // visualize current triangulation
     viz::show_or_update_current(in); 
 
-    // global vertex_id -> local polyscope index of target triangulation (fixed)
+    // global vertex_id -> local polyscope index of target triangulation
     std::unordered_map<df::vertex_id, int> id2local_lower;
     id2local_lower.reserve(target_triangulation.number_of_vertices());
     int loc = 0;
@@ -58,8 +58,7 @@ int main() {
         }
 
         // collect locally non-regular (down-flippable) edges
-        std::vector<std::array<df::vertex_id,2>> down_flip_edges =
-            df::reg::find_locally_non_regular_edges(current_triangulation);
+        std::vector<std::array<df::vertex_id,2>> down_flip_edges = df::reg::find_locally_non_regular_edges(current_triangulation);
 
         // for storing flippable edges which are NOT in the target triangulation and conforming 
         std::vector<std::pair<df::vertex_id, df::vertex_id>> flippable_edges;
@@ -83,8 +82,7 @@ int main() {
 
             // compute flags
             bool in_target = df::reg::edge_in_target(ia, ib, in);
-            bool conf      = df::reg::is_flip_conforming(
-                ia, ib, in, id2local_current, id2local_lower);
+            bool conf      = df::reg::is_flip_conforming(ia, ib, in, id2local_current, id2local_lower);
 
             // in_target is false and conf is true -> we can flip this edge
             if (!in_target && conf) {
@@ -119,6 +117,36 @@ int main() {
         viz::show_or_update_current(in);
 
         ++iteration;
+    }
+
+    auto missing = df::find_missing_vertices(current_triangulation,
+                                              target_triangulation);
+
+    if (missing.empty()) {
+        std::cout << "No missing vertices: current already contains all target points.\n";
+    } else {
+        std::cout << "Missing vertices (global ids): ";
+        for (auto id : missing) std::cout << id << " ";
+        std::cout << "\n";
+        // choose the vertex with highest height 
+        // fix: do we need a conforming check here?
+        df::vertex_id vertex_to_be_inserted = pick_next_insertion_vertex(missing, in);
+        std::cout << "Inserting vertex (global id) " << vertex_to_be_inserted << "\n";
+        int local_index_insertion_vertex = id2local_lower.at(vertex_to_be_inserted);
+        std::cout << "Local index in target triangulation: " << local_index_insertion_vertex << "\n";
+        df::apply_vertex_insertion(vertex_to_be_inserted, in);
+        viz::show_or_update_current(in);
+        // update polyscope map 
+        // rebuild id2local_current for the *current* triangulation
+        id2local_current.clear();
+        id2local_current.reserve(current_triangulation.number_of_vertices());
+        loc = 0;
+        for (auto v = current_triangulation.finite_vertices_begin();
+             v != current_triangulation.finite_vertices_end(); ++v) {
+            id2local_current[v->info()] = loc++;
+        }
+        //do we need to check if a vertex insertion is conforming?
+    
     }
 
     polyscope::show();

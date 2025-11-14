@@ -158,3 +158,8 @@ bool is_flip_conforming(df::vertex_id ia,
 
 } } // namespace df::reg
 
+    // global index -> vertex handle map for upper triangulation
+    D.index_to_vertex_handle_upper.assign(D.points2d.size(), vertex_handle{});
+    for (auto v = D.tri_upper.finite_vertices_begin();
+        v != D.tri_upper.finite_vertices_end(); ++v)
+    D.index_to_vertex_handle_upper[v->info()] = v; 

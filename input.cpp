@@ -13,52 +13,55 @@
 
 namespace df {
 
-// checks if three points are collinear
-bool are_collinear(const P2& a, const P2& b, const P2& c) {
-    // use CGAL orientation test
-    return CGAL::orientation(a, b, c) == CGAL::COLLINEAR;
+
+
+// check if "p_new" is collinear with ANY pair of points in "pts"
+static bool forms_collinear_triple(const std::vector<P2>& pts, const P2& p_new) {
+    std::size_t n = pts.size();
+    if (n < 2) return false; // need at least 2 existing points to form a triple
+
+    for (std::size_t i = 0; i < n; ++i) {
+        for (std::size_t j = i + 1; j < n; ++j) {
+            if (CGAL::orientation(pts[i], pts[j], p_new) == CGAL::COLLINEAR) {
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
-// checks the hull point set and removes collinear points
-// modifies hull_ids in place
-static void prune_collinear_hull(const std::vector<df::P2>& P, std::vector<std::size_t>& hull_ids) {
-    if (hull_ids.size() < 3) return;
-        std::vector<std::size_t> out; out.reserve(hull_ids.size());
-        auto n = hull_ids.size();
-    //iterate over hull ids and check if the previous, current, 
-    // next are collinear, modulo because we want a closed loop
-    for (size_t i = 0; i < n; ++i) {
-        const auto ia = hull_ids[(i + n - 1) % n];
-        const auto ib = hull_ids[i];
-        const auto ic = hull_ids[(i + 1) % n];
-        // check if ia, ib, ic are collinear
-        // if not, ib is a true corner, keept it
-        // if collinear, ib lies on a straight line between ia and ic, skip it
-        if (!are_collinear(P[ia], P[ib], P[ic])) out.push_back(ib);
-    }
-    // replace old hull_ids with filtered one
-    hull_ids.swap(out);
-    // if hull contains less then 3 points, choose another input and print warning 
-    if (hull_ids.size() < 3) {
-        std::cerr << "[Warning] Hull degenerated after pruning: "
-                  << hull_ids.size()
-                  << " vertices remain (need >= 3). ";
-    }
-}
 
-// generate n 2d points inside a disk of radius R, uniformly over the area to spread points evenly
-// we pick random angle and random radius for polar coordinates and then convert to cartesian coordinates
-static std::vector<P2> sample_points_in_disk(int n, double R, std::mt19937& rng) { // // std::mt19937& rng: random number generator
+
+
+// generate n 2d points inside a disk of radius R, uniformly over the area,
+// with the extra constraint: no three points are collinear
+static std::vector<P2> sample_points_in_disk(int n, double R, std::mt19937& rng) {
     std::uniform_real_distribution<double> Uang(0.0, 2.0 * PI); // random angle
-    std::uniform_real_distribution<double> Urad(0.0, 1.0); // random radius
-    std::vector<P2> pts; pts.reserve(n);
-    for (int i = 0; i < n; ++i) {
-        double ang = Uang(rng); // random angle between 0 and 2pi
-        double r   = R * std::sqrt(Urad(rng));     // sqrt of random radius
-        pts.emplace_back(r * std::cos(ang), r * std::sin(ang)); // convert to cartesian
-    }  
+    std::uniform_real_distribution<double> Urad(0.0, 1.0);      // random radius
+
+    std::vector<P2> pts;
+    pts.reserve(n);
+
+    for (int k = 0; k < n; ++k) {
+        P2 p;
+        // rejection sampling until p does not form a collinear triple
+        while (true) {
+            double ang = Uang(rng);                 // angle in [0, 2pi)
+            double r   = R * std::sqrt(Urad(rng));  // radius with area-uniform sampling
+            p = P2(r * std::cos(ang), r * std::sin(ang));
+
+            if (!forms_collinear_triple(pts, p)) {
+                break; // accept this point
+            }
+            // else: try again
+        }
+
+        pts.push_back(p);
+    }
+
     return pts;
 }
+
 
 
 // create random input: points, hull triangulation, full triangulation
@@ -92,9 +95,6 @@ InputData make_random_input(int n_points, unsigned seed) {
     CGAL::convex_hull_2(global_indices.begin(), global_indices.end(),
                         std::back_inserter(hull_ids),
                         hull_adapter(point_map));
-
-    // prune collinear points from hull
-    prune_collinear_hull(D.points2d, hull_ids);
 
 
     // 6) build (point, global index) pairs for the hull

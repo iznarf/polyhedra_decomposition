@@ -188,7 +188,7 @@ void show_or_update_current(const df::InputData& D) {
   // (re)register meshes
   polyscope::registerSurfaceMesh("current 2D", V2, F);
   auto* m3 = polyscope::registerSurfaceMesh("current lifted", V3, F);
-  m3->setTransparency(0.5f);
+  //m3->setTransparency(0.5f);
 }
 
 
