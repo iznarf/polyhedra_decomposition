@@ -1,4 +1,5 @@
 #include "flip.h"
+#include <iostream>
 
 
 
@@ -10,7 +11,8 @@ namespace df {
 // since the flip only changes the connectivity of the triangulation, not the vertices themselves
 
 
-    void apply_edge_flip(df::vertex_id ia,
+
+void apply_edge_flip(df::vertex_id ia,
                      df::vertex_id ib,
                      df::InputData& D)
 {
@@ -45,15 +47,43 @@ namespace df {
         return; // or assert(false);
     }
 
-    // Optional: check we’re not on the boundary
+    // boundary / infinite check
     if (tri.is_infinite(fh) || tri.is_infinite(fh->neighbor(ei))) {
         std::cerr << "[flip] WARNING: edge (" << ia << "," << ib
                   << ") is on boundary / infinite, not flipping\n";
         return;
     }
 
-    // Perform the edge flip
+    // determine the opposite vertices c,d *before* the flip 
+    auto vc = fh->vertex(ei);                 // opposite vertex in fh
+    auto gh = fh->neighbor(ei);               // neighbor across the edge
+    int  j  = tri.mirror_index(fh, ei);       // mirrored index in neighbor
+    auto vd = gh->vertex(j);                  // opposite vertex in gh
+
+    df::vertex_id ic = vc->info();
+    df::vertex_id id = vd->info();
+
+   
+    D.flip_history.emplace_back(ia, ib, ic, id);
+
+    
     tri.flip(fh, ei);
 }
+
+
+
+void print_flip_history(const df::InputData& D)
+{
+    std::cout << "\n=== edge flip history ===\n";
+    int i = 0;
+    for (const auto& rec : D.flip_history) {
+        std::cout << i++ << ": (" 
+                  << rec.a << "," << rec.b 
+                  << ") -> (" 
+                  << rec.c << "," << rec.d << ")\n";
+    }
+}
+
+
 
 } // namespace df

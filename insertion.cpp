@@ -45,23 +45,35 @@ namespace df {
         return missing;
     }
 
-    df::vertex_id pick_next_insertion_vertex(const std::vector<df::vertex_id>& missing, const df::InputData& D) {
-        assert(!missing.empty());
+    std::vector<df::vertex_id>
+    sorted_insertion_vertices(const std::vector<df::vertex_id>& missing,
+                                const df::InputData& D)
+    {
+        std::vector<std::pair<double, df::vertex_id>> temp;
+        temp.reserve(missing.size());
 
-        auto best_id = missing.front();
-        double best_height = -std::numeric_limits<double>::infinity();
-
+        // compute lifted height and store (height, id)
         for (auto id : missing) {
-            const auto& p = D.points2d[id]; // or whatever your 2D array is called
-            const double z = p.x()*p.x() + p.y()*p.y(); // your lifting function
-
-            if (z > best_height) {
-                best_height = z;
-                best_id = id;
-            }
+            const auto& p = D.points2d[id];
+            double z = p.x()*p.x() + p.y()*p.y();  // lift 
+            temp.emplace_back(z, id);
         }
-        return best_id;
+
+        // sort by descending height
+        std::sort(temp.begin(), temp.end(),
+                [](const auto& a, const auto& b) {
+                    return a.first > b.first; // largest height first
+                });
+
+        // extract ids only
+        std::vector<df::vertex_id> sorted_ids;
+        sorted_ids.reserve(temp.size());
+        for (auto& pair : temp)
+            sorted_ids.push_back(pair.second);
+
+        return sorted_ids;
     }
+
 
     void apply_vertex_insertion(df::vertex_id id, df::InputData& D) {
         const auto& p = D.points2d[id];

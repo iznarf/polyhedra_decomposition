@@ -18,6 +18,13 @@ std::unordered_map<df::vertex_id,int> make_local_index(const std::vector<df::ver
 void show_flip_tetra(const df::InputData& D, df::vertex_id ia, df::vertex_id ib, const std::string& label);
 
 void show_or_update_current(const df::InputData& D);
+
+void debug_print_lower_vertex_ids(const df::InputData& D,
+                                    const std::vector<int>& local_indices);
+
+
+void debug_print_edge_list(const df::InputData& D);
+
 } // namespace viz
 
 

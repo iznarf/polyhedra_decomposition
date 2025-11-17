@@ -30,6 +30,8 @@ add_executable(main
     conforming.cpp
     flip.cpp
     insertion.cpp
+    edge_flip_loop.cpp
+    conforming_insertion.cpp
 )
 
 target_include_directories(main PRIVATE ${portable-file-dialogs_SOURCE_DIR})

@@ -9,9 +9,12 @@
 #include <random>
 #include <cmath>
 #include <cassert>
+#include <iostream>
 
 
 namespace df {
+
+    using DT2 = CGAL::Delaunay_triangulation_2<K, Tri_ds>;
 
 
 
@@ -64,6 +67,9 @@ static std::vector<P2> sample_points_in_disk(int n, double R, std::mt19937& rng)
 
 
 
+
+
+
 // create random input: points, hull triangulation, full triangulation
 // n_points: number of vertices 
 // seed: starting value for the random number generator -> if seed stays the same, we can get the same random points
@@ -72,8 +78,11 @@ InputData make_random_input(int n_points, unsigned seed) {
     std::mt19937 rng(seed); 
 
     InputData D;
+    // clear flip history from earlier runs
+    D.flip_history.clear(); 
     // 1) random points with interior points
     D.points2d = sample_points_in_disk(n_points, /*R=*/1.0, rng);
+
 
     // 2) make an global index array [0,...,n-1]
     std::vector<std::size_t> global_indices(D.points2d.size());

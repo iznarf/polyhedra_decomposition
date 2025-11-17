@@ -22,6 +22,12 @@
     <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\insertion.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\edge_flip_loop.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\conforming_insertion.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="C:\Users\franz\Desktop\polyhedra_decomposition\CMakeLists.txt" />

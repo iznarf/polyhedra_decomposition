@@ -26,11 +26,24 @@ namespace df {
 
     inline constexpr double PI = 3.14159265358979323846;
 
+
+    struct FlipRecord {
+        vertex_id a, b;  // edge BEFORE flip  (a,b)
+        vertex_id c, d;  // edge AFTER  flip (c,d)
+
+        FlipRecord() = default;
+        FlipRecord(vertex_id aa, vertex_id bb, vertex_id cc, vertex_id dd)
+            : a(aa), b(bb), c(cc), d(dd) {}
+    };
+
     struct InputData {
         std::vector<P2> points2d;   // all random points of planar point set A
         Tri2            tri_upper;  // source: triangulation using hull only (no interior vertices)
         Tri2            tri_lower;  // target: triangulation using all points (includes interior)
         Tri2           tri_current;  // triangulation of the current state in the algorithm
+
+        std::vector<df::FlipRecord> flip_history;
+
   
     };
   

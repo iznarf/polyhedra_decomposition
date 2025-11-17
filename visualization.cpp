@@ -64,7 +64,7 @@ void register_triangulation_as_mesh(const df::Tri2& tri,
 
     auto vertices_3d = points_lifted(ids, points2d); // coordinates of lifted points 
     auto mesh = polyscope::registerSurfaceMesh(name_lifted, vertices_3d, faces); // lifted mesh
-    mesh->setTransparency(0.5); 
+    //mesh->setTransparency(0.5); 
 }
 
 } // anon
@@ -191,7 +191,52 @@ void show_or_update_current(const df::InputData& D) {
   //m3->setTransparency(0.5f);
 }
 
+void debug_print_lower_vertex_ids(const df::InputData& D,
+                                  const std::vector<int>& local_indices) {
+    // global ids in the same order as used for polyscope "lower 2D"/"lower lifted"
+    auto ids = present_ids(D.tri_current);
 
+    std::cout << "[debug] lower polyscope local -> global mapping:\n";
+    for (int li : local_indices) {
+        if (li < 0 || li >= static_cast<int>(ids.size())) {
+            std::cout << "  local " << li << " : out of range (0.." 
+                      << (ids.size() - 1) << ")\n";
+            continue;
+        }
+
+        df::vertex_id gid = ids[li];  // this is the global index (index into points2d)
+        std::cout << "  local " << li << " -> global " << gid << "\n";
+    }
+}
+
+// print list of global edge ids in current triangulation
+void debug_print_edge_list(const df::InputData& D) {
+    const auto& tri = D.tri_current;
+
+    // collect edges as pairs of global vertex ids
+    std::vector<std::pair<df::vertex_id, df::vertex_id>> edges;
+    std::cout << "[debug] edges in current triangulation (global vertex ids):\n";
+    for (auto e = tri.finite_edges_begin(); e != tri.finite_edges_end(); ++e) {
+        auto f  = e->first; // incident face of the edge
+        int ei  = e->second; // local index of the edge in face f
+
+        auto va = f->vertex(tri.cw(ei)); // vertex opposite to index ei in face f
+        auto vb = f->vertex(tri.ccw(ei)); // vertex opposite to index ei in face f
+
+        df::vertex_id ja = va->info(); // global index of vertex a
+        df::vertex_id jb = vb->info(); // global index of vertex b
+        edges.emplace_back(ja, jb);  
+    }
+    // print edges but in a compact way, not one row for one edge
+    for (size_t i = 0; i < edges.size(); i++) {
+        const auto& e = edges[i];
+        std::cout << "(" << e.first << ", " << e.second << ")";
+        if (i + 1 < edges.size()) {
+            std::cout << ",";
+        }
+    }
+
+}
 
 } // namespace viz
 

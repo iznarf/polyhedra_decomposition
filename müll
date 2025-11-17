@@ -158,8 +158,40 @@ bool is_flip_conforming(df::vertex_id ia,
 
 } } // namespace df::reg
 
-    // global index -> vertex handle map for upper triangulation
-    D.index_to_vertex_handle_upper.assign(D.points2d.size(), vertex_handle{});
-    for (auto v = D.tri_upper.finite_vertices_begin();
-        v != D.tri_upper.finite_vertices_end(); ++v)
-    D.index_to_vertex_handle_upper[v->info()] = v; 
+
+
+
+
+
+
+
+
+
+     // 3) build convex hull: We use the property map to then give CGAL just the global indices for the convex hull
+    // since we have the property map, CGAL can then build the convex hull based on the indices
+    // build property map: global index -> point: for integer k it gives back points2d[k]
+    // in O(1) time
+    auto point_map = CGAL::make_property_map(D.points2d);
+
+    // 4) ask CGAL for the hull *indices*
+    std::vector<std::size_t> hull_ids;
+    hull_ids.reserve(D.points2d.size());
+
+    // 5) convex hull as global indices in ccw order 
+    using hull_adapter = CGAL::Convex_hull_traits_adapter_2<K, decltype(point_map)>;
+    // this gives back the global indices of the hull points in ccw order
+    CGAL::convex_hull_2(global_indices.begin(), global_indices.end(),
+                        std::back_inserter(hull_ids),
+                        hull_adapter(point_map));
+
+
+    // 6) build (point, global index) pairs for the hull
+    std::vector<std::pair<P2, vertex_id>> hull_pairs;
+    hull_pairs.reserve(hull_ids.size());
+    for (auto id : hull_ids)
+        hull_pairs.emplace_back(D.points2d[id], id);
+    
+    // 7) insert into triangulation; each vertex’s info() becomes the global index
+    D.tri_upper.clear();
+    D.tri_upper.insert(hull_pairs.begin(), hull_pairs.end());
+    D.tri_current.insert(hull_pairs.begin(), hull_pairs.end());
