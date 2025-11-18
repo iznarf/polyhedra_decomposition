@@ -7,3 +7,5 @@ C:\Users\franz\Desktop\polyhedra_decomposition\flip.cpp;C:\Users\franz\Desktop\p
 C:\Users\franz\Desktop\polyhedra_decomposition\insertion.cpp;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\main.dir\Release\insertion.obj
 C:\Users\franz\Desktop\polyhedra_decomposition\edge_flip_loop.cpp;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\main.dir\Release\edge_flip_loop.obj
 C:\Users\franz\Desktop\polyhedra_decomposition\conforming_insertion.cpp;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\main.dir\Release\conforming_insertion.obj
+C:\Users\franz\Desktop\polyhedra_decomposition\debug.cpp;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\main.dir\Release\debug.obj
+C:\Users\franz\Desktop\polyhedra_decomposition\geometry_utils.cpp;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\main.dir\Release\geometry_utils.obj

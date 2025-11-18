@@ -1,9 +1,6 @@
 #include "flip.h"
 #include <iostream>
 
-
-
-
 namespace df {
 
 // we now have to perform the edge flip on the current triangulation with given indices

@@ -32,6 +32,8 @@ add_executable(main
     insertion.cpp
     edge_flip_loop.cpp
     conforming_insertion.cpp
+    debug.cpp
+    geometry_utils.cpp
 )
 
 target_include_directories(main PRIVATE ${portable-file-dialogs_SOURCE_DIR})

@@ -3,6 +3,7 @@
 #include "conforming.h"
 #include "flip.h"
 #include "visualization.h"
+#include "debug.h"
 #include <iostream>
 #include <unordered_map>
 
@@ -98,7 +99,7 @@ void perform_all_conforming_down_flips(df::InputData& in) {
         // update the visualization 
         viz::show_or_update_current(in);
 
-        viz::debug_print_edge_list(in);
+        //df::debug_print_edge_list(in);
 
         ++iteration;
     }

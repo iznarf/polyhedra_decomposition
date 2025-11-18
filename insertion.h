@@ -20,4 +20,6 @@ namespace df {
     // apply vertex insertion into the current triangulation
     void apply_vertex_insertion(const df::vertex_id id, df::InputData& D);
 
+    bool is_insertion_downflip(const df::vertex_id id, const df::InputData& D);
+
 } // namespace df

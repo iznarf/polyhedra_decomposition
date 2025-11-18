@@ -1,11 +1,20 @@
 // check the present global vertex ids of the current triangulation and compare them with the target triangulation
 // if the target triangulation contains more vertices, then we have to do a vertex insertion
 #include "insertion.h"
+#include "geometry_utils.h"
 #include <iostream>
 
 #include <unordered_set>
 
 namespace df {
+
+   
+                                           
+
+    // small helper just for this file
+    static inline P3 lift_paraboloid(const P2& p) {
+        return P3(p.x(), p.y(), p.x()*p.x() + p.y()*p.y());
+    }
 
 
     // helper function: build a set of global ids present in a triangulation
@@ -76,6 +85,8 @@ namespace df {
 
 
     void apply_vertex_insertion(df::vertex_id id, df::InputData& D) {
+
+
         const auto& p = D.points2d[id];
         df::Tri2& T = D.tri_current;
 
@@ -87,29 +98,48 @@ namespace df {
             // p is strictly inside this triangle
             std::cout << "[locate] point is inside a face\n";
 
-            df::Tri2::Vertex_handle vh = T.insert(p, fh); // 1–3 flip
+            df::Tri2::Vertex_handle vh = T.insert_in_face(p, fh); // 1–3 flip
             vh->info() = id; // set the global vertex id
 
             std::cout << "Inserted vertex id " << id
                     << " at point (" << p.x() << "," << p.y() << ")\n";
         }
-        else if (lt == df::Tri2::EDGE) {
-            // p lies on an edge of the triangulation
-            std::cout << "[locate] WARNING: point lies on an existing edge, inserting in edge\n";
-
-            df::Tri2::Vertex_handle vh = T.insert_in_edge(p, fh, li);
-            vh->info() = id;
-
-            std::cout << "Inserted vertex id " << id
-                    << " on edge, point (" << p.x() << "," << p.y() << ")\n";
-        }
-        else if (lt == df::Tri2::VERTEX) {
-            std::cout << "[locate] WARNING: point is at an existing vertex, nothing inserted\n";
-        }
-        else { // OUTSIDE_CONVEX_HULL or OUTSIDE_AFFINE_HULL
-            std::cout << "[locate] ERROR: point lies outside current hull, cannot insert\n";
-        }
     }
+
+    bool is_insertion_downflip(vertex_id id, const InputData& D) {
+        const Tri2& tri = D.tri_current;
+        const P2& d2    = D.points2d[id];
+
+        Tri2::Locate_type lt;
+        int li;
+        Tri2::Face_handle fh = tri.locate(d2, lt, li);
+
+        if (lt != Tri2::FACE) {
+            return false;
+        }
+
+        auto va = fh->vertex(0);
+        auto vb = fh->vertex(1);
+        auto vc = fh->vertex(2);
+
+        const P2& a2 = va->point();
+        const P2& b2 = vb->point();
+        const P2& c2 = vc->point();
+
+        // lift four points to the paraboloid
+        P3 a3 = lift_paraboloid(a2);
+        P3 b3 = lift_paraboloid(b2);
+        P3 c3 = lift_paraboloid(c2);
+        P3 d3 = lift_paraboloid(d2);
+
+
+        CGAL::Orientation s =
+            oriented_height_sign(a2, b2, c2, a3, b3, c3, d3);
+
+        // In your flip test: NEGATIVE = d' is below the face -> allowed
+        return (s == CGAL::NEGATIVE);
+    }
+
 
 
 

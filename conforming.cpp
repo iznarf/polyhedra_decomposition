@@ -208,4 +208,3 @@ bool is_flip_conforming(df::vertex_id ia,
 
 
 } } // namespace df::reg
-

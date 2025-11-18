@@ -15,22 +15,18 @@
 #include "insertion.h"
 #include "flip.h"
 #include "conforming_insertion.h"
+#include "debug.h"
+#include "geometry_utils.h"
 
 
 int main() {
     polyscope::init();
 
-    //df::InputData in = df::make_random_input(21, 48);
-    df::InputData in = df::make_random_input(19, 40);
+    df::InputData in = df::make_random_input(21, 48);
+    //df::InputData in = df::make_random_input(19, 40);
 
     viz::show_four_meshes(in);
     viz::show_or_update_current(in);
-
-    {
-        std::vector<int> locals = {6, 4, 18, 17}; // the polyscope vertex indices you see
-        viz::debug_print_lower_vertex_ids(in, locals);
-    }
-
 
 
     while (true) {
@@ -54,13 +50,23 @@ int main() {
         std::cout << "\n";
 
         // pick candidates sorted by height (highest first)
-        std::vector<df::vertex_id> insertion_vertex_list = df::sorted_insertion_vertices(missing, in);  // returns list of global ids sorted by height 
+        std::vector<df::vertex_id> insertion_vertex_list =
+            df::sorted_insertion_vertices(missing, in);  // global ids sorted by height
 
         df::vertex_id insertion_vertex = 0; // will only be used if we find a conforming one
         bool found_conforming = false;
 
-        // try candidates in order until one is conforming
+        // try candidates in order until one is BOTH a downflip and conforming
         for (auto id : insertion_vertex_list) {
+
+            // 1) check downflip condition
+            if (!df::is_insertion_downflip(id, in)) {
+                std::cout << "[main] skipping vertex " << id
+                        << " (insertion is not a down-flip)\n";
+                continue;
+            }
+
+            // 2) check global conformance w.r.t. lower triangulation
             if (df::reg::is_insertion_conforming(id, in)) {
                 insertion_vertex = id;
                 found_conforming = true;
@@ -83,13 +89,32 @@ int main() {
 
 
 
-        viz::show_or_update_current(in);
-        viz::debug_print_edge_list(in);
-
+        if (insertion_vertex == 13) {
+            df::debug_check_edge_against_lower(13, 5, in);
+            
         }
+
+        if(insertion_vertex == 4) {
+            df::debug_check_edge_against_lower(4, 13, in); 
+        }
+
+        df::debug_edges_created_by_insertion(insertion_vertex, in);
+
+        viz::show_or_update_current(in);
+        df::debug_print_edge_list(in);
+    }
     
-    std::vector<int> locals = {17, 5, 12, 0};
-    viz::debug_print_lower_vertex_ids(in, locals);
+    //std::vector<int> locals = {15, 12, 14, 5};
+    std::vector<int> locals = {12,0};
+    //curent test: the edge (4,13) with global ids is faulty, we get it with inserting vertex 4, meaning that the conforming check for insertion failed somewhere
+    df::debug_print_current_vertex_ids(in, locals);
+
+    // compare triangulations now 
+    df::debug_print_edge_diff_current_vs_lower(in);
+    df::debug_print_edge_diff_with_local(in);
+
+
+
 
     df::print_flip_history(in);
 

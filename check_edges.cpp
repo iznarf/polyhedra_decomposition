@@ -1,4 +1,5 @@
 #include "check_edges.h"
+#include "geometry_utils.h"
 
 #include <CGAL/enum.h>
 #include <unordered_map>
@@ -6,13 +7,16 @@
 #include <iostream>
 #include <vector>
 
+
 namespace df {
 namespace reg {
 
-  using K   = df::K;
-  using P2  = df::P2;
-  using P3  = df::P3;
-  using Tri = df::Tri2;
+    using K   = df::K;
+    using P2  = df::P2;
+    using P3  = df::P3;
+    using Tri = df::Tri2;
+
+    using df::oriented_height_sign;
 
 
   // function 1
@@ -34,17 +38,6 @@ namespace reg {
   // if the edge is already in the target triangulation we can delete it form the list of edges to flip
 
 
-
-
-  // ensure (a,b,c) ccw in 2D, then evaluate orientation(a',b',c',d')
-  // returns POSITIVE if d' above plane a'b'c', NEGATIVE if below, COLLINEAR if coplanar
-  static inline CGAL::Orientation oriented_height_sign(const P2& a2, const P2& b2, const P2& c2,
-                                                      const P3& a3, const P3& b3, const P3& c3, const P3& d3) {
-    auto o2 = CGAL::orientation(a2, b2, c2);
-    if (o2 == CGAL::RIGHT_TURN) return CGAL::orientation(a3, c3, b3, d3);
-    if (o2 == CGAL::COLLINEAR)  return CGAL::COLLINEAR;
-    return CGAL::orientation(a3, b3, c3, d3);
-  }
 
   // quad strictly convex around edge ab: c and d on opposite sides of ab, neither collinear
   static inline bool quad_strictly_convex(const P2& a, const P2& b, const P2& c, const P2& d) {
@@ -85,6 +78,7 @@ namespace reg {
         CGAL::Orientation s =
             oriented_height_sign(a2, b2, c2, a3, b3, c3, d3);
 
+        // if negative then edge (a,b) is locally non-regular -> down flip
         if (s == CGAL::NEGATIVE) {
             df::vertex_id ia = va->info();
             df::vertex_id ib = vb->info();
