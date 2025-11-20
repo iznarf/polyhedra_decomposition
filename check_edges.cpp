@@ -84,6 +84,14 @@ namespace reg {
             df::vertex_id ib = vb->info();
             non_regular_edges.push_back({ia, ib});
         }
+
+        if (s == CGAL::COPLANAR) {
+            // just print that there is a colplanar quad 
+            df::vertex_id ia = va->info();
+            df::vertex_id ib = vb->info();
+            std::cout << "[check_edges] WARNING: edge (" << ia << "," << ib
+                      << ") is in a coplanar quad\n";
+        }
     }
     return non_regular_edges;
 }

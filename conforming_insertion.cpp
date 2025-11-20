@@ -52,9 +52,17 @@ bool is_insertion_conforming(df::vertex_id id,
     auto vb = fh->vertex(1);
     auto vc = fh->vertex(2);
 
+
     df::vertex_id ia = va->info();
     df::vertex_id ib = vb->info();
     df::vertex_id ic = vc->info();
+
+      if (id == 5){
+        // print ia, ib, ic
+        std::cout << "[conform] Insertion check for vertex id " << id << " in face ("
+                  << ia << "," << ib << "," << ic << ")\n";
+    }
+
 
     const P2& a2 = va->point();
     const P2& b2 = vb->point();
@@ -170,6 +178,7 @@ bool is_insertion_conforming(df::vertex_id id,
         df::vertex_id u = vu->info();
         df::vertex_id v = vv->info();
 
+
         // skip edges that are incident to d or incident to b
         if (u == ib || u == id || v == ib || v == id) continue;
 
@@ -204,6 +213,9 @@ bool is_insertion_conforming(df::vertex_id id,
         if (o3d == CGAL::POSITIVE) {
             std::cout << "[conform] WARNING: inserting vertex with global id "
                       << id << " is non-conforming (edge (b,d))\n";
+            // print vertex ids (b,d) and (u,v)
+            std::cout << "  (b,d) = (" << ib << "," << id << ")\n";
+            std::cout << "  (u,v) = (" << u << "," << v << ")\n";
             return false;
         }
     }

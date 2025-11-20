@@ -43,12 +43,22 @@ namespace df {
         Tri2           tri_current;  // triangulation of the current state in the algorithm
 
         std::vector<df::FlipRecord> flip_history;
+        std::vector<std::pair<vertex_id, vertex_id>> hull_edges;
+
 
   
     };
-  
-  // create random input points, hull triangulation, full triangulation
-  InputData make_random_input(int n_points = 10, unsigned seed = 42);
+
+    // check if edge (u,v) is a hull edge
+    bool is_hull_edge(const InputData& D, vertex_id u, vertex_id v);
+
+    
+    // create random input polyhedron (not necessarily valid)
+    InputData make_random_input(int n_points, unsigned seed);
+
+    // create random VALID input polyhedron
+    InputData make_random_valid_input(int n_points, unsigned seed_start);
+
 
 } // namespace df
 

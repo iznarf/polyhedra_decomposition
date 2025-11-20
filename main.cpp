@@ -22,8 +22,22 @@
 int main() {
     polyscope::init();
 
-    df::InputData in = df::make_random_input(21, 48);
+    // number of vertices in triangulation
+    int n_points = 37;
+    // random seed to start point generation
+    unsigned seed0 = 4458;
+
+    df::InputData in = df::make_random_valid_input(n_points, seed0);
+
+    // these are valid inputs where the algorithm works well:
+    //df::InputData in = df::make_random_input(21, 48);
     //df::InputData in = df::make_random_input(19, 40);
+
+    // these are valid inputs where the algorithm fails:
+    // one can see that no conforming down-flip insertion exists at some point -> why is that? 
+    // the polyhedrom should be decomposable...
+    //df::InputData in = df::make_random_input(37, 4458);
+    //df::InputData in = df::make_random_input(35, 218);
 
     viz::show_four_meshes(in);
     viz::show_or_update_current(in);
@@ -37,10 +51,9 @@ int main() {
         // see which vertices of the lower triangulation are still missing
         auto missing = df::find_missing_vertices(in.tri_current, in.tri_lower);
 
-        // if vertex set of current triangulation matches that of lower triangulation, we are almost done
-        // fix: compare CGAL triangulations. same vertex set does not guarantee same triangulation!
+
         if (missing.empty()) { 
-            std::cout << "\n=== Finished: no missing vertices and no down-flips left ===\n";
+            std::cout << "\n=== no missing vertices left ===\n";
             break; 
         }
 
@@ -51,7 +64,7 @@ int main() {
 
         // pick candidates sorted by height (highest first)
         std::vector<df::vertex_id> insertion_vertex_list =
-            df::sorted_insertion_vertices(missing, in);  // global ids sorted by height
+        df::sorted_insertion_vertices(missing, in);  // global ids sorted by height
 
         df::vertex_id insertion_vertex = 0; // will only be used if we find a conforming one
         bool found_conforming = false;
@@ -66,6 +79,7 @@ int main() {
                 continue;
             }
 
+        
             // 2) check global conformance w.r.t. lower triangulation
             if (df::reg::is_insertion_conforming(id, in)) {
                 insertion_vertex = id;
@@ -80,43 +94,32 @@ int main() {
         // if no conforming insertion exists → polyhedron is non-decomposable
         if (!found_conforming) {
             std::cout << "\n[main] ERROR: all candidate vertex insertions are non-conforming.\n"
-                    << "[main] The polyhedron appears to be non-decomposable by conforming flips.\n";
+                    << "[main] The polyhedron appears to be non-decomposable.\n";
             break;  // break out of the main while(true) loop
         }
 
         std::cout << "Inserting vertex (global id) " << insertion_vertex << "\n";
         df::apply_vertex_insertion(insertion_vertex, in);
 
-
-
-        if (insertion_vertex == 13) {
-            df::debug_check_edge_against_lower(13, 5, in);
-            
-        }
-
-        if(insertion_vertex == 4) {
-            df::debug_check_edge_against_lower(4, 13, in); 
-        }
-
-        df::debug_edges_created_by_insertion(insertion_vertex, in);
-
         viz::show_or_update_current(in);
         df::debug_print_edge_list(in);
     }
     
-    //std::vector<int> locals = {15, 12, 14, 5};
-    std::vector<int> locals = {12,0};
-    //curent test: the edge (4,13) with global ids is faulty, we get it with inserting vertex 4, meaning that the conforming check for insertion failed somewhere
-    df::debug_print_current_vertex_ids(in, locals);
-
     // compare triangulations now 
-    df::debug_print_edge_diff_current_vs_lower(in);
-    df::debug_print_edge_diff_with_local(in);
+    if (df::edge_diff_with_lower(in) == true){
+        std::cout << "\n[main] ERROR: after all flips and insertions, current triangulation differs from lower triangulation!\n";
+    } else {
+        std::cout << "\n[main] SUCCESS: current triangulation matches lower triangulation!\n";
+    }
+
+    df::debug_print_local_to_global_map(in, df::TriKind::Lower);
+    df::debug_print_local_to_global_map(in, df::TriKind::Current);
 
 
-
+    
 
     df::print_flip_history(in);
+
 
 
     polyscope::show();

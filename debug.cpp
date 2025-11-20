@@ -10,6 +10,8 @@
 
 namespace df {
 
+
+// print mapping from polyscope local indices to global vertex ids in current triangulation
 static std::vector<df::vertex_id>
 collect_vertex_ids_in_order(const df::Tri2& tri) {
     std::vector<df::vertex_id> ids;
@@ -20,24 +22,10 @@ collect_vertex_ids_in_order(const df::Tri2& tri) {
     return ids;
 }
 
-void debug_print_current_vertex_ids(const df::InputData& D,
-                                  const std::vector<int>& local_indices) {
-    // global ids in the same order as used for polyscope "lower 2D"/"lower lifted"
-    auto ids = collect_vertex_ids_in_order(D.tri_current);
 
-    std::cout << "[debug] current polyscope local -> global mapping:\n";
-    for (int li : local_indices) {
-        if (li < 0 || li >= static_cast<int>(ids.size())) {
-            std::cout << "  local " << li << " : out of range (0.." 
-                      << (ids.size() - 1) << ")\n";
-            continue;
-        }
 
-        df::vertex_id gid = ids[li];  // this is the global index (index into points2d)
-        std::cout << "  local " << li << " -> global " << gid << "\n";
-    }
-}
 
+ // helper function to collect edges in current but not in target
 std::vector<std::pair<vertex_id, vertex_id>>
 edges_in_current_not_in_target(const Tri2& current, const Tri2& target)
 {
@@ -59,47 +47,25 @@ edges_in_current_not_in_target(const Tri2& current, const Tri2& target)
         target_edges.insert(canon(a, b));
     }
 
-    // Compare with current
     std::vector<std::pair<vertex_id, vertex_id>> diff;
+        for (auto e = current.finite_edges_begin(); e != current.finite_edges_end(); ++e) {
+            auto f  = e->first;
+            int ei  = e->second;
 
-    for (auto e = current.finite_edges_begin(); e != current.finite_edges_end(); ++e) {
-        auto f  = e->first;
-        int ei  = e->second;
+            vertex_id a = f->vertex(current.cw(ei))->info();
+            vertex_id b = f->vertex(current.ccw(ei))->info();
 
-        vertex_id a = f->vertex(current.cw(ei))->info();
-        vertex_id b = f->vertex(current.ccw(ei))->info();
-
-        auto ce = canon(a, b);
-        if (target_edges.find(ce) == target_edges.end()) { 
-            diff.push_back(ce);
+            auto ce = canon(a, b);
+            if (target_edges.find(ce) == target_edges.end()) { 
+                diff.push_back(ce);
+            }
         }
-    }
 
-    return diff;
+        return diff;
 }
 
 
-
-
-void debug_print_edge_diff_current_vs_lower(const InputData& D)
-    {
-        auto diff = edges_in_current_not_in_target(D.tri_current, D.tri_lower);
-
-        std::cout << "\n=== Edges in current but NOT in lower (global ids) ===\n";
-        if (diff.empty()) {
-            std::cout << "(none)\n";
-            return;
-        }
-
-        for (std::size_t i = 0; i < diff.size(); ++i) {
-            auto [a, b] = diff[i];
-            std::cout << "(" << a << "," << b << ")";
-            if (i + 1 < diff.size()) std::cout << ", ";
-        }
-        std::cout << "\n";
-    }
-
-
+// prints all edges in the current triangulation
 void debug_print_edge_list(const InputData& D) {
     const auto& tri = D.tri_current;
 
@@ -130,15 +96,18 @@ void debug_print_edge_list(const InputData& D) {
     std::cout << "\n";
 }
 
-void debug_print_edge_diff_with_local(const df::InputData& D) {
+// checks whether there are edges in current triangulation that are not in lower triangulation
+// if returns true, there are differences
+bool edge_diff_with_lower(const df::InputData& D) {
     auto diff = edges_in_current_not_in_target(D.tri_current, D.tri_lower);
     auto ids      = viz::present_ids(D.tri_current);
     auto to_local = viz::make_local_index(ids);
+    
 
     std::cout << "\n=== Edges in current but NOT in lower (global + local ids in current) ===\n";
     if (diff.empty()) {
         std::cout << "(none)\n";
-        return;
+        return false;
     }
 
     for (auto [a, b] : diff) {
@@ -147,9 +116,11 @@ void debug_print_edge_diff_with_local(const df::InputData& D) {
         std::cout << "  global (" << a << "," << b << ")"
                   << "  local (" << la << "," << lb << ")\n";
     }
+    // if difference was found, return true 
+    return true;
 }
 
-// helper: check if an edge (i,j) exists in a triangulation T
+// check if an edge (i,j) exists in a triangulation T
 static bool edge_in_triangulation(const Tri2& T,
                                   vertex_id i,
                                   vertex_id j)
@@ -175,6 +146,7 @@ static bool edge_in_triangulation(const Tri2& T,
     return false;
 }
 
+// print all edges created by insertion of vertex id
 void debug_edges_created_by_insertion(vertex_id id, const InputData& D)
 {
     const Tri2& cur   = D.tri_current;
@@ -201,7 +173,7 @@ void debug_edges_created_by_insertion(vertex_id id, const InputData& D)
     Tri2::Vertex_circulator vc = cur.incident_vertices(vd);
     Tri2::Vertex_circulator done = vc;
 
-    // CGAL circulator: check against 0, *not* `!vc`
+    
     if (vc == 0) {
         std::cout << "[debug-insert] vertex has no incident vertices (unexpected)\n";
         return;
@@ -227,14 +199,12 @@ void debug_edges_created_by_insertion(vertex_id id, const InputData& D)
     } while (vc != done);
 }
 
-void debug_check_edge_against_lower(df::vertex_id i,
-                                           df::vertex_id j,
-                                           const df::InputData& D)
-{
+// check edge (i,j) against lower triangulation for intersections
+void debug_check_edge_against_lower(df::vertex_id i, df::vertex_id j, const df::InputData& D) {
     const auto& pts = D.points2d;
     CGAL::Segment_2<K> e2d(pts[i], pts[j]);
 
-    std::cout << "[post-insert-debug] checking edge (" << i << "," << j << ") against tri_lower\n";
+    std::cout << "[post-insert-debug] checking edge (" << i << "," << j << ") against lower triangulation\n";
 
     for (auto e = D.tri_lower.finite_edges_begin();
          e != D.tri_lower.finite_edges_end(); ++e) {
@@ -255,6 +225,46 @@ void debug_check_edge_against_lower(df::vertex_id i,
         }
     }
 }
+
+void debug_print_local_to_global_map(
+    const df::InputData& D,
+    TriKind which,
+    const std::vector<int>& local_indices)
+{
+    const df::Tri2& tri = (which == TriKind::Current)
+                        ? D.tri_current
+                        : D.tri_lower;
+
+    // get global ids in polyscope order for this triangulation
+    auto ids = collect_vertex_ids_in_order(tri);
+
+    const char* label = (which == TriKind::Current) ? "current" : "lower";
+
+    std::cout << "\n[debug] " << label
+              << " polyscope local -> global mapping:\n";
+
+    // if no subset given: dump full map
+    if (local_indices.empty()) {
+        for (int li = 0; li < static_cast<int>(ids.size()); ++li) {
+            df::vertex_id gid = ids[li];
+            std::cout << "  local " << li << " -> global " << gid << "\n";
+        }
+        return;
+    }
+
+    // otherwise: only print the requested local indices
+    for (int li : local_indices) {
+        if (li < 0 || li >= static_cast<int>(ids.size())) {
+            std::cout << "  local " << li << " : out of range (0.."
+                      << (ids.size() - 1) << ")\n";
+            continue;
+        }
+        df::vertex_id gid = ids[li];
+        std::cout << "  local " << li << " -> global " << gid << "\n";
+    }
+}
+
+
 
 
 
