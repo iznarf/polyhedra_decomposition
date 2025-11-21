@@ -23,22 +23,31 @@ int main() {
     polyscope::init();
 
     // number of vertices in triangulation
-    int n_points = 37;
+    int n_points = 21;
     // random seed to start point generation
-    unsigned seed0 = 4458;
+    unsigned seed0 = 44;
 
     df::InputData in = df::make_random_valid_input(n_points, seed0);
 
-    // these are valid inputs where the algorithm works well:
-    //df::InputData in = df::make_random_input(21, 48);
-    //df::InputData in = df::make_random_input(19, 40);
+    // current setup: we do not sort the to be inserted vertices by height 
+    // we do a conforming insertion check 
 
-    // these are valid inputs where the algorithm fails:
-    // one can see that no conforming down-flip insertion exists at some point -> why is that? 
-    // the polyhedrom should be decomposable...
-    //df::InputData in = df::make_random_input(37, 4458);
+    // these are valid inputs where the algorithm works:
+    //df::InputData in = daf::make_random_input(37, 4458);
+    //df::InputData in = df::make_random_input(19, 42);
     //df::InputData in = df::make_random_input(35, 218);
+    //df::InputData in = df::make_random_input(40, 40);
+    //df::InputData in = df::make_random_input(50, 40);
 
+
+    // these are valid inputs where the algorithm with complicated conforming insertion check stucks BUT works if we do simple conforming check only:
+    //df::InputData in = df::make_random_input(21, 44); 
+
+    // -> the order of vertex insertions matters for the algorithm to succeed
+    // -> sorting vertices by descending height is not correct 
+    // what is the 'correct' order of vertex insertions?
+
+    
     viz::show_four_meshes(in);
     viz::show_or_update_current(in);
 
@@ -63,8 +72,11 @@ int main() {
         std::cout << "\n";
 
         // pick candidates sorted by height (highest first)
-        std::vector<df::vertex_id> insertion_vertex_list =
-        df::sorted_insertion_vertices(missing, in);  // global ids sorted by height
+        //std::vector<df::vertex_id> insertion_vertex_list =
+        //df::sorted_insertion_vertices(missing, in);  // global ids sorted by height
+
+        std::vector<df::vertex_id> insertion_vertex_list = missing; // unsorted version
+
 
         df::vertex_id insertion_vertex = 0; // will only be used if we find a conforming one
         bool found_conforming = false;
@@ -118,7 +130,7 @@ int main() {
 
     
 
-    df::print_flip_history(in);
+    df::print_step_history(in);
 
 
 

@@ -26,6 +26,17 @@ namespace df {
 
     inline constexpr double PI = 3.14159265358979323846;
 
+    enum class StepKind { EdgeFlip, VertexInsertion };
+
+    struct StepRecord {
+    StepKind kind;
+
+    // For both flip + insertion, we can store 4 ids:
+    // Edge flip: (a,b) edge, (c,d) opposite vertices before flip
+    // Insertion: (a,b,c) is the face containing d, and d is the new vertex
+    vertex_id a, b, c, d;
+    };
+
 
     struct FlipRecord {
         vertex_id a, b;  // edge BEFORE flip  (a,b)
@@ -41,9 +52,11 @@ namespace df {
         Tri2            tri_upper;  // source: triangulation using hull only (no interior vertices)
         Tri2            tri_lower;  // target: triangulation using all points (includes interior)
         Tri2           tri_current;  // triangulation of the current state in the algorithm
+        Tri2          tri_replay;  // triangulation for applying the recorded flips
 
-        std::vector<df::FlipRecord> flip_history;
+        std::vector<df::FlipRecord> flip_history; // edge flip history 
         std::vector<std::pair<vertex_id, vertex_id>> hull_edges;
+        std::vector<StepRecord> step_history;  // sequence of all flips: edge flips and insertions
 
 
   

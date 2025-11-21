@@ -32,10 +32,9 @@ namespace df {
                                            df::vertex_id j,
                                            const df::InputData& D);
 
-    void debug_print_local_to_global_map(
-    const df::InputData& D,
-    TriKind which,
-    const std::vector<int>& local_indices = {});
+    void debug_print_local_to_global_map(const df::InputData& D, TriKind which, const std::vector<int>& local_indices = {});
+
+    void print_step_history(const df::InputData& D);
 
 
 

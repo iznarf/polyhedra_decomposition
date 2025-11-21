@@ -192,6 +192,30 @@ void show_or_update_current(const df::InputData& D) {
 }
 
 
+void show_or_update_replay(const df::InputData& D) {
+    const auto& tri = D.tri_replay;
+
+    const auto ids      = present_ids(tri);
+    const auto to_local = make_local_index(ids);
+    const auto V2       = points_planar(ids,  D.points2d);
+    const auto V3       = points_lifted(ids,  D.points2d);
+    const auto F        = faces_from_triangles(tri, to_local);
+
+    // remove old replay meshes if they exist
+    if (polyscope::hasSurfaceMesh("replay 2D")) {
+        polyscope::getSurfaceMesh("replay 2D")->remove();
+    }
+    if (polyscope::hasSurfaceMesh("replay lifted")) {
+        polyscope::getSurfaceMesh("replay lifted")->remove();
+    }
+
+    polyscope::registerSurfaceMesh("replay 2D", V2, F);
+    auto* m3 = polyscope::registerSurfaceMesh("replay lifted", V3, F);
+    m3->setTransparency(0.5f);
+}
+
+
+
 } // namespace viz
 
 

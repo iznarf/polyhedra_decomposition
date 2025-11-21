@@ -126,7 +126,10 @@ InputData make_random_input(int n_points, unsigned seed) {
     D.tri_upper.insert(hull_pairs.begin(), hull_pairs.end());
     D.tri_current.insert(hull_pairs.begin(), hull_pairs.end());
 
-  
+    // we need this for applying then all recorded flips
+    D.tri_replay.clear();
+    D.tri_replay.insert(hull_pairs.begin(), hull_pairs.end());
+
     using vertex_handle = Tri2::Vertex_handle;
     
     // indices of all points for shuffling
@@ -205,13 +208,18 @@ bool lifted_triangulations_intersect(const InputData& D)
             Triangle3 trianle_lower(a3l, b3l, c3l);
 
             std::array<df::vertex_id,3> low_ids = { al, bl, cl };
-
+           
             // Count common vertices between these two faces (in 2D).
             int common = 0;
-            for (auto iu : up_ids)
-                for (auto il : low_ids)
-                    if (iu == il)
+            std::vector<df::vertex_id> common_ids;
+            for (auto iu : up_ids) {
+                for (auto il : low_ids) {
+                    if (iu == il) {
                         ++common;
+                        common_ids.push_back(iu);
+                    }
+                }
+            }
 
             // we still have to check the CGAL intersection type
             auto intersection_object = CGAL::intersection(triangle_upper, trianle_lower);
@@ -220,12 +228,13 @@ bool lifted_triangulations_intersect(const InputData& D)
             }
 
             if (intersection_object) {
-                if  (const CGAL::Point_3<K>* s = std::get_if<CGAL::Point_3<K>>(&*intersection_object))
+                if  (const CGAL::Point_3<K>* s = std::get_if<CGAL::Point_3<K>>(&*intersection_object)) {
                     if(common == 1) {
                     // intersection is a point -> allowed
                     continue;
+                    }
                 }
-                if (const CGAL::Segment_3<K>* s = std::get_if<CGAL::Segment_3<K>>(&*intersection_object))
+                if (const CGAL::Segment_3<K>* s = std::get_if<CGAL::Segment_3<K>>(&*intersection_object)) {
                     if (common == 1) {
                         // we have to check if point is mislabeled as segment
                         // check distance of source and target of segment to the 3 lifted points of upper triangle
@@ -239,26 +248,46 @@ bool lifted_triangulations_intersect(const InputData& D)
                                             CGAL::squared_distance(p1, c3u) });
                         const double eps = 1e-12;
                         if (d0 < eps && d1 < eps) {
-                        // both endpoints are very close to lifted upper triangle vertices
-                        // treat as point intersection
-                        continue;
+                            // both endpoints are very close to lifted upper triangle vertices
+                            // treat as point intersection
+                            continue;
+                        }
+                        else {
+                            // intersection is a segment but triangles only share one vertex -> invalid
+                            std::cout << "[intersect] lifted triangles intersect in segment but only share one vertex\n";
+                            return true;
+                        }
                     }
-                    if (common == 2){
-                        // intersection is a segment -> allowed if they share an edge
-                        continue;
-                    }
+                    if (common == 2){ 
+                        // check if the common points are forming a hull edge
+                        df::vertex_id u = common_ids[0];
+                        df::vertex_id v = common_ids[1];
+                        // now check if they form a hull edge
+                        if (!is_hull_edge(D, u, v)) {
+                            return true;
+                        }
+                        else {
+                            // intersection is a hull edge -> allowed
+                            continue;
+                        }  
+                    }    
                     if (common == 0 || common == 3) {
                         // intersection is a segment but triangles do not share an edge -> invalid
                         std::cout << "[intersect] lifted triangles intersect in segment but do not share an edge\n";
                         return true;
                     }
                 }
-                if (const Triangle3* t = std::get_if<Triangle3>(&*intersection_object))
+                if (const Triangle3* t = std::get_if<Triangle3>(&*intersection_object)) {
                     if(common != 3){
                         std::cout << "[intersect] lifted triangles share an intersection face\n";
                         return true; // allowed if they are the same triangle
-                    }    
+                    }
                 }
+                // we have to check if intersection object is a vector of points (coplanar triangles)
+                if (const std::vector<CGAL::Point_3<K>>* pts = std::get_if<std::vector<CGAL::Point_3<K>>>(&*intersection_object)) {
+                    return true; // intersection is a face or edge or multiple points -> invalid   
+                }  
+            }
         }
     }
     // no interior intersections found

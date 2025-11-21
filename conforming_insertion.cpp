@@ -1,3 +1,5 @@
+
+
 #include "conforming_insertion.h"
 #include <CGAL/Segment_3.h>
 #include <CGAL/Segment_2.h>
@@ -99,6 +101,8 @@ bool is_insertion_conforming(df::vertex_id id,
                   << ") are already in lower triangulation -> insertion is conforming\n";
         return true;
     }
+
+    
 
     // lift the triangle vertices
     P3 a3 = lift(a2);
@@ -276,3 +280,4 @@ bool is_insertion_conforming(df::vertex_id id,
     return true;
 }
 }}
+

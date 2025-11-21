@@ -19,6 +19,7 @@ void show_flip_tetra(const df::InputData& D, df::vertex_id ia, df::vertex_id ib,
 
 void show_or_update_current(const df::InputData& D);
 
+void show_or_update_replay(const df::InputData& D);
 
 
 } // namespace viz

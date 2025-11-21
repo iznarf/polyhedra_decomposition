@@ -1,6 +1,24 @@
-#include "conforming.h"
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#include "conforming_insertion.h"
 #include <CGAL/Segment_3.h>
+#include <CGAL/Segment_2.h>
 #include <CGAL/intersections.h>
 #include <CGAL/Object.h>
 #include <algorithm>
@@ -8,501 +26,30 @@
 #include <optional>
 #include <variant>
 #include <vector>
-
-
-// fixes for conforming check:
-// for every tetrahedron (flip) the whole target triangulation is checked for intersection, could be optimized using spatial data structure
-
+#include <iostream>
+#include <unordered_map>
 
 namespace df { namespace reg {
 
-using K   = df::K;    
+using K   = df::K;
 using P2  = df::P2;
 using P3  = df::P3;
 using Tri = df::Tri2;
+using Seg3 = CGAL::Segment_3<K>;
+using Seg2 = CGAL::Segment_2<K>;
 
-using Tetra = CGAL::Tetrahedron_3<K>;
-using Tri3  = CGAL::Triangle_3<K>;
-using Seg3  = CGAL::Segment_3<K>;
 
 
 static inline P3 lift(const P2& p) {
-  return P3(p.x(), p.y(), p.x()*p.x() + p.y()*p.y());
-}
-
-// we check if flipping the edge with endpoints ia, ib is conforming to the target triangulation
-// conforming to the target triangulation means that the tetrahedron formed by the lifted points a,b,c,d does not intersect the faces of the target triangulation
-
-
-bool is_flip_conforming(df::vertex_id ia,
-                        df::vertex_id ib,
-                        const df::InputData& D,
-                        const std::unordered_map<df::vertex_id,int>& li_current,
-                        const std::unordered_map<df::vertex_id,int>& li_lower)
-{
-    auto idxStr = [](const auto& M, df::vertex_id g)->std::string {
-        auto it = M.find(g);
-        return (it == M.end()) ? "nc" : std::to_string(it->second); // "nc" = not contained
-    };
-    auto Lcur = [&](df::vertex_id g){ return idxStr(li_current, g); };
-    auto Llow = [&](df::vertex_id g){ return idxStr(li_lower,   g); };
-
-    if (ib < ia) std::swap(ia, ib);
-
-    // (a,b) from current triangulation
-    const auto& id_to_vh = D.index_to_vertex_handle_current;
-    auto va = id_to_vh.at(ia);
-    auto vb = id_to_vh.at(ib);
-
-    // find opposite vertices c,d in current
-    df::Tri2::Face_handle fh; int i = -1;
-    D.tri_current.is_edge(va, vb, fh, i);
-    auto gh = fh->neighbor(i);
-    auto vc = fh->vertex(i);
-    int  j  = D.tri_current.mirror_index(fh, i);
-    auto vd = gh->vertex(j);
-
-    df::vertex_id ic = vc->info();
-    df::vertex_id id = vd->info();
-
-    std::cout << "[conform] flip (a,b)=(" << ia << "," << ib << ")"
-              << "  local_cur=(" << Lcur(ia) << "," << Lcur(ib) << ")\n";
-    std::cout << "[conform] quad c=" << ic << "[" << Lcur(ic)
-              << "], d=" << id << "[" << Lcur(id) << "]\n";
-
-    // candidate (c,d) segment in 2D (current)
-    const P2& pc = vc->point();
-    const P2& pd = vd->point();
-    const CGAL::Segment_2<K> edge_cd_2d(pc, pd);
-
-    // scan edges in LOWER triangulation
-    for (auto e = D.tri_lower.finite_edges_begin(); e != D.tri_lower.finite_edges_end(); ++e) {
-        auto f  = e->first;
-        int  ei = e->second;
-
-        auto vu = f->vertex(D.tri_lower.cw(ei));
-        auto vv = f->vertex(D.tri_lower.ccw(ei));
-        df::vertex_id iu = vu->info(), iv = vv->info();
-
-        // skip same as (a,b)
-        if ((iu == ia && iv == ib) || (iu == ib && iv == ia)) continue;
-
-        // already in target → OK, print only lower indices
-        if (((iu == ic) && (iv == id)) || ((iu == id) && (iv == ic))) {
-            std::cout << "[conform] (c,d)=(" << ic << "," << id << ") is already in lower -> OK\n";
-            return true;
-        }
-
-        // share endpoint with (c,d) → boundary touch, skip
-        if (iu == ic || iu == id || iv == ic || iv == id) continue;
-
-        // 2D intersection (lower)
-        const P2& pu = vu->point();
-        const P2& pv = vv->point();
-        const CGAL::Segment_2<K> edge_uv_2d(pu, pv);
-
-        auto inter = CGAL::intersection(edge_cd_2d, edge_uv_2d);
-        if (!inter) continue;
-
-        P2 x;
-        if (const P2* p = std::get_if<P2>(&*inter)) {
-            x = *p;
-        } else if (const CGAL::Segment_2<K>* s = std::get_if<CGAL::Segment_2<K>>(&*inter)) {
-            const P2& x0 = s->source(); const P2& x1 = s->target();
-            const double dx = CGAL::to_double(x1.x() - x0.x());
-            const double dy = CGAL::to_double(x1.y() - x0.y());
-            if (dx*dx + dy*dy < 1e-24) x = x0; else continue; // overlapping segment -> ignore
-        } else continue;
-
-        auto param = [](const P2& p0, const P2& p1, const P2& x) {
-            auto dx = p1.x() - p0.x(), dy = p1.y() - p0.y();
-            if (CGAL::abs(dx) >= CGAL::abs(dy)) return (dx != 0) ? CGAL::to_double((x.x() - p0.x()) / dx) : 0.5;
-            else                                 return (dy != 0) ? CGAL::to_double((x.y() - p0.y()) / dy) : 0.5;
-        };
-
-        double t_cd = param(pc, pd, x);
-        double t_uv = param(pu, pv, x);
-        const double eps_t = 1e-12;
-        if (!(t_cd > eps_t && t_cd < 1.0 - eps_t && t_uv > eps_t && t_uv < 1.0 - eps_t)) continue;
-
-        // 3D check & height compare
-        const P3 c3 = lift(pc), d3 = lift(pd), u3 = lift(pu), v3 = lift(pv);
-        if (CGAL::do_intersect(Seg3(c3, d3), Seg3(u3, v3))) {
-            std::cout << "[conform] BLOCK seg-seg 3D with lower (u,v)=(" << iu << "," << iv
-                      << ") local_low=(" << Llow(iu) << "," << Llow(iv) << ")\n";
-            return false;
-        }
-
-        const double z_cd = (1.0 - t_cd) * CGAL::to_double(c3.z()) + t_cd * CGAL::to_double(d3.z());
-        const double z_uv = (1.0 - t_uv) * CGAL::to_double(u3.z()) + t_uv * CGAL::to_double(v3.z());
-        const double eps_z = 1e-12 * std::max({1.0, std::fabs(z_cd), std::fabs(z_uv)});
-
-        if (z_cd < z_uv - eps_z) {
-            std::cout << "[conform] BLOCK z_cd<z_uv at x; z_cd=" << std::setprecision(15) << z_cd
-                      << " z_uv=" << z_uv
-                      << "  lower (u,v)=(" << iu << "," << iv << ") local_low=("
-                      << Llow(iu) << "," << Llow(iv) << ")\n";
-            return false;
-        } else {
-            std::cout << "[conform] pass at x; z_cd=" << std::setprecision(15) << z_cd
-                      << " z_uv=" << z_uv
-                      << "  lower (u,v)=(" << iu << "," << iv << ") local_low=("
-                      << Llow(iu) << "," << Llow(iv) << ")\n";
-        }
-    }
-
-    std::cout << "[conform] OK: flip (a,b)=(" << ia << "," << ib << ") → (c,d)=("
-              << ic << "," << id << ") is conforming\n";
-    return true;
-}
-
-} } // namespace df::reg
-
-
-
-
-
-
-
-
-
-
-// create random input: points, hull triangulation, full triangulation
-// n_points: number of vertices 
-// seed: starting value for the random number generator -> if seed stays the same, we can get the same random points
-InputData make_random_input(int n_points, unsigned seed) {
-    assert(n_points >= 3); // need at least 3 points to form a triangulation
-    std::mt19937 rng(seed); 
-
-    InputData D;
-    // clear flip history from earlier runs
-    D.flip_history.clear(); 
-    // 1) random points with interior points
-    D.points2d = sample_points_in_disk(n_points, /*R=*/1.0, rng);
-
-
-    // 2) make an global index array [0,...,n-1]
-    std::vector<std::size_t> global_indices(D.points2d.size());
-    std::iota(global_indices.begin(), global_indices.end(), 0);
-
-    // 3) build convex hull: We use the property map to then give CGAL just the global indices for the convex hull
-    // since we have the property map, CGAL can then build the convex hull based on the indices
-    // build property map: global index -> point: for integer k it gives back points2d[k]
-    // in O(1) time
-    auto point_map = CGAL::make_property_map(D.points2d);
-
-    // 4) ask CGAL for the hull *indices*
-    std::vector<std::size_t> hull_ids;
-    hull_ids.reserve(D.points2d.size());
-
-    // 5) convex hull as global indices in ccw order 
-    using hull_adapter = CGAL::Convex_hull_traits_adapter_2<K, decltype(point_map)>;
-    // this gives back the global indices of the hull points in ccw order
-    CGAL::convex_hull_2(global_indices.begin(), global_indices.end(),
-                        std::back_inserter(hull_ids),
-                        hull_adapter(point_map));
-
-
-    // 6) build (point, global index) pairs for the hull
-    std::vector<std::pair<P2, vertex_id>> hull_pairs;
-    hull_pairs.reserve(hull_ids.size());
-    for (auto id : hull_ids)
-        hull_pairs.emplace_back(D.points2d[id], id);
-    
-    // 7) insert into triangulation; each vertex’s info() becomes the global index
-    D.tri_upper.clear();
-    D.tri_upper.insert(hull_pairs.begin(), hull_pairs.end());
-    D.tri_current.insert(hull_pairs.begin(), hull_pairs.end());
-
-  
-    using vertex_handle = Tri2::Vertex_handle;
-    
-    // indices of all points for shuffling
-    // we shuffle the order of insertion to generate random triangulations
-    std::vector<std::size_t> indices(D.points2d.size());
-    std::iota(indices.begin(), indices.end(), 0);
-
-    // shuffle the indices (not the points)
-    std::shuffle(indices.begin(), indices.end(), rng);
-
-    // now insert (point, id) pairs using the shuffled order
-    std::vector<std::pair<P2, std::size_t>> shuffled_pairs;
-    shuffled_pairs.reserve(D.points2d.size());
-    for (auto id : indices)
-        shuffled_pairs.emplace_back(D.points2d[id], id);
-
-    D.tri_lower.clear();
-    D.tri_lower.insert(shuffled_pairs.begin(), shuffled_pairs.end());
-
-    return D;
-}
-
-
-
-// create random input: points, hull triangulation, full triangulation
-// n_points: number of vertices 
-// seed: starting value for the random number generator -> if seed stays the same, we can get the same random points
-InputData make_random_input(int n_points, unsigned seed) {
-    assert(n_points >= 3); // need at least 3 points to form a triangulation
-    std::mt19937 rng(seed); 
-
-    InputData D;
-    // clear flip history from earlier runs
-    D.flip_history.clear(); 
-
-    // 1) random points with interior points
-    D.points2d = sample_points_in_disk(n_points, /*R=*/1.0, rng);
-
-    // 2) global indices [0, n-1]
-    std::vector<std::size_t> global_indices(D.points2d.size());
-    std::iota(global_indices.begin(), global_indices.end(), 0);
-
-    // 3) build convex hull via property map: global index -> point
-    auto point_map = CGAL::make_property_map(D.points2d);
-
-    // 4) ask CGAL for the hull *indices* (in ccw order)
-    std::vector<std::size_t> hull_ids;
-    hull_ids.reserve(D.points2d.size());
-
-    using hull_adapter = CGAL::Convex_hull_traits_adapter_2<K, decltype(point_map)>;
-    CGAL::convex_hull_2(
-        global_indices.begin(), global_indices.end(),
-        std::back_inserter(hull_ids),
-        hull_adapter(point_map)
-    );
-
-    // 5) build (point, global index) pairs for the hull
-    std::vector<std::pair<P2, vertex_id>> hull_pairs;
-    hull_pairs.reserve(hull_ids.size());
-    for (auto id : hull_ids) {
-        hull_pairs.emplace_back(D.points2d[id], id);
-    }
-
-    // 6) UPPER triangulation:
-    //    build a Delaunay triangulation on hull vertices, then slice to Tri2
-    DT2 dt_upper;
-    dt_upper.insert(hull_pairs.begin(), hull_pairs.end());
-
-    D.tri_upper   = dt_upper;      // copy from Delaunay to plain Tri2
-    D.tri_current = D.tri_upper;   // current starts as upper triangulation
-
-    // 7) LOWER triangulation:
-    //    Delaunay triangulation on ALL points (in random insertion order)
-
-    // indices of all points for shuffling
-    std::vector<std::size_t> indices(D.points2d.size());
-    std::iota(indices.begin(), indices.end(), 0);
-
-    // shuffle the indices (not the points)
-    std::shuffle(indices.begin(), indices.end(), rng);
-
-    // build (point, id) pairs in shuffled order
-    std::vector<std::pair<P2, vertex_id>> shuffled_pairs;
-    shuffled_pairs.reserve(D.points2d.size());
-    for (auto id : indices) {
-        shuffled_pairs.emplace_back(D.points2d[id], id);
-    }
-
-    // build Delaunay triangulation on all points
-    DT2 dt_lower;
-    dt_lower.insert(shuffled_pairs.begin(), shuffled_pairs.end());
-
-    // slice into plain Tri2
-    D.tri_lower = dt_lower;
-
-    return D;
+    return P3(p.x(), p.y(), p.x()*p.x() + p.y()*p.y());
 }
 
 
 bool is_insertion_conforming(df::vertex_id id,
                              const df::InputData& D)
 {
-
     const Tri& current = D.tri_current;
-
-    // 2D position of the vertex to be inserted
-    const P2& d2 = D.points2d[id];
-
-    // locate in current triangulation
-    Tri::Locate_type lt;
-    int li; // index used if point lies on an edge
-    Tri::Face_handle fh = current.locate(d2, lt, li);
-
-    if (lt != Tri::FACE) {
-        // p is not inside a face, we do not handle this case here
-        std::cout << "[conform] WARNING: insertion point is not inside a face, cannot check conforming\n";
-        return false;
-    }
-
-    // face containing the point to be inserted
-    auto va = fh->vertex(0);
-    auto vb = fh->vertex(1);
-    auto vc = fh->vertex(2);
-
-    df::vertex_id ia = va->info();
-    df::vertex_id ib = vb->info();
-    df::vertex_id ic = vc->info();
-
-    const P2& a2 = va->point();
-    const P2& b2 = vb->point();
-    const P2& c2 = vc->point();
-
-    // edges that will be created by inserting d
-    Seg2 edge_ad_2d(a2, d2); // (id, ia)
-    Seg2 edge_bd_2d(b2, d2); // (id, ib)
-    Seg2 edge_cd_2d(c2, d2); // (id, ic)
-
-
-
-    // iterate over all edges of the lower triangulation
-    for (auto e = D.tri_lower.finite_edges_begin();
-         e != D.tri_lower.finite_edges_end(); ++e) {
-
-        auto f  = e->first;
-        int  ei = e->second;
-
-        auto vu = f->vertex(D.tri_lower.cw(ei));
-        auto vv = f->vertex(D.tri_lower.ccw(ei));
-
-        df::vertex_id u = vu->info();
-        df::vertex_id v = vv->info();
-
-        // skip neighbor edges (sharing vertices with a,b,c)
-        if (u == ia || u == ib || u == ic || u == id ||
-            v == ia || v == ib || v == ic || v == id) {
-            continue;
-        }
-
-        // **Important change**: make *copies* so we can swap them
-        P2 u2 = vu->point();
-        P2 v2 = vv->point();
-
-        Seg2 edge_uv_2d(u2, v2);
-
-        bool intersection_ad = CGAL::do_intersect(edge_ad_2d, edge_uv_2d);
-        bool intersection_bd = CGAL::do_intersect(edge_bd_2d, edge_uv_2d);
-        bool intersection_cd = CGAL::do_intersect(edge_cd_2d, edge_uv_2d);
-
-        // if there is no intersection, nothing to check for this lower edge
-        if (!intersection_ad && !intersection_bd && !intersection_cd) {
-            continue;
-        }
-
-        // if any of the segments in 3D intersect, the insertion is non-conforming
-        // lift all points to 3D and make segments
-        P3 a3 = lift(a2);
-        P3 b3 = lift(b2);
-        P3 c3 = lift(c2);
-        P3 d3 = lift(d2);
-        P3 u3 = lift(u2);
-        P3 v3 = lift(v2);
-
-        // create 3D segments
-        Seg3 seg_ad_3d(a3, d3);
-        Seg3 seg_bd_3d(b3, d3);
-        Seg3 seg_cd_3d(c3, d3);
-        Seg3 seg_uv_3d(u3, v3);
-
-        if (CGAL::do_intersect(seg_ad_3d, seg_uv_3d)) {
-            std::cout << "[conform] WARNING: inserting vertex with global id "
-                      << id << " is non-conforming (edge (a,d))\n";
-            return false;
-        }
-        if (CGAL::do_intersect(seg_bd_3d, seg_uv_3d)) {
-            std::cout << "[conform] WARNING: inserting vertex with global id "
-                      << id << " is non-conforming (edge (b,d))\n";
-            return false;
-        }
-        if (CGAL::do_intersect(seg_cd_3d, seg_uv_3d)) {
-            std::cout << "[conform] WARNING: inserting vertex with global id "
-                      << id << " is non-conforming (edge (c,d))\n";
-            return false;
-        }
-
-
-
-        // For each intersecting edge, check the height condition
-
-        // (a,d) vs (u,v)
-        if (intersection_ad) {
-            // we need the copies for consistent orientation tests
-            // make copies again
-            P2 u2 = vu->point();
-            P2 v2 = vv->point();
-            P3 u3 = lift(u2);
-            P3 v3 = lift(v2);
-
-            auto su = CGAL::orientation(a2, d2, u2); // >0: u left of a->d, <0: right
-            // if collinear, we just skip orientation-based test
-            if (su == CGAL::NEGATIVE) {
-                std::swap(u2, v2);
-                std::swap(u3, v3);            
-            }
-
-            const auto o = CGAL::orientation(a3, d3, u3, v3);
-            // interpret: if (a,d) is "below" (u,v), insertion is non-conforming
-            if (o == CGAL::NEGATIVE) {
-                std::cout << "[conform] WARNING: inserting vertex with global id "
-                          << id << " is non-conforming (edge (a,d))\n";
-                return false;
-            }
-        }
-
-        // (b,d) vs (u,v)
-        if (intersection_bd) {
-            P2 u2 = vu->point();
-            P2 v2 = vv->point();
-            P3 u3 = lift(u2);
-            P3 v3 = lift(v2);
-
-            auto su = CGAL::orientation(b2, d2, u2);
-            if (su == CGAL::NEGATIVE) {
-                std::swap(u2, v2);
-                std::swap(u3, v3);            
-            }
-
-            const auto o = CGAL::orientation(b3, d3, u3, v3);
-            if (o == CGAL::NEGATIVE) {
-                std::cout << "[conform] WARNING: inserting vertex with global id "
-                          << id << " is non-conforming (edge (b,d))\n";
-                return false;
-            }
-        }
-
-        // (c,d) vs (u,v)
-        if (intersection_cd) {
-            P2 u2 = vu->point();
-            P2 v2 = vv->point();
-            P3 u3 = lift(u2);
-            P3 v3 = lift(v2);
-           
-            auto su = CGAL::orientation(c2, d2, u2);
-            if (su == CGAL::NEGATIVE) {
-                std::swap(u2, v2);
-                std::swap(u3, v3);
-            }
-
-            const auto o = CGAL::orientation(c3, d3, u3, v3);
-            if (o == CGAL::NEGATIVE) {
-                std::cout << "[conform] WARNING: inserting vertex with global id "
-                          << id << " is non-conforming (edge (c,d))\n";
-                return false;
-            }
-        }
-    }
-
-    // if we never found a blocking lower edge, insertion is conforming
-    return true;
-}
-
-}} // namespace df::reg
-
-
-
-bool is_insertion_conforming(df::vertex_id id,
-                             const df::InputData& D)
-{
-    const Tri& current = D.tri_current;
+    const Tri& lower   = D.tri_lower;
 
     // 2D position of the vertex to be inserted
     const P2& d2 = D.points2d[id];
@@ -523,155 +70,61 @@ bool is_insertion_conforming(df::vertex_id id,
     auto vb = fh->vertex(1);
     auto vc = fh->vertex(2);
 
+
     df::vertex_id ia = va->info();
     df::vertex_id ib = vb->info();
     df::vertex_id ic = vc->info();
+
+      if (id == 5){
+        // print ia, ib, ic
+        std::cout << "[conform] Insertion check for vertex id " << id << " in face ("
+                  << ia << "," << ib << "," << ic << ")\n";
+    }
+
 
     const P2& a2 = va->point();
     const P2& b2 = vb->point();
     const P2& c2 = vc->point();
 
+    // fast path: are (a,d), (b,d), (c,d) already in the lower triangulation?
     bool ad_in_lower = false;
     bool bd_in_lower = false;
     bool cd_in_lower = false;
 
-    //iterate once over all edges to check if (a,d), (b,d), (c,d) are contained in the lower triangulation, if yes we can accept directly
-    // if not we have to do intersection tests
-    for (auto e = D.tri_lower.finite_edges_begin(); e != D.tri_lower.finite_edges_end(); ++e) {
+    for (auto e = lower.finite_edges_begin();
+         e != lower.finite_edges_end(); ++e)
+    {
         auto f  = e->first;
         int  ei = e->second;
 
-        auto vu = f->vertex(D.tri_lower.cw(ei));
-        auto vv = f->vertex(D.tri_lower.ccw(ei));
+        auto vu = f->vertex(lower.cw(ei));
+        auto vv = f->vertex(lower.ccw(ei));
 
         df::vertex_id u = vu->info();
         df::vertex_id v = vv->info();
 
-
-
-        // check edge (a,d)
-        if ((u == ia && v == id) || (u == id && v == ia)) {
-            std::cout << "[conform] edge (" << ia << "," << id << ") is already in lower triangulation\n";
+        if ((u == ia && v == id) || (u == id && v == ia))
             ad_in_lower = true;
-        }
-        // check edge (b,d)
-        if ((u == ib && v == id) || (u == id && v == ib)) {
-            std::cout << "[conform] edge (" << ib << "," << id << ") is already in lower triangulation\n";
+        if ((u == ib && v == id) || (u == id && v == ib))
             bd_in_lower = true;
-        }
-        // check edge (c,d)
-        if ((u == ic && v == id) || (u == id && v == ic)) {
-            std::cout << "[conform] edge (" << ic << "," << id << ") is already in lower triangulation\n";
+        if ((u == ic && v == id) || (u == id && v == ic))
             cd_in_lower = true;
-        }
     }
 
-    // if all three edges are in lower triangulation we can accept directly
     if (ad_in_lower && bd_in_lower && cd_in_lower) {
         std::cout << "[conform] all three edges (" << ia << "," << id << "), ("
                   << ib << "," << id << "), (" << ic << "," << id
                   << ") are already in lower triangulation -> insertion is conforming\n";
         return true;
     }
+return false;
+}
+}}
 
     
 
-    P3 a3 = lift(a2);
-    P3 b3 = lift(b2);
-    P3 c3 = lift(c2);
 
-    // helper: check a single new edge (p, d)
-    auto edge_ok = [&](const P2& p2, const P3& p3, df::vertex_id ip) -> bool {
 
-        Seg2 edge_pd_2d(p2, d2);
+    
 
-        // 1) if (p,d) already exists in lower triangulation, it is OK
-        for (auto e = D.tri_lower.finite_edges_begin();
-             e != D.tri_lower.finite_edges_end(); ++e)
-        {
-            auto f  = e->first;
-            int  ei = e->second;
-
-            auto vu = f->vertex(D.tri_lower.cw(ei));
-            auto vv = f->vertex(D.tri_lower.ccw(ei));
-
-            df::vertex_id u = vu->info();
-            df::vertex_id v = vv->info();
-
-            if ((u == ip && v == id) || (u == id && v == ip)) {
-                return true; // already in lower
-            }
-        }
-
-        // 2) otherwise, test (p,d) against all lower edges
-        for (auto e = D.tri_lower.finite_edges_begin();
-             e != D.tri_lower.finite_edges_end(); ++e)
-        {
-            auto f  = e->first;
-            int  ei = e->second;
-
-            auto vu = f->vertex(D.tri_lower.cw(ei));
-            auto vv = f->vertex(D.tri_lower.ccw(ei));
-
-            df::vertex_id u = vu->info();
-            df::vertex_id v = vv->info();
-
-            // skip neighbor edges (sharing vertices with a,b,c or d)
-            if (u == ia || u == ib || u == ic || u == id ||
-                v == ia || v == ib || v == ic || v == id) {
-                continue;
-            }
-
-            P2 u2 = vu->point();
-            P2 v2 = vv->point();
-
-            Seg2 edge_uv_2d(u2, v2);
-
-            // no 2D intersection => nothing to check
-            if (!CGAL::do_intersect(edge_pd_2d, edge_uv_2d))
-                continue;
-
-            // 3D intersection test
-            P3 u3 = lift(u2);
-            P3 v3 = lift(v2);
-
-            Seg3 seg_pd_3d(p3, d3);
-            Seg3 seg_uv_3d(u3, v3);
-
-            if (CGAL::do_intersect(seg_pd_3d, seg_uv_3d)) {
-                std::cout << "[conform] WARNING: inserting vertex " << id
-                          << " is non-conforming: 3D intersection on edge ("
-                          << ip << "," << id << ") vs lower edge ("
-                          << u << "," << v << ")\n";
-                return false;
-            }
-
-            // height test: use consistent convention
-            // we decided: o == POSITIVE => (p,d) is "below" (u,v) => BLOCK
-            auto o = CGAL::orientation(p3, d3, u3, v3);
-
-            if (o == CGAL::POSITIVE) {
-                std::cout << "[conform] WARNING: inserting vertex " << id
-                          << " is non-conforming: height test on edge ("
-                          << ip << "," << id << ") vs lower edge ("
-                          << u << "," << v << ")\n";
-                return false;
-            }
-
-            // if o is NEGATIVE or COPLANAR, we accept this lower edge and
-            // continue checking others
-        }
-
-        // no blocking lower edge found
-        return true;
-    };
-
-    // now require all three new edges to be OK
-    if (!edge_ok(a2, a3, ia)) return false;
-    if (!edge_ok(b2, b3, ib)) return false;
-    if (!edge_ok(c2, c3, ic)) return false;
-
-    return true;
-}
-
-}}
+ 

@@ -264,6 +264,32 @@ void debug_print_local_to_global_map(
     }
 }
 
+void print_step_history(const df::InputData& D) {
+    std::cout << "\n==== Step history (" 
+              << D.step_history.size() << " steps) ====\n";
+
+    int i = 0;
+    for (const auto& s : D.step_history) {
+        std::cout << "Step " << i++ << ": ";
+
+        if (s.kind == df::StepKind::EdgeFlip) {
+            std::cout << "EdgeFlip  (a=" << s.a 
+                      << ", b=" << s.b
+                      << ", c=" << s.c
+                      << ", d=" << s.d << ")";
+        } else {
+            std::cout << "VertexInsertion  (face=(" 
+                      << s.a << "," << s.b << "," << s.c 
+                      << "), new=" << s.d << ")";
+        }
+
+        std::cout << "\n";
+    }
+
+    std::cout << "========================================\n\n";
+}
+
+
 
 
 

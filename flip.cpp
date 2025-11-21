@@ -1,4 +1,5 @@
 #include "flip.h"
+#include "input.h"
 #include <iostream>
 
 namespace df {
@@ -62,6 +63,11 @@ void apply_edge_flip(df::vertex_id ia,
 
    
     D.flip_history.emplace_back(ia, ib, ic, id);
+    df::StepRecord s;
+    s.kind = df::StepKind::EdgeFlip;
+    s.a = ia; s.b = ib;
+    s.c = ic; s.d = id;
+    D.step_history.push_back(s);
 
     
     tri.flip(fh, ei);

@@ -1,6 +1,7 @@
 // check the present global vertex ids of the current triangulation and compare them with the target triangulation
 // if the target triangulation contains more vertices, then we have to do a vertex insertion
 #include "insertion.h"
+#include "input.h"
 #include "geometry_utils.h"
 #include <iostream>
 
@@ -54,6 +55,7 @@ namespace df {
         return missing;
     }
 
+    // sort missing vertices by descending lifted height 
     std::vector<df::vertex_id>
     sorted_insertion_vertices(const std::vector<df::vertex_id>& missing,
                                 const df::InputData& D)
@@ -99,7 +101,20 @@ namespace df {
             std::cout << "[locate] point is inside a face\n";
 
             df::Tri2::Vertex_handle vh = T.insert_in_face(p, fh); // 1–3 flip
+            auto va = fh->vertex(0);
+            auto vb = fh->vertex(1);
+            auto vc = fh->vertex(2);
+
+            df::vertex_id ia = va->info();
+            df::vertex_id ib = vb->info();
+            df::vertex_id ic = vc->info();
             vh->info() = id; // set the global vertex id
+
+            // --- record this as a "step" ---
+            df::StepRecord s;
+            s.kind = df::StepKind::VertexInsertion;
+            s.a = ia; s.b = ib; s.c = ic; s.d = id;  // face (a,b,c) and new vertex d
+            D.step_history.push_back(s);
 
             std::cout << "Inserted vertex id " << id
                     << " at point (" << p.x() << "," << p.y() << ")\n";
