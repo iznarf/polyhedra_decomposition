@@ -100,7 +100,7 @@ namespace df {
             // p is strictly inside this triangle
             std::cout << "[locate] point is inside a face\n";
 
-            df::Tri2::Vertex_handle vh = T.insert_in_face(p, fh); // 1–3 flip
+          
             auto va = fh->vertex(0);
             auto vb = fh->vertex(1);
             auto vc = fh->vertex(2);
@@ -108,13 +108,16 @@ namespace df {
             df::vertex_id ia = va->info();
             df::vertex_id ib = vb->info();
             df::vertex_id ic = vc->info();
-            vh->info() = id; // set the global vertex id
+           
 
-            // --- record this as a "step" ---
+            // record flip
             df::StepRecord s;
             s.kind = df::StepKind::VertexInsertion;
             s.a = ia; s.b = ib; s.c = ic; s.d = id;  // face (a,b,c) and new vertex d
             D.step_history.push_back(s);
+
+            df::Tri2::Vertex_handle vh = T.insert_in_face(p, fh);
+            vh->info() = id; // set the global vertex id 
 
             std::cout << "Inserted vertex id " << id
                     << " at point (" << p.x() << "," << p.y() << ")\n";

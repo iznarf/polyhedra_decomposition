@@ -2,6 +2,8 @@
 #include "input.h"
 #include "visualization.h"
 #include "geometry_utils.h"
+#include "check_edges.h"
+#include "insertion.h"
 #include <iostream>
 #include <set>
 #include <vector>
@@ -9,7 +11,7 @@
 #include <CGAL/intersections.h>
 
 namespace df {
-
+   
 
 // print mapping from polyscope local indices to global vertex ids in current triangulation
 static std::vector<df::vertex_id>
@@ -21,8 +23,6 @@ collect_vertex_ids_in_order(const df::Tri2& tri) {
     }
     return ids;
 }
-
-
 
 
  // helper function to collect edges in current but not in target
@@ -101,110 +101,29 @@ void debug_print_edge_list(const InputData& D) {
 bool edge_diff_with_lower(const df::InputData& D) {
     auto diff = edges_in_current_not_in_target(D.tri_current, D.tri_lower);
     auto ids      = viz::present_ids(D.tri_current);
-    auto to_local = viz::make_local_index(ids);
+
     
 
-    std::cout << "\n=== Edges in current but NOT in lower (global + local ids in current) ===\n";
+    std::cout << "\n=== Edges in current but NOT in lower (global ids)===\n";
     if (diff.empty()) {
         std::cout << "(none)\n";
         return false;
     }
 
     for (auto [a, b] : diff) {
-        int la = to_local.at(a);
-        int lb = to_local.at(b);
-        std::cout << "  global (" << a << "," << b << ")"
-                  << "  local (" << la << "," << lb << ")\n";
+        std::cout << "(" << a << "," << b << ")\n";
     }
     // if difference was found, return true 
     return true;
 }
 
-// check if an edge (i,j) exists in a triangulation T
-static bool edge_in_triangulation(const Tri2& T,
-                                  vertex_id i,
-                                  vertex_id j)
-{
-    if (i == j) return false;
-    if (i > j) std::swap(i, j);
-
-    for (auto e = T.finite_edges_begin(); e != T.finite_edges_end(); ++e) {
-        auto  f  = e->first;
-        int   ei = e->second;
-
-        auto  va = f->vertex(T.cw(ei));
-        auto  vb = f->vertex(T.ccw(ei));
-
-        vertex_id a = va->info();
-        vertex_id b = vb->info();
-        if (a > b) std::swap(a, b);
-
-        if (a == i && b == j) {
-            return true;
-        }
-    }
-    return false;
-}
-
-// print all edges created by insertion of vertex id
-void debug_edges_created_by_insertion(vertex_id id, const InputData& D)
-{
-    const Tri2& cur   = D.tri_current;
-    const Tri2& lower = D.tri_lower;
-
-    std::cout << "\n[debug-insert] edges incident to inserted vertex " << id << ":\n";
-
-    // 1) find the vertex handle for the newly inserted vertex
-    Tri2::Vertex_handle vd = Tri2::Vertex_handle();
-    for (auto v = cur.finite_vertices_begin(); v != cur.finite_vertices_end(); ++v) {
-        if (v->info() == id) {
-            vd = v;
-            break;
-        }
-    }
-
-    if (vd == Tri2::Vertex_handle()) {
-        std::cout << "[debug-insert] ERROR: could not find vertex " << id
-                  << " in current triangulation\n";
-        return;
-    }
-
-    // 2) iterate over all incident vertices -> edges (id, n)
-    Tri2::Vertex_circulator vc = cur.incident_vertices(vd);
-    Tri2::Vertex_circulator done = vc;
-
-    
-    if (vc == 0) {
-        std::cout << "[debug-insert] vertex has no incident vertices (unexpected)\n";
-        return;
-    }
-
-    do {
-        if (cur.is_infinite(vc)) {
-            ++vc;
-            continue;
-        }
-
-        vertex_id n = vc->info();
-        vertex_id a = id;
-        vertex_id b = n;
-        if (a > b) std::swap(a, b);
-
-        bool in_lower = edge_in_triangulation(lower, a, b);
-
-        std::cout << "  edge (" << a << "," << b << ")"
-                  << (in_lower ? "  [in lower]\n" : "  [NOT in lower]\n");
-
-        ++vc;
-    } while (vc != done);
-}
 
 // check edge (i,j) against lower triangulation for intersections
 void debug_check_edge_against_lower(df::vertex_id i, df::vertex_id j, const df::InputData& D) {
     const auto& pts = D.points2d;
     CGAL::Segment_2<K> e2d(pts[i], pts[j]);
 
-    std::cout << "[post-insert-debug] checking edge (" << i << "," << j << ") against lower triangulation\n";
+    std::cout << "[post-insert-or-flip-debug] checking edge (" << i << "," << j << ") against lower triangulation\n";
 
     for (auto e = D.tri_lower.finite_edges_begin();
          e != D.tri_lower.finite_edges_end(); ++e) {
@@ -289,12 +208,122 @@ void print_step_history(const df::InputData& D) {
     std::cout << "========================================\n\n";
 }
 
+// helper: given an edge (ia, ib), find the 4 vertices of the quad around it
+// in current triangulation (a,b,c,d) with edge (a,b) and opposite vertices (c,d)
+static bool
+compute_quad_for_edge(const Tri2& tri,
+                      vertex_id ia, vertex_id ib,
+                      std::array<vertex_id,4>& out)
+{
+    // find the edge in the triangulation
+    Tri2::Face_handle f;
+    int edge_idx = -1;
+    bool found = false;
+
+    for (auto e = tri.finite_edges_begin(); e != tri.finite_edges_end(); ++e) {
+        auto fh = e->first;
+        int  ei = e->second;
+
+        auto va = fh->vertex(tri.cw(ei));
+        auto vb = fh->vertex(tri.ccw(ei));
+
+        vertex_id a = va->info();
+        vertex_id b = vb->info();
+
+        if ((a == ia && b == ib) || (a == ib && b == ia)) {
+            f        = fh;
+            edge_idx = ei;
+            found    = true;
+            break;
+        }
+    }
+
+    if (!found) {
+        std::cout << "[debug] compute_quad_for_edge: edge (" << ia << "," << ib
+                  << ") not found in tri_current\n";
+        return false;
+    }
+
+    if (tri.is_infinite(f)) {
+        std::cout << "[debug] compute_quad_for_edge: incident face is infinite\n";
+        return false;
+    }
+
+    auto g = f->neighbor(edge_idx);
+    if (tri.is_infinite(g)) {
+        std::cout << "[debug] compute_quad_for_edge: neighbor face is infinite\n";
+        return false;
+    }
+
+    auto va = f->vertex(tri.cw(edge_idx));
+    auto vb = f->vertex(tri.ccw(edge_idx));
+    auto vc = f->vertex(edge_idx);
+    int  mi = tri.mirror_index(f, edge_idx);
+    auto vd = g->vertex(mi);
+
+    out = { va->info(), vb->info(), vc->info(), vd->info() };
+    return true;
+}
 
 
+// this function collects the tetrahedra that correspond to edge flips and vertex insertions if the algorithm did not terminate correctly
+std::vector<DebugTetrahedron>
+collect_debug_tetrahedra(const InputData& D)
+{
+    std::vector<DebugTetrahedron> result;
 
+    const Tri2& current = D.tri_current;
+    const Tri2& target  = D.tri_lower;
 
+    // collecting locally non-regular edges for 2-2 flip tetrahedra 
+    auto non_regular_edges = df::reg::find_locally_non_regular_edges(current);
 
+    for (const auto& e : non_regular_edges) {
+        vertex_id ia = e[0];
+        vertex_id ib = e[1];
 
+        std::array<vertex_id,4> quad_ids;
+        if (!compute_quad_for_edge(current, ia, ib, quad_ids)) {
+            // if we can't build the quad, just skip this one
+            continue;
+        }
 
+        DebugTetrahedron tet;
+        tet.verts = quad_ids;
+        tet.kind  = DebugTetKind::EdgeFlip;
+        result.push_back(tet);
+    }
 
+    // collect missing vertices for insertion tetrahedra 
+    auto missing = df::find_missing_vertices(current, target);
+
+    for (vertex_id id : missing) {
+        const P2& p = D.points2d[id];
+
+        Tri2::Locate_type lt;
+        int li;
+        Tri2::Face_handle fh = current.locate(p, lt, li);
+
+        if (lt != Tri2::FACE || current.is_infinite(fh)) {
+            std::cout << "[debug] collect_debug_tetrahedra: "
+                      << "missing vertex " << id
+                      << " not in a finite face (lt=" << lt << ")\n";
+            continue;
+        }
+
+        vertex_id a = fh->vertex(0)->info();
+        vertex_id b = fh->vertex(1)->info();
+        vertex_id c = fh->vertex(2)->info();
+
+        DebugTetrahedron tet;
+        tet.verts = { a, b, c, id };
+        tet.kind  = DebugTetKind::Insertion;
+        result.push_back(tet);
+        // tetrahedron with vertices 0,1,2,3 has faces 
+        // {0,1,2}, {0,3,1}, {1,3,2}, {0,2,3}
+
+    }
+
+    return result;
+}
 }

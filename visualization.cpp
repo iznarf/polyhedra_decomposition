@@ -1,19 +1,23 @@
 #include "visualization.h"
 #include "input.h"
+#include "debug.h"
 
 #include <polyscope/polyscope.h>
 #include <polyscope/surface_mesh.h>
-
 #include <glm/glm.hpp>
 #include <unordered_map>
 #include <vector>
 #include <array>
+#include <imgui.h>
 
+using df::DebugTetrahedron;
+using df::DebugTetKind;
 
 using df::vertex_id;
 using glm::vec3;
 
 namespace  {
+
 
 
 // vertcies for planar triangulation z = 0
@@ -50,24 +54,72 @@ std::vector<std::array<int,3>> faces_from_triangles(const df::Tri2& t, const std
     return F;
 }
 
-// register one triangulation as (2D mesh + lifted mesh)
-void register_triangulation_as_mesh(const df::Tri2& tri,
-                         const std::vector<df::P2>& points2d,
-                         const std::string& name_planar,
-                         const std::string& name_lifted) {
-    auto ids   = viz::present_ids(tri); // which vertices does the triangulation contain -> global indices
-    auto to_local = viz::make_local_index(ids); // map to local indices for polyscope
 
-    auto vertices_2d = points_planar(ids, points2d); // coordinates of points in 2D
-    auto faces  = faces_from_triangles(tri, to_local); // faces as local index triples
-    polyscope::registerSurfaceMesh(name_planar, vertices_2d, faces); // planar mesh 
+// we use this function to give each vertex the global index as a scalar quantity in polyscope
+static void add_global_id_quantity(polyscope::SurfaceMesh* mesh,
+                                   const std::vector<df::vertex_id>& ids) {
+    // polyscope scalar quantities are doubles, so just cast
+    std::vector<double> values;
+    values.reserve(ids.size());
+    for (auto id : ids) {
+        values.push_back(static_cast<double>(id));
+    }
 
-    auto vertices_3d = points_lifted(ids, points2d); // coordinates of lifted points 
-    auto mesh = polyscope::registerSurfaceMesh(name_lifted, vertices_3d, faces); // lifted mesh
-    //mesh->setTransparency(0.5); 
+    mesh->addVertexScalarQuantity("global id", values);
 }
 
-} // anon
+// one debug mesh for the tetrahedra with geometry + ids + type
+struct DebugTetGeom {
+    std::array<vertex_id,4> ids;
+    std::array<vec3,4>      pos;
+    DebugTetKind            kind;
+};
+
+std::vector<DebugTetGeom> g_debug_tets;
+int g_debug_idx = 0;
+polyscope::SurfaceMesh* g_debug_mesh = nullptr;
+
+// faces of a tetrahedron in canonical order
+const std::vector<std::array<size_t,3>> kTetFaces = {
+    {0,1,2},
+    {0,3,1},
+    {1,3,2},
+    {0,2,3}
+};
+
+
+// update/create the single debug mesh for the current index
+void update_debug_tet_mesh() {
+    if (g_debug_tets.empty())
+        return;
+
+    const DebugTetGeom& dt = g_debug_tets[g_debug_idx];
+
+    std::vector<vec3> V = {
+        dt.pos[0], dt.pos[1], dt.pos[2], dt.pos[3]
+    };
+
+    if (!g_debug_mesh) {
+        g_debug_mesh = polyscope::registerSurfaceMesh("debug tetra", V, kTetFaces);
+        //g_debug_mesh->setTransparency(0.5f); // make it transparent
+    } else {
+        g_debug_mesh->updateVertexPositions(V);
+    }
+
+    // debug tets are yellow 
+    glm::vec3 ochre(0.87f, 0.69f, 0.17f);
+;
+
+    g_debug_mesh->setSurfaceColor(ochre);
+
+
+}
+
+} // anonymous namespace
+
+
+
+
 
 namespace viz {
 
@@ -76,68 +128,6 @@ static inline glm::vec3 lift_paraboloid(const df::P2& p) {
   double y = CGAL::to_double(p.y());
   return glm::vec3((float)x, (float)(x*x + y*y), (float)y); // y-up
 }
-
-void show_flip_tetra(const df::InputData& D, df::vertex_id ia, df::vertex_id ib,  const std::string& label) {
-
-    const auto& tri = D.tri_current;
-
-    // find the edge (ia, ib) in the current triangulation by vertex ids
-    df::Tri2::Face_handle f;
-    int i = -1;
-    bool found = false;
-
-    for (auto e = tri.finite_edges_begin(); e != tri.finite_edges_end(); ++e) {
-        auto fe = e->first;
-        int  ei = e->second;
-
-        auto va = fe->vertex(tri.cw(ei));
-        auto vb = fe->vertex(tri.ccw(ei));
-
-        df::vertex_id ja = va->info();
-        df::vertex_id jb = vb->info();
-
-        if ((ja == ia && jb == ib) || (ja == ib && jb == ia)) {
-            f     = fe;
-            i     = ei;
-            found = true;
-            break;
-        }
-    }
-
-        if (!found) {
-            std::cout << "[viz] show_flip_tetra: edge (" << ia << "," << ib
-                    << ") not found in tri_current\n";
-            return;
-        }
-
-        // if the incident face or its neighbor is infinite, just bail out
-        if (tri.is_infinite(f)) return;
-        auto g = f->neighbor(i);
-        if (tri.is_infinite(g)) return;
-
-        // endpoints of the edge and the two opposite vertices
-        auto va = f->vertex(tri.cw(i));
-        auto vb = f->vertex(tri.ccw(i));
-        auto vc = f->vertex(i);
-        int  mi = tri.mirror_index(f, i);
-        auto vd = g->vertex(mi);
-
-        const df::P2& A2 = va->point();
-        const df::P2& B2 = vb->point();
-        const df::P2& C2 = vc->point();
-        const df::P2& D2 = vd->point();
-
-        std::vector<glm::vec3> V = {
-            lift_paraboloid(A2), lift_paraboloid(B2),
-            lift_paraboloid(C2), lift_paraboloid(D2)
-        };
-        std::vector<std::array<size_t,3>> F = { {0,1,2}, {0,3,1}, {1,3,2}, {0,2,3} };
-
-        auto mesh = polyscope::registerSurfaceMesh(label, V, F);
-        mesh->setTransparency(0.5f);
-}
-
-
 
 // collect the global indices present in a triangulation
 std::vector<vertex_id> present_ids(const df::Tri2& t) {
@@ -156,42 +146,164 @@ std::unordered_map<vertex_id,int> make_local_index(const std::vector<vertex_id>&
     return m;
 }
 
-void show_four_meshes(const df::InputData& D) {
+// register one triangulation as (2D mesh + lifted mesh)
+// we use this function to register both lower and upper triangulations at startup
+void register_triangulation_as_mesh(const df::Tri2& tri,
+                         const std::vector<df::P2>& points2d,
+                         const std::string& name_planar,
+                         const std::string& name_lifted) {
+    auto ids      = viz::present_ids(tri);
+    auto to_local = viz::make_local_index(ids);
 
-  // lower (all points) as planar & lifted
-  register_triangulation_as_mesh(D.tri_lower, D.points2d, "lower 2D", "lower lifted");
+    auto vertices_2d = points_planar(ids, points2d);
+    auto faces       = faces_from_triangles(tri, to_local);
 
-  // upper (hull) as planar & lifted
-  register_triangulation_as_mesh(D.tri_upper, D.points2d, "upper 2D", "upper lifted");
 
+
+    glm::vec3 lightBlue(0.6f, 0.8f, 1.0f);  
+
+    // planar mesh
+    auto* m2 = polyscope::registerSurfaceMesh(name_planar, vertices_2d, faces);
+    add_global_id_quantity(m2, ids);
+    // do not show 2D mesh by default
+    m2->setEnabled(false); 
+    m2->setSurfaceColor(lightBlue);
+   
+
+
+    // lifted mesh
+    auto vertices_3d = points_lifted(ids, points2d);
+    auto* m3 = polyscope::registerSurfaceMesh(name_lifted, vertices_3d, faces);
+    add_global_id_quantity(m3, ids);
+    m3->setSurfaceColor(lightBlue);
+
+    //m3->setTransparency(0.5); 
 }
 
 
+
+
+
+// we use this function to register and to update the current triangulation
 void show_or_update_current(const df::InputData& D) {
-  // build fresh buffers from the current triangulation
-  const auto& tri = D.tri_current;
+    // build fresh buffers from the current triangulation
+    const auto& tri = D.tri_current;
 
-  const auto ids      = present_ids(tri);
-  const auto to_local = make_local_index(ids);
-  const auto V2       = points_planar(ids,  D.points2d);
-  const auto V3       = points_lifted(ids,  D.points2d);
-  const auto F        = faces_from_triangles(tri, to_local);
+    const auto ids      = present_ids(tri);
+    const auto to_local = make_local_index(ids);
+    const auto V2       = points_planar(ids,  D.points2d);
+    const auto V3       = points_lifted(ids,  D.points2d);
+    const auto F        = faces_from_triangles(tri, to_local);
 
-  // remove old meshes only if they exist
-  if (polyscope::hasSurfaceMesh("current 2D")) {
-    polyscope::getSurfaceMesh("current 2D")->remove();
-  }
-  if (polyscope::hasSurfaceMesh("current lifted")) {
-    polyscope::getSurfaceMesh("current lifted")->remove();
-  }
+    // remove old meshes only if they exist
+    if (polyscope::hasSurfaceMesh("current 2D")) {
+        polyscope::getSurfaceMesh("current 2D")->remove();
+    }
+    if (polyscope::hasSurfaceMesh("current lifted")) {
+        polyscope::getSurfaceMesh("current lifted")->remove();
+    }
 
-  // (re)register meshes
-  polyscope::registerSurfaceMesh("current 2D", V2, F);
-  auto* m3 = polyscope::registerSurfaceMesh("current lifted", V3, F);
-  m3->setTransparency(0.5f);
+    glm::vec3 aubergine(0.549f, 0.227f, 0.459f);
+
+
+    // (re)register meshes
+    auto* m2 =polyscope::registerSurfaceMesh("current 2D", V2, F);
+    add_global_id_quantity(m2, ids);
+    // do not show 2D mesh by default
+    m2->setEnabled(false); 
+    m2->setSurfaceColor(aubergine);
+
+    auto* m3 = polyscope::registerSurfaceMesh("current lifted", V3, F);
+    add_global_id_quantity(m3, ids);
+    m3->setSurfaceColor(aubergine);
+    m3->setTransparency(0.6f);
 }
 
 
+
+
+
+
+// --------------------------------
+// debug tetrahedra visualization
+// --------------------------------
+
+void load_debug_tetrahedra(const df::InputData& D,
+                           const std::vector<DebugTetrahedron>& tets)
+{
+    g_debug_tets.clear();
+    g_debug_idx  = 0;
+
+    
+    if (polyscope::hasSurfaceMesh("debug tetra")) {
+        polyscope::getSurfaceMesh("debug tetra")->remove();
+        g_debug_mesh = nullptr;
+    }
+
+    g_debug_tets.reserve(tets.size());
+
+    for (const auto& t : tets) {
+        DebugTetGeom g;
+        g.ids  = t.verts;
+        g.kind = t.kind;
+
+        // turn 4 vertex ids into 4 lifted positions
+        for (int i = 0; i < 4; ++i) {
+            vertex_id vid = t.verts[i];
+            const df::P2& p2 = D.points2d[vid];
+            g.pos[i] = lift_paraboloid(p2);
+        }
+
+        g_debug_tets.push_back(g);
+    }
+
+    if (!g_debug_tets.empty()) {
+        update_debug_tet_mesh();
+    } else {
+        std::cout << "load_debug_tetrahedra: no tets to visualize\n";
+    }
+}
+
+void debug_tet_ui() {
+    if (g_debug_tets.empty()) {
+        ImGui::Text("no debug tetrahedra");
+        return;
+    }
+
+    int n = static_cast<int>(g_debug_tets.size());
+    ImGui::Text("debug tetrahedra (yellow): %d", n);
+    ImGui::Text("current index: %d", g_debug_idx);
+
+    // show vertex ids of the current tet
+    const auto& cur = g_debug_tets[g_debug_idx];
+    ImGui::Text("vertices: (%d, %d, %d, %d)",
+                (int)cur.ids[0], (int)cur.ids[1],
+                (int)cur.ids[2], (int)cur.ids[3]);
+
+    ImGui::Text("kind: %s",
+        cur.kind == DebugTetKind::EdgeFlip ? "2-2 flip" : "1-3 flip");
+
+    // Buttons
+    if (ImGui::Button("prev") && g_debug_idx > 0) {
+        --g_debug_idx;
+        update_debug_tet_mesh();
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("next") && g_debug_idx < n - 1) {
+        ++g_debug_idx;
+        update_debug_tet_mesh();
+    }
+
+}
+// --------------------------------
+// end debug tetrahedra visualization
+
+
+// --------------------------------
+// replay visualization (needs fixing)
+// --------------------------------
+
+// update visualization of replay mesh
 void show_or_update_replay(const df::InputData& D) {
     const auto& tri = D.tri_replay;
 
@@ -209,10 +321,21 @@ void show_or_update_replay(const df::InputData& D) {
         polyscope::getSurfaceMesh("replay lifted")->remove();
     }
 
-    polyscope::registerSurfaceMesh("replay 2D", V2, F);
+    // i need neon green for replay meshes
+    glm::vec3 neon_green(0.0f, 1.0f, 0.0f);
+    
+
+    auto* m2 = polyscope::registerSurfaceMesh("replay 2D", V2, F);
+    add_global_id_quantity(m2, ids);
+   
+    m2->setSurfaceColor(neon_green);
     auto* m3 = polyscope::registerSurfaceMesh("replay lifted", V3, F);
+    add_global_id_quantity(m3, ids);
+  
+    m3->setSurfaceColor(neon_green);
     m3->setTransparency(0.5f);
 }
+
 
 
 

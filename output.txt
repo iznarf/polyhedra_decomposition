@@ -1,0 +1,136 @@
+
+// von 21,44 mit complicated conforming VertexInsertion: not terminating 
+// insertion order 15,2,13,9,4,11,18,3
+
+// Missing vertices (global ids): 15 6 4 2 11 17 13 19 9 0 16 18 8 3 1
+
+
+==== Step history (18 steps) ====
+Step 0: EdgeFlip  (a=20, b=12, c=5, d=10)
+Step 1: EdgeFlip  (a=10, b=20, c=7, d=5)
+Step 2: EdgeFlip  (a=5, b=10, c=12, d=7)
+Step 3: EdgeFlip  (a=20, b=7, c=5, d=14)
+Step 4: VertexInsertion  (face=(7,14,5), new=15)
+Step 5: EdgeFlip  (a=5, b=14, c=15, d=20)
+Step 6: EdgeFlip  (a=5, b=7, c=12, d=15)
+Step 7: EdgeFlip  (a=12, b=7, c=10, d=15)
+Step 8: VertexInsertion  (face=(15,20,5), new=2)
+Step 9: VertexInsertion  (face=(2,20,5), new=13)
+Step 10: VertexInsertion  (face=(12,10,15), new=9)
+Step 11: EdgeFlip  (a=10, b=15, c=7, d=9)
+Step 12: EdgeFlip  (a=12, b=15, c=9, d=5)
+Step 13: VertexInsertion  (face=(12,9,5), new=4)
+Step 14: EdgeFlip  (a=9, b=5, c=15, d=4)
+Step 15: VertexInsertion  (face=(4,9,15), new=11)
+Step 16: VertexInsertion  (face=(5,4,15), new=18)
+Step 17: VertexInsertion  (face=(5,4,18), new=3)
+
+
+
+// von 21,44 mit not complicated conforming VertexInsertion: terminating  
+// insertion order 9,15,4,11,19,6,2,17,13,0,16,18,8,3,1
+
+==== Step history (27 steps) ====
+Step 0: EdgeFlip  (a=20, b=12, c=5, d=10)
+Step 1: EdgeFlip  (a=10, b=20, c=7, d=5)
+Step 2: EdgeFlip  (a=5, b=10, c=12, d=7)
+Step 3: EdgeFlip  (a=20, b=7, c=5, d=14)
+Step 4: VertexInsertion  (face=(10,7,12), new=9)
+Step 5: EdgeFlip  (a=12, b=7, c=9, d=5)
+Step 6: EdgeFlip  (a=5, b=7, c=9, d=14)
+Step 7: VertexInsertion  (face=(9,7,14), new=15)
+Step 8: EdgeFlip  (a=14, b=9, c=5, d=15)
+Step 9: EdgeFlip  (a=14, b=5, c=20, d=15)
+Step 10: VertexInsertion  (face=(12,9,5), new=4)
+Step 11: EdgeFlip  (a=9, b=5, c=15, d=4)
+Step 12: EdgeFlip  (a=5, b=15, c=4, d=20)
+Step 13: VertexInsertion  (face=(4,9,15), new=11)
+Step 14: VertexInsertion  (face=(4,20,5), new=19)
+Step 15: EdgeFlip  (a=20, b=4, c=19, d=15)
+Step 16: VertexInsertion  (face=(4,15,19), new=6)
+Step 17: EdgeFlip  (a=19, b=15, c=6, d=20)
+Step 18: VertexInsertion  (face=(6,15,20), new=2)
+Step 19: VertexInsertion  (face=(4,15,6), new=17)
+Step 20: VertexInsertion  (face=(6,2,20), new=13)
+Step 21: VertexInsertion  (face=(17,15,6), new=0)
+Step 22: VertexInsertion  (face=(4,19,5), new=16)
+Step 23: VertexInsertion  (face=(4,16,5), new=18)
+Step 24: VertexInsertion  (face=(6,2,13), new=8)
+Step 25: VertexInsertion  (face=(4,18,5), new=3)
+Step 26: VertexInsertion  (face=(4,19,16), new=1)
+
+
+
+
+
+
+
+
+    // check edge flip tetra eder
+    // take all downflippable edges in current triangulation and form edge flip tetraeder with the four vertices involved
+    // flip 15,5 -> 18,2 
+    // flip 2,20 -> 18,11 
+    // flip 7,11 -> 9,15
+    // flip 2,20 -> 15,13
+    // flip 18,11 -> 15,4
+    // flip 12, 9 -> 10,4
+    // flip 5,4 -> 12, 18 
+
+--------------------------------------------------
+example (19,42)
+not complicated conforming: terminating 
+order: 7,11,18,0,3,6,8,10,2,9,12
+
+==== Step history (22 steps) ====
+Step 0: EdgeFlip  (a=14, b=15, c=17, d=1)
+Step 1: EdgeFlip  (a=1, b=14, c=16, d=17)
+Step 2: EdgeFlip  (a=17, b=1, c=15, d=16)
+Step 3: EdgeFlip  (a=14, b=16, c=17, d=5)
+Step 4: EdgeFlip  (a=16, b=17, c=5, d=15)
+Step 5: EdgeFlip  (a=15, b=16, c=1, d=5)
+Step 6: EdgeFlip  (a=14, b=5, c=17, d=4)
+Step 7: EdgeFlip  (a=14, b=4, c=17, d=13)
+Step 8: VertexInsertion  (face=(1,16,5), new=7)
+Step 9: EdgeFlip  (a=1, b=5, c=7, d=15)
+Step 10: EdgeFlip  (a=15, b=5, c=7, d=17)
+Step 11: VertexInsertion  (face=(17,7,5), new=11)
+Step 12: VertexInsertion  (face=(17,11,5), new=18)
+Step 13: VertexInsertion  (face=(15,1,7), new=0)
+Step 14: EdgeFlip  (a=15, b=7, c=0, d=17)
+Step 15: VertexInsertion  (face=(4,13,17), new=3)
+Step 16: VertexInsertion  (face=(17,18,5), new=6)
+Step 17: VertexInsertion  (face=(17,18,6), new=8)
+Step 18: VertexInsertion  (face=(4,3,17), new=10)
+Step 19: VertexInsertion  (face=(10,3,17), new=2)
+Step 20: VertexInsertion  (face=(11,7,5), new=9)
+Step 21: VertexInsertion  (face=(5,4,17), new=12)
+
+
+complicated conforming
+order: 7,11,18,0,3,6,8,10,2,9,12
+
+==== Step history (22 steps) ====
+Step 0: EdgeFlip  (a=14, b=15, c=17, d=1)
+Step 1: EdgeFlip  (a=1, b=14, c=16, d=17)
+Step 2: EdgeFlip  (a=17, b=1, c=15, d=16)
+Step 3: EdgeFlip  (a=14, b=16, c=17, d=5)
+Step 4: EdgeFlip  (a=16, b=17, c=5, d=15)
+Step 5: EdgeFlip  (a=15, b=16, c=1, d=5)
+Step 6: EdgeFlip  (a=14, b=5, c=17, d=4)
+Step 7: EdgeFlip  (a=14, b=4, c=17, d=13)
+Step 8: VertexInsertion  (face=(1,16,5), new=7)
+Step 9: EdgeFlip  (a=5, b=1, c=15, d=7)
+Step 10: EdgeFlip  (a=5, b=15, c=17, d=7)
+Step 11: VertexInsertion  (face=(17,7,5), new=11)
+Step 12: VertexInsertion  (face=(17,11,5), new=18)
+Step 13: VertexInsertion  (face=(15,1,7), new=0)
+Step 14: EdgeFlip  (a=7, b=15, c=17, d=0)
+Step 15: VertexInsertion  (face=(4,13,17), new=3)
+Step 16: VertexInsertion  (face=(17,18,5), new=6)
+Step 17: VertexInsertion  (face=(17,18,6), new=8)
+Step 18: VertexInsertion  (face=(4,3,17), new=10)
+Step 19: VertexInsertion  (face=(10,3,17), new=2)
+Step 20: VertexInsertion  (face=(11,7,5), new=9)
+Step 21: VertexInsertion  (face=(5,4,17), new=12)
+
+-> 

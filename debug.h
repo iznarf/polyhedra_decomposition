@@ -2,17 +2,39 @@
 
 #include "input.h"   
 #include <vector>
+#include <array>
 #include <utility>
 
+
 namespace df {
+
+    enum class DebugTetKind {
+        EdgeFlip,   
+        Insertion   
+    };
+
+    struct DebugTetrahedron {
+        std::array<vertex_id, 4> verts; // global ids of the four vertices
+        DebugTetKind kind;
+    };
+
+    // function:
+    //  - search for locally non regular edges in current triangulation
+    //  - take the four involved vertices and store them
+    //  - take the missing vertices, find the triangle they are in, and
+    //    store the triangle vertices + missing vertex
+    //  - output: list of tetrahedra + kind (2-2 flip vs insertion)
+    std::vector<DebugTetrahedron>
+    collect_debug_tetrahedra(const InputData& D);
+
+
 
     enum class TriKind {
         Current,
         Lower
     };
 
-    // Return all global edges that are in current but NOT in target.
-    // Edges are treated as undirected (a,b) == (b,a), and stored with (min,max).
+    // returns all global edges that are in current but NOT in target 
     std::vector<std::pair<vertex_id, vertex_id>>
     edges_in_current_not_in_target(const Tri2& current, const Tri2& target);
 

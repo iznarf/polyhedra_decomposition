@@ -12,6 +12,7 @@
 
 namespace df {
 
+    // simple cartesian kernel with double would be better 
     //using K  = CGAL::Simple_cartesian<double>; // cartesian kernel
     using K  = CGAL::Exact_predicates_inexact_constructions_kernel;
     using P2 = K::Point_2;
@@ -50,7 +51,7 @@ namespace df {
     struct InputData {
         std::vector<P2> points2d;   // all random points of planar point set A
         Tri2            tri_upper;  // source: triangulation using hull only (no interior vertices)
-        Tri2            tri_lower;  // target: triangulation using all points (includes interior)
+        Tri2            tri_lower;  // target: triangulation using all points 
         Tri2           tri_current;  // triangulation of the current state in the algorithm
         Tri2          tri_replay;  // triangulation for applying the recorded flips
 

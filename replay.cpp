@@ -1,12 +1,53 @@
 #include "replay.h"
 #include "visualization.h"
+#include "input.h"
+#include <imgui.h> 
 #include <iostream>
+
+namespace {
+    // pointer to the data we are replaying
+    df::InputData* g_replay_data = nullptr;
+
+    // triangulation at step 0 (no flips applied, this is just tri_upper)
+    df::Tri2 g_replay_base;
+
+    // current step index: number of steps applied on tri_replay (0..N)
+    int g_step_idx = 0;
+
+    // reset tri_replay to base and apply first k steps
+    void rebuild_to_step(int k) {
+        if (!g_replay_data) return;
+
+        int n = static_cast<int>(g_replay_data->step_history.size());
+        if (k < 0) k = 0;
+        if (k > n) k = n;
+
+        g_step_idx = k;
+
+        // reset to base triangulation
+        g_replay_data->tri_replay = g_replay_base;
+
+        // apply first k steps
+        for (int i = 0; i < k; ++i) {
+            df::apply_step(g_replay_data->step_history[i], *g_replay_data);
+        }
+
+        // if k == 0, no apply_step was called, so we still need to show the base mesh
+        if (k == 0) {
+            viz::show_or_update_replay(*g_replay_data);
+        }
+    }
+
+} // namespace 
+
+
+
 
 
 
 namespace df {
 
-// === edge flip (a,b,c,d) ===
+// edge flip (a,b,c,d)
 // a,b : edge to be flipped 
 // c,d : opposite vertices, only used for optional sanity checks/debug
 void edge_flip_replay(vertex_id ia,
@@ -71,35 +112,15 @@ void edge_flip_replay(vertex_id ia,
     T.flip(fh, ei);
 }
 
-// === vertex insertion (face a,b,c, new vertex d) ===
+// vertex insertion (face a,b,c, new vertex d) 
 void vertex_insertion_replay(vertex_id ia, vertex_id ib, vertex_id ic, vertex_id id, InputData& D) {
     Tri2& T   = D.tri_replay;
     const P2& insertion_point = D.points2d[id];
 
-    // Option 1: use locate (robust, uses actual geometry)
+    // locate the face (a,b,c) in current triangulation
     Tri2::Locate_type lt;
     int li;
     Tri2::Face_handle fh = T.locate(insertion_point, lt, li);
-
-
-    // Optional: sanity check that this face is indeed (a,b,c)
-    vertex_id fa = fh->vertex(0)->info();
-    vertex_id fb = fh->vertex(1)->info();
-    vertex_id fc = fh->vertex(2)->info();
-
-    // sort and compare as sets
-    std::array<vertex_id,3> rec  = { ia, ib, ic };
-    std::array<vertex_id,3> face = { fa, fb, fc };
-    std::sort(rec.begin(),  rec.end());
-    std::sort(face.begin(), face.end());
-
-    if (rec != face) {
-        std::cerr << "[replay] vertex insertion: recorded face ("
-                  << ia << "," << ib << "," << ic
-                  << "), but locate() found face ("
-                  << fa << "," << fb << "," << fc << ")\n";
-        // not fatal; we still insert in the geometric face
-    }
 
     Tri2::Vertex_handle vh = T.insert_in_face(insertion_point, fh);
     vh->info() = id;
@@ -122,6 +143,58 @@ void apply_step(const StepRecord& step, InputData& D) {
 
     // after modifying tri_replay, just update the replay meshes
     viz::show_or_update_replay(D);
+}
+
+void init_replay(InputData& D) {
+    g_replay_data = &D;
+
+    g_step_idx = 0;
+
+    // tri_replay currently contains the step-0 triangulation
+    g_replay_base = D.tri_replay;
+
+    g_step_idx = 0;
+    viz::show_or_update_replay(D);
+}
+
+
+
+void replay_ui() {
+    if (!g_replay_data) {
+        ImGui::Text("replay not initialized.");
+        return;
+    }
+
+    // info about current step 
+    int n = (int) g_replay_data->step_history.size();
+    if (n > 0 && g_step_idx >= 0 && g_step_idx < n) {
+
+        const StepRecord& step = g_replay_data->step_history[g_step_idx];
+
+        const char* kindStr =
+            (step.kind == StepKind::EdgeFlip)
+                ? "2-2 flip"
+                : "1-3 flip";
+
+        ImGui::Text("replay (green) step: %d / %d", g_step_idx, n - 1);
+        ImGui::Text("kind: %s", kindStr);
+        ImGui::Text("vertices: (%zu, %zu, %zu, %zu)",
+                    step.a, step.b, step.c, step.d);
+    }
+    else {
+        ImGui::Text("initial state (before first step).");
+    }
+
+    ImGui::Separator();
+
+    
+    if (ImGui::Button("prev") && g_step_idx > 0) {
+        rebuild_to_step(g_step_idx - 1);
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("next") && g_step_idx + 1 < n) {
+        rebuild_to_step(g_step_idx + 1);
+    }
 }
 
 }

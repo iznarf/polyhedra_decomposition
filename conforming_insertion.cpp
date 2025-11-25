@@ -1,5 +1,4 @@
 
-
 #include "conforming_insertion.h"
 #include <CGAL/Segment_3.h>
 #include <CGAL/Segment_2.h>
@@ -23,12 +22,12 @@ using Seg3 = CGAL::Segment_3<K>;
 using Seg2 = CGAL::Segment_2<K>;
 
 
-
+// fix: put it in geometry helper
 static inline P3 lift(const P2& p) {
     return P3(p.x(), p.y(), p.x()*p.x() + p.y()*p.y());
 }
 
-
+// fix: one for loop not three
 bool is_insertion_conforming(df::vertex_id id,
                              const df::InputData& D)
 {
@@ -41,7 +40,7 @@ bool is_insertion_conforming(df::vertex_id id,
 
     // locate in current triangulation
     Tri::Locate_type lt;
-    int li; // index used if point lies on an edge
+    int li; // index used if point lies on an edge -> will not happen
     Tri::Face_handle fh = current.locate(d2, lt, li);
 
     if (lt != Tri::FACE) {
@@ -70,7 +69,8 @@ bool is_insertion_conforming(df::vertex_id id,
     const P2& b2 = vb->point();
     const P2& c2 = vc->point();
 
-    // fast path: are (a,d), (b,d), (c,d) already in the lower triangulation?
+    // fast path: are (a,d), (b,d), (c,d) already in the lower triangulation 
+    // if yes, we flip is conforming
     bool ad_in_lower = false;
     bool bd_in_lower = false;
     bool cd_in_lower = false;
@@ -113,7 +113,7 @@ bool is_insertion_conforming(df::vertex_id id,
     Seg2 edge_bd_2d(b2, d2);
     Seg2 edge_cd_2d(c2, d2);
 
-    // ---- edge (a,d) ----
+    // edge (a,d)
     for (auto e = lower.finite_edges_begin();
          e != lower.finite_edges_end(); ++e)
     {
@@ -161,15 +161,18 @@ bool is_insertion_conforming(df::vertex_id id,
         }
 
         auto o3d = CGAL::orientation(a3, d3, u3, v3);
-        // interpret: if (a,d) is "below" (u,v), insertion is non-conforming
+        // if (a,d) is below (u,v), insertion is non-conforming
         if (o3d == CGAL::POSITIVE) {
             std::cout << "[conform] WARNING: inserting vertex with global id "
                       << id << " is non-conforming (edge (a,d))\n";
+            std::cout << "  (a,d) = (" << ia << "," << id << ")\n";
+            std::cout << "  (u,v) = (" << u << "," << v << ")\n";
+
             return false;
         }
     }
 
-    // ---- edge (b,d) ----
+    // edge (b,d) 
     for (auto e = lower.finite_edges_begin();
          e != lower.finite_edges_end(); ++e)
     {
@@ -224,7 +227,7 @@ bool is_insertion_conforming(df::vertex_id id,
         }
     }
 
-    // ---- edge (c,d) ----
+    // edge (c,d) 
     for (auto e = lower.finite_edges_begin();
          e != lower.finite_edges_end(); ++e)
     {
@@ -271,6 +274,8 @@ bool is_insertion_conforming(df::vertex_id id,
         if (o3d == CGAL::POSITIVE) {
             std::cout << "[conform] WARNING: inserting vertex with global id "
                       << id << " is non-conforming (edge (c,d))\n";
+            std::cout << "  (c,d) = (" << ic << "," << id << ")\n";
+            std::cout << "  (u,v) = (" << u << "," << v << ")\n";
             return false;
         }
     }
@@ -280,4 +285,3 @@ bool is_insertion_conforming(df::vertex_id id,
     return true;
 }
 }}
-

@@ -56,7 +56,6 @@ static std::vector<P2> sample_points_in_disk(int n, double R, std::mt19937& rng)
             if (!forms_collinear_triple(pts, p)) {
                 break; // accept this point
             }
-            // else: try again
         }
 
         pts.push_back(p);
@@ -91,7 +90,7 @@ InputData make_random_input(int n_points, unsigned seed) {
     // in O(1) time
     auto point_map = CGAL::make_property_map(D.points2d);
 
-    // 4) ask CGAL for the hull *indices*
+    // 4) ask CGAL for the hull indices
     std::vector<std::size_t> hull_ids;
     // build hull edge list
     hull_ids.reserve(D.points2d.size());
@@ -109,11 +108,11 @@ InputData make_random_input(int n_points, unsigned seed) {
     for(int i = 0; i < H; ++i) {
         vertex_id a = hull_ids[i];
         vertex_id b = hull_ids[(i + 1) % H]; // circular
+            // this needs fixing, we do not want to order the indices here
             if (a > b) std::swap(a, b);          
             D.hull_edges.emplace_back(a, b);
 
     }
-
 
     // 6) build (point, global index) pairs for the hull
     std::vector<std::pair<P2, vertex_id>> hull_pairs;
@@ -153,7 +152,7 @@ InputData make_random_input(int n_points, unsigned seed) {
 }
 
 
-
+// fix: put it in geometry helper
 static inline P3 lift(const P2& p) {
     return P3(p.x(), p.y(), p.x() * p.x() + p.y() * p.y());
 }
@@ -170,7 +169,7 @@ bool is_hull_edge(const InputData& D, vertex_id u, vertex_id v)
 }
 
 // checks if the lifted surfaces of lower and upper triangulations intersect
-// return true if they do intersect since this is invalid input for the algorithm
+// returns true if they do intersect since this is invalid input for the algorithm
 bool lifted_triangulations_intersect(const InputData& D)
 {
     const Tri2& upper = D.tri_upper;

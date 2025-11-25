@@ -34,6 +34,8 @@ add_executable(main
     conforming_insertion.cpp
     debug.cpp
     geometry_utils.cpp
+    replay.cpp
+    ui_callbacks.cpp
 )
 
 target_include_directories(main PRIVATE ${portable-file-dialogs_SOURCE_DIR})

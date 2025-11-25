@@ -17,6 +17,8 @@
 #include "conforming_insertion.h"
 #include "debug.h"
 #include "geometry_utils.h"
+#include "replay.h"
+#include "ui_callbacks.h"
 
 
 int main() {
@@ -47,8 +49,9 @@ int main() {
     // -> sorting vertices by descending height is not correct 
     // what is the 'correct' order of vertex insertions?
 
-    
-    viz::show_four_meshes(in);
+    viz::register_triangulation_as_mesh(in.tri_lower, in.points2d, "lower 2D", "lower lifted");
+    viz::register_triangulation_as_mesh(in.tri_upper, in.points2d, "upper 2D", "upper lifted");
+
     viz::show_or_update_current(in);
 
 
@@ -120,23 +123,39 @@ int main() {
     // compare triangulations now 
     if (df::edge_diff_with_lower(in) == true){
         std::cout << "\n[main] ERROR: after all flips and insertions, current triangulation differs from lower triangulation!\n";
+        
     } else {
         std::cout << "\n[main] SUCCESS: current triangulation matches lower triangulation!\n";
     }
 
-    df::debug_print_local_to_global_map(in, df::TriKind::Lower);
-    df::debug_print_local_to_global_map(in, df::TriKind::Current);
+    //df::debug_print_local_to_global_map(in, df::TriKind::Lower);
+    //df::debug_print_local_to_global_map(in, df::TriKind::Current);
 
-
-    
 
     df::print_step_history(in);
+
+    std::vector<df::DebugTetrahedron> debug_tets = df::collect_debug_tetrahedra(in);
+
+    // visualize debug tetrahedra
+    viz::load_debug_tetrahedra(in, debug_tets);
+    
+
+    // initialize replay data
+    df::init_replay(in);
+   
+    polyscope::state::userCallback = combined_ui_callback;
+
+
+    // to do: visualize the tetrahedra corresponding to the steps taken by the algorithm
 
 
 
     polyscope::show();
     return 0;
 }
+
+
+
 
 
 
