@@ -146,10 +146,6 @@ int main() {
     polyscope::state::userCallback = combined_ui_callback;
 
 
-    // to do: visualize the tetrahedra corresponding to the steps taken by the algorithm
-
-
-
     polyscope::show();
     return 0;
 }
