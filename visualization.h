@@ -12,6 +12,12 @@ void register_triangulation_as_mesh(const df::Tri2& tri,
                                     const std::string& name_planar,
                                     const std::string& name_lifted);
 
+// registers a regular triangulation as lifted and planar meshes in polyscope
+void register_regular_triangulation_as_mesh(const df::Tri2Regular& tri,
+                                    const std::vector<df::P2_weighted>& points2d_weighted,
+                                    const std::string& name_planar,
+                                    const std::string& name_lifted);
+
 
 // Collect global vertex IDs in the same order as used for Polyscope registration
 std::vector<df::vertex_id> present_ids(const df::Tri2& t);
@@ -30,6 +36,13 @@ void load_debug_tetrahedra(const df::InputData& D,
 
 // buttons / slider to step through the debug tets
 void debug_tet_ui();
+
+
+void update_flip_decomposition_mesh(const df::InputData& D, int prefix_steps);
+
+void init_flip_decomposition(df::InputData& D);
+void flip_decomposition_ui();
+
 
 
 

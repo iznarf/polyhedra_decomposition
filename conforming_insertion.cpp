@@ -58,12 +58,7 @@ bool is_insertion_conforming(df::vertex_id id,
     df::vertex_id ib = vb->info();
     df::vertex_id ic = vc->info();
 
-      if (id == 5){
-        // print ia, ib, ic
-        std::cout << "[conform] Insertion check for vertex id " << id << " in face ("
-                  << ia << "," << ib << "," << ic << ")\n";
-    }
-
+    
 
     const P2& a2 = va->point();
     const P2& b2 = vb->point();
@@ -74,6 +69,7 @@ bool is_insertion_conforming(df::vertex_id id,
     bool ad_in_lower = false;
     bool bd_in_lower = false;
     bool cd_in_lower = false;
+
 
     for (auto e = lower.finite_edges_begin();
          e != lower.finite_edges_end(); ++e)
@@ -93,6 +89,7 @@ bool is_insertion_conforming(df::vertex_id id,
             bd_in_lower = true;
         if ((u == ic && v == id) || (u == id && v == ic))
             cd_in_lower = true;
+
     }
 
     if (ad_in_lower && bd_in_lower && cd_in_lower) {
@@ -101,8 +98,6 @@ bool is_insertion_conforming(df::vertex_id id,
                   << ") are already in lower triangulation -> insertion is conforming\n";
         return true;
     }
-
-    
 
     // lift the triangle vertices
     P3 a3 = lift(a2);
@@ -114,6 +109,9 @@ bool is_insertion_conforming(df::vertex_id id,
     Seg2 edge_cd_2d(c2, d2);
 
     // edge (a,d)
+    if (ad_in_lower == false) {
+
+    
     for (auto e = lower.finite_edges_begin();
          e != lower.finite_edges_end(); ++e)
     {
@@ -144,13 +142,15 @@ bool is_insertion_conforming(df::vertex_id id,
         Seg3 seg_uv_3d(u3, v3);
         Seg3 seg_ad_3d(a3, d3);
 
-        // if they intersect in 3D, reject immediately
+        // if they intersect in 3D and are not coplanar, flip is not conforming
         if (CGAL::do_intersect(seg_ad_3d, seg_uv_3d)) {
-            std::cout << "[conform] WARNING: inserting vertex " << id
-                      << " is non-conforming: 3D intersection on edge ("
-                      << ia << "," << id << ") vs lower edge ("
-                      << u << "," << v << ")\n";
-            return false;
+            if (CGAL::orientation(a3, d3, u3, v3) != CGAL::COPLANAR) {
+                std::cout << "[conform] WARNING: inserting vertex " << id
+                          << " is non-conforming: 3D intersection on edge ("
+                          << ia << "," << id << ") vs lower edge ("
+                          << u << "," << v << ")\n";
+                return false;
+            }
         }
 
         // if they do not intersect, then do height/orientation test
@@ -171,7 +171,9 @@ bool is_insertion_conforming(df::vertex_id id,
             return false;
         }
     }
+}
 
+    if (bd_in_lower == false) {
     // edge (b,d) 
     for (auto e = lower.finite_edges_begin();
          e != lower.finite_edges_end(); ++e)
@@ -203,11 +205,13 @@ bool is_insertion_conforming(df::vertex_id id,
         Seg3 seg_bd_3d(b3, d3);
 
         if (CGAL::do_intersect(seg_bd_3d, seg_uv_3d)) {
-            std::cout << "[conform] WARNING: inserting vertex " << id
-                      << " is non-conforming: 3D intersection on edge ("
-                      << ib << "," << id << ") vs lower edge ("
-                      << u << "," << v << ")\n";
-            return false;
+            if (CGAL::orientation(b3, d3, u3, v3) != CGAL::COPLANAR) {
+                std::cout << "[conform] WARNING: inserting vertex " << id
+                        << " is non-conforming: 3D intersection on edge ("
+                        << ib << "," << id << ") vs lower edge ("
+                        << u << "," << v << ")\n";
+                return false;
+            }
         }
 
         auto o2d = CGAL::orientation(b2, d2, u2);
@@ -226,6 +230,8 @@ bool is_insertion_conforming(df::vertex_id id,
             return false;
         }
     }
+}
+    if (cd_in_lower == false) {
 
     // edge (c,d) 
     for (auto e = lower.finite_edges_begin();
@@ -257,11 +263,13 @@ bool is_insertion_conforming(df::vertex_id id,
         Seg3 seg_cd_3d(c3, d3);
 
         if (CGAL::do_intersect(seg_cd_3d, seg_uv_3d)) {
-            std::cout << "[conform] WARNING: inserting vertex " << id
-                      << " is non-conforming: 3D intersection on edge ("
-                      << ic << "," << id << ") vs lower edge ("
-                      << u << "," << v << ")\n";
-            return false;
+            if (CGAL::orientation(c3, d3, u3, v3) != CGAL::COPLANAR) {
+                std::cout << "[conform] WARNING: inserting vertex " << id
+                        << " is non-conforming: 3D intersection on edge ("
+                        << ic << "," << id << ") vs lower edge ("
+                        << u << "," << v << ")\n";
+                return false;
+            }
         }
 
         auto o2d = CGAL::orientation(c2, d2, u2);
@@ -279,6 +287,7 @@ bool is_insertion_conforming(df::vertex_id id,
             return false;
         }
     }
+}
 
     std::cout << "[conform] insertion of vertex with global id " << id
               << " is conforming\n";

@@ -19,9 +19,18 @@ using glm::vec3;
 namespace  {
 
 
-
 // vertcies for planar triangulation z = 0
 std::vector<vec3> points_planar(const std::vector<vertex_id>& ids, const std::vector<df::P2>& P) {
+    std::vector<vec3> V; V.reserve(ids.size());
+    for (auto id : ids) {
+        const auto& p = P[id];
+        V.push_back(vec3((float)p.x(), 0.0f, (float)p.y()));
+    }
+    return V;
+}
+
+// vertcies for planar triangulation z = 0
+std::vector<vec3> points_planar_regular(const std::vector<vertex_id>& ids, const std::vector<df::P2_weighted>& P) {
     std::vector<vec3> V; V.reserve(ids.size());
     for (auto id : ids) {
         const auto& p = P[id];
@@ -41,8 +50,32 @@ std::vector<vec3> points_lifted(const std::vector<vertex_id>& ids, const std::ve
     return V;
 }
 
+// vertices for lifted triangulation z = x^2 + y^2 
+std::vector<vec3> points_lifted_regular(const std::vector<vertex_id>& ids, const std::vector<df::P2_weighted>& P) {
+    std::vector<vec3> V; V.reserve(ids.size());
+    for (auto id : ids) {
+        const auto& p = P[id];
+        float z = (float)(p.x()*p.x() + p.y()*p.y());
+        V.push_back(vec3((float)p.x(), z, (float)p.y()));
+    }
+    return V;
+}
+
 // faces as local index triples
 std::vector<std::array<int,3>> faces_from_triangles(const df::Tri2& t, const std::unordered_map<vertex_id,int>& to_local) {
+    std::vector<std::array<int,3>> F;
+    F.reserve(t.number_of_faces());
+    for (auto f = t.finite_faces_begin(); f != t.finite_faces_end(); ++f) {
+        int a = to_local.at(f->vertex(0)->info());
+        int b = to_local.at(f->vertex(1)->info());
+        int c = to_local.at(f->vertex(2)->info());
+        F.push_back({a,b,c});
+    }
+    return F;
+}
+
+// faces as local index triples for regular triangulation
+std::vector<std::array<int,3>> faces_from_triangles_regular(const df::Tri2Regular& t, const std::unordered_map<vertex_id,int>& to_local) {
     std::vector<std::array<int,3>> F;
     F.reserve(t.number_of_faces());
     for (auto f = t.finite_faces_begin(); f != t.finite_faces_end(); ++f) {
@@ -68,6 +101,8 @@ static void add_global_id_quantity(polyscope::SurfaceMesh* mesh,
     mesh->addVertexScalarQuantity("global id", values);
 }
 
+// --------------------------------
+// for debug tet visualization
 // one debug mesh for the tetrahedra with geometry + ids + type
 struct DebugTetGeom {
     std::array<vertex_id,4> ids;
@@ -86,6 +121,18 @@ const std::vector<std::array<size_t,3>> kTetFaces = {
     {1,3,2},
     {0,2,3}
 };
+
+// --------------------------------
+
+// decomposition (flip history) tetrahedra
+polyscope::SurfaceMesh* g_decomp_mesh = nullptr;
+df::InputData* g_decomp_data = nullptr;
+int g_decomp_prefix = 0;  // how many steps are currently visualized
+
+// --------------------------------
+
+
+
 
 
 // update/create the single debug mesh for the current index
@@ -108,22 +155,27 @@ void update_debug_tet_mesh() {
 
     // debug tets are yellow 
     glm::vec3 ochre(0.87f, 0.69f, 0.17f);
-;
-
     g_debug_mesh->setSurfaceColor(ochre);
 
 
 }
 
+
+
+
+
 } // anonymous namespace
-
-
-
 
 
 namespace viz {
 
 static inline glm::vec3 lift_paraboloid(const df::P2& p) {
+  double x = CGAL::to_double(p.x());
+  double y = CGAL::to_double(p.y());
+  return glm::vec3((float)x, (float)(x*x + y*y), (float)y); // y-up
+}
+
+static inline glm::vec3 lift_paraboloid_regular(const df::P2_weighted& p) {
   double x = CGAL::to_double(p.x());
   double y = CGAL::to_double(p.y());
   return glm::vec3((float)x, (float)(x*x + y*y), (float)y); // y-up
@@ -137,6 +189,17 @@ std::vector<vertex_id> present_ids(const df::Tri2& t) {
         ids.push_back(v->info());
     return ids;
 }
+
+// collect the global indices present in a regular triangulation
+std::vector<vertex_id> present_ids_regular(const df::Tri2Regular& t) {
+    std::vector<vertex_id> ids;
+    ids.reserve(t.number_of_vertices());
+    for (auto v = t.finite_vertices_begin(); v != t.finite_vertices_end(); ++v)
+        ids.push_back(v->info());
+    return ids;
+}
+
+
 
 // map global index to local compact index [0,..,V-1] for polyscope
 std::unordered_map<vertex_id,int> make_local_index(const std::vector<vertex_id>& ids) {
@@ -170,12 +233,43 @@ void register_triangulation_as_mesh(const df::Tri2& tri,
     m2->setSurfaceColor(lightBlue);
    
 
-
     // lifted mesh
     auto vertices_3d = points_lifted(ids, points2d);
     auto* m3 = polyscope::registerSurfaceMesh(name_lifted, vertices_3d, faces);
     add_global_id_quantity(m3, ids);
     m3->setSurfaceColor(lightBlue);
+
+    //m3->setTransparency(0.5); 
+}
+
+// 
+void register_regular_triangulation_as_mesh(const df::Tri2Regular& tri,
+                         const std::vector<df::P2_weighted>& points2d_weighted,
+                         const std::string& name_planar,
+                         const std::string& name_lifted) {
+    auto ids      = viz::present_ids_regular(tri);
+    auto to_local = viz::make_local_index(ids);
+
+    auto vertices_2d = points_planar_regular(ids, points2d_weighted);
+    auto faces       = faces_from_triangles_regular(tri, to_local);
+
+
+    // dark blue
+    glm::vec3 darkBlue(0.0f, 0.0f, 0.5f);  
+
+    // planar mesh
+    auto* m2 = polyscope::registerSurfaceMesh(name_planar, vertices_2d, faces);
+    //add_global_id_quantity(m2, ids);
+    // do not show 2D mesh by default
+    m2->setEnabled(false); 
+    m2->setSurfaceColor(darkBlue);
+   
+
+    // lifted mesh
+    auto vertices_3d = points_lifted_regular(ids, points2d_weighted);
+    auto* m3 = polyscope::registerSurfaceMesh(name_lifted, vertices_3d, faces);
+    //add_global_id_quantity(m3, ids);
+    m3->setSurfaceColor(darkBlue);
 
     //m3->setTransparency(0.5); 
 }
@@ -300,7 +394,7 @@ void debug_tet_ui() {
 
 
 // --------------------------------
-// replay visualization (needs fixing)
+// replay visualization 
 // --------------------------------
 
 // update visualization of replay mesh
@@ -321,7 +415,7 @@ void show_or_update_replay(const df::InputData& D) {
         polyscope::getSurfaceMesh("replay lifted")->remove();
     }
 
-    // i need neon green for replay meshes
+    //neon green for replay meshes
     glm::vec3 neon_green(0.0f, 1.0f, 0.0f);
     
 
@@ -335,6 +429,147 @@ void show_or_update_replay(const df::InputData& D) {
     m3->setSurfaceColor(neon_green);
     m3->setTransparency(0.5f);
 }
+
+// --------------------------------
+// decompostion 
+// Build/update ONE mesh containing the first `prefix_steps` tets
+// from D.step_history. This does NOT touch debug tets.
+void update_flip_decomposition_mesh(const df::InputData& D, int prefix_steps)
+{
+    const auto& steps = D.step_history;
+    int n = static_cast<int>(steps.size());
+
+    if (prefix_steps < 0) prefix_steps = 0;
+    if (prefix_steps > n) prefix_steps = n;
+
+    if (prefix_steps == 0) {
+        // no tets -> remove mesh if it exists
+        if (polyscope::hasSurfaceMesh("flip decomposition")) {
+            polyscope::getSurfaceMesh("flip decomposition")->remove();
+        }
+        g_decomp_mesh = nullptr;
+        return;
+    }
+
+    std::vector<vec3> V;
+    std::vector<std::array<size_t,3>> F;
+    std::vector<df::vertex_id> vids;   // one global id per vertex
+
+    V.reserve(4 * prefix_steps);
+    F.reserve(4 * prefix_steps);
+    vids.reserve(4 * prefix_steps);
+
+
+    // canonical tet faces
+    const std::array<std::array<size_t,3>,4> tetFaces = {{
+        {0,1,2},
+        {0,3,1},
+        {1,3,2},
+        {0,2,3}
+    }};
+
+    for (int s = 0; s < prefix_steps; ++s) {
+        const df::StepRecord& step = steps[s];
+
+        df::vertex_id ids[4] = { step.a, step.b, step.c, step.d };
+        vec3 pos[4];
+
+        for (int i = 0; i < 4; ++i) {
+            const df::P2& p2 = D.points2d[ids[i]];
+            pos[i] = lift_paraboloid(p2);
+        }
+
+        size_t base = V.size();
+        V.push_back(pos[0]);
+        V.push_back(pos[1]);
+        V.push_back(pos[2]);
+        V.push_back(pos[3]);
+
+        // record global ids per vertex, in the same order
+        vids.push_back(ids[0]);
+        vids.push_back(ids[1]);
+        vids.push_back(ids[2]);
+        vids.push_back(ids[3]);
+
+        for (auto f : tetFaces) {
+            F.push_back({ base + f[0], base + f[1], base + f[2] });
+        }
+    }
+
+
+    if (!g_decomp_mesh) {
+        g_decomp_mesh =
+            polyscope::registerSurfaceMesh("flip decomposition", V, F);
+        add_global_id_quantity(g_decomp_mesh, vids);  // <<< attach ids
+
+        glm::vec3 cyan(0.0f, 0.8f, 0.9f);
+        g_decomp_mesh->setSurfaceColor(cyan);
+        g_decomp_mesh->setTransparency(0.4f);
+    } else {
+        // remove old mesh and re-register with new geometry
+        g_decomp_mesh->remove();
+        g_decomp_mesh =
+            polyscope::registerSurfaceMesh("flip decomposition", V, F);
+        add_global_id_quantity(g_decomp_mesh, vids);  // <<< attach ids again
+
+        glm::vec3 cyan(0.0f, 0.8f, 0.9f);
+        g_decomp_mesh->setSurfaceColor(cyan);
+        g_decomp_mesh->setTransparency(0.4f);
+    }
+
+}
+
+void init_flip_decomposition(df::InputData& D)
+{
+    g_decomp_data  = &D;
+    g_decomp_prefix = 0;
+    viz::update_flip_decomposition_mesh(D, g_decomp_prefix);
+}
+
+void flip_decomposition_ui()
+{
+    if (!g_decomp_data) {
+        ImGui::Text("decomposition not initialized.");
+        return;
+    }
+
+    const auto& steps = g_decomp_data->step_history;
+    int n = static_cast<int>(steps.size());
+
+    if (n == 0) {
+        ImGui::Text("no steps recorded");
+    } else if (g_decomp_prefix == 0) {
+        ImGui::Text("initial state (no tetrahedra yet)");
+    } else {
+        // last included tet is at index g_decomp_prefix - 1
+        const df::StepRecord& step = steps[g_decomp_prefix - 1];
+
+        const char* kindStr =
+            (step.kind == df::StepKind::EdgeFlip) ? "2-2 flip" : "1-3 flip";
+
+        ImGui::Text("flip decomposition (cyan) step: %d / %d",
+                    g_decomp_prefix, n);
+        ImGui::Text("kind: %s", kindStr);
+        ImGui::Text("vertices: (%zu, %zu, %zu, %zu)",
+                    step.a, step.b, step.c, step.d);
+    }
+
+    ImGui::Separator();
+
+    // prev: shrink prefix (remove last tet)
+    if (ImGui::Button("prev") && g_decomp_prefix > 0) {
+        --g_decomp_prefix;
+        viz::update_flip_decomposition_mesh(*g_decomp_data, g_decomp_prefix);
+    }
+    ImGui::SameLine();
+
+    // next: grow prefix (add next tet)
+    if (ImGui::Button("next") && g_decomp_prefix < n) {
+        ++g_decomp_prefix;
+        viz::update_flip_decomposition_mesh(*g_decomp_data, g_decomp_prefix);
+    }
+}
+
 
 
 

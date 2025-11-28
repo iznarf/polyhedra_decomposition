@@ -2,7 +2,6 @@
 #include <CGAL/Convex_hull_traits_adapter_2.h> // for convex hull with property map
 #include <CGAL/property_map.h> // for make_property_map
 #include <CGAL/enum.h>
-#include <CGAL/Delaunay_triangulation_2.h>
 #include <CGAL/Object.h>
 
 #include <algorithm>
@@ -16,8 +15,12 @@
 #include <CGAL/Segment_3.h>
 
 
-
 namespace df {
+
+// fix: put it in geometry helper
+static inline P3 lift(const P2& p) {
+    return P3(p.x(), p.y(), p.x() * p.x() + p.y() * p.y());
+}
 
 
 // check if the point p_new is collinear with any pair of points in pts
@@ -66,6 +69,34 @@ static std::vector<P2> sample_points_in_disk(int n, double R, std::mt19937& rng)
 
 
 
+// return true iff all lifted points are vertices of their convex hull
+// ensure that all points are in convex position in 3D
+bool vertices_in_convex_position(const InputData& D)
+{
+    const std::size_t n = D.points2d.size();
+    if (n == 0) return true;
+    if (n <= 3) return true; // any less or equal than 3 points in 3D are trivially in convex position
+
+    // 1) lift all points to paraboloid 
+    std::vector<P3> lifted;
+    lifted.reserve(n);
+    for (const P2& p : D.points2d) {
+        lifted.push_back(lift(p));
+    }
+
+    // 2) compute convex hull in 3D
+    Polyhedron_3 hull;
+    CGAL::convex_hull_3(lifted.begin(), lifted.end(), hull);
+
+    // 3) convex hull vertices are a subset of the input points
+    // if every input point is extreme, these two cardinalities are the same 
+    const std::size_t n_hull_vertices = hull.size_of_vertices();
+
+    return n_hull_vertices == n;
+}
+
+
+
 // create random input: points, hull triangulation, full triangulation
 // n_points: number of vertices 
 // seed: starting value for the random number generator -> if seed stays the same, we can get the same random points
@@ -79,10 +110,28 @@ InputData make_random_input(int n_points, unsigned seed) {
     // 1) random points with interior points
     D.points2d = sample_points_in_disk(n_points, /*R=*/1.0, rng);
 
+    //print 2d points list
+    std::cout << "Generated " << n_points << " random 2D points:\n";
+    for (std::size_t i = 0; i < D.points2d.size(); ++i) {
+        const P2& p = D.points2d[i];
+        std::cout << " " << p.x() << " " << p.y() << "\n";
+    }
 
     // 2) make an global index array [0,...,n-1]
     std::vector<std::size_t> global_indices(D.points2d.size());
     std::iota(global_indices.begin(), global_indices.end(), 0);
+
+    // build weighted points for regular triangulation
+    D.points2d_weighted.clear();
+    for (std::size_t i = 0; i < D.points2d.size(); ++i) {
+        const P2& p = D.points2d[i];
+        // weight = - (x^2 + y^2)
+        double weight = -(p.x() * p.x() + p.y() * p.y());
+        P2_weighted wp(p, weight);
+        auto vh = D.tri_regular.insert(wp);
+        vh->info() = i; // set global index as info
+        D.points2d_weighted.push_back(wp); 
+    }
 
     // 3) build convex hull: We use the property map to then give CGAL just the global indices for the convex hull
     // since we have the property map, CGAL can then build the convex hull based on the indices
@@ -132,29 +181,21 @@ InputData make_random_input(int n_points, unsigned seed) {
     using vertex_handle = Tri2::Vertex_handle;
     
     // indices of all points for shuffling
-    // we shuffle the order of insertion to generate random triangulations
     std::vector<std::size_t> indices(D.points2d.size());
     std::iota(indices.begin(), indices.end(), 0);
 
-    // shuffle the indices (not the points)
-    std::shuffle(indices.begin(), indices.end(), rng);
-
-    // now insert (point, id) pairs using the shuffled order
-    std::vector<std::pair<P2, std::size_t>> shuffled_pairs;
-    shuffled_pairs.reserve(D.points2d.size());
+    // 8) build full triangulation with all points
+    std::vector<std::pair<P2, std::size_t>> lower_pairs;
+    lower_pairs.reserve(D.points2d.size());
     for (auto id : indices)
-        shuffled_pairs.emplace_back(D.points2d[id], id);
+        lower_pairs.emplace_back(D.points2d[id], id);
 
     D.tri_lower.clear();
-    D.tri_lower.insert(shuffled_pairs.begin(), shuffled_pairs.end());
+    D.tri_lower.insert(lower_pairs.begin(), lower_pairs.end());
+
+    
 
     return D;
-}
-
-
-// fix: put it in geometry helper
-static inline P3 lift(const P2& p) {
-    return P3(p.x(), p.y(), p.x() * p.x() + p.y() * p.y());
 }
 
 bool is_hull_edge(const InputData& D, vertex_id u, vertex_id v)
@@ -204,7 +245,7 @@ bool lifted_triangulations_intersect(const InputData& D)
             const P3 a3l = lift(D.points2d[al]);
             const P3 b3l = lift(D.points2d[bl]);
             const P3 c3l = lift(D.points2d[cl]);
-            Triangle3 trianle_lower(a3l, b3l, c3l);
+            Triangle3 triangle_lower(a3l, b3l, c3l);
 
             std::array<df::vertex_id,3> low_ids = { al, bl, cl };
            
@@ -220,8 +261,9 @@ bool lifted_triangulations_intersect(const InputData& D)
                 }
             }
 
+
             // we still have to check the CGAL intersection type
-            auto intersection_object = CGAL::intersection(triangle_upper, trianle_lower);
+            auto intersection_object = CGAL::intersection(triangle_upper, triangle_lower);
             if (!intersection_object) {
                 continue; // no intersection
             }
@@ -277,10 +319,8 @@ bool lifted_triangulations_intersect(const InputData& D)
                     }
                 }
                 if (const Triangle3* t = std::get_if<Triangle3>(&*intersection_object)) {
-                    if(common != 3){
-                        std::cout << "[intersect] lifted triangles share an intersection face\n";
-                        return true; // allowed if they are the same triangle
-                    }
+                    std::cout << "[intersect] lifted triangles share an intersection face\n";
+                    return true; // not allowed, upper and lower can not intersect in whole triangles 
                 }
                 // we have to check if intersection object is a vector of points (coplanar triangles)
                 if (const std::vector<CGAL::Point_3<K>>* pts = std::get_if<std::vector<CGAL::Point_3<K>>>(&*intersection_object)) {
@@ -299,6 +339,12 @@ InputData make_random_valid_input(int n_points, unsigned seed_start)
 
     while (true) {
         InputData D = make_random_input(n_points, seed);
+
+        if (!df::vertices_in_convex_position(D)) {
+        std::cout << "[check] vertices are NOT in convex position\n";
+        } else {
+            std::cout << "[check] vertices ARE in convex position\n";
+        }
 
         if (!lifted_triangulations_intersect(D)) {
             std::cout << "[input] using seed " << seed

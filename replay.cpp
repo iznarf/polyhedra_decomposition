@@ -165,34 +165,32 @@ void replay_ui() {
         return;
     }
 
-    // info about current step 
     int n = (int) g_replay_data->step_history.size();
-    if (n > 0 && g_step_idx >= 0 && g_step_idx < n) {
 
-        const StepRecord& step = g_replay_data->step_history[g_step_idx];
+    if (n == 0) {
+        ImGui::Text("no steps recorded");
+    } else if (g_step_idx == 0) {
+        ImGui::Text("initial state (no flips yet)");
+    } else {
+        // last applied step is index g_step_idx - 1
+        const StepRecord& step = g_replay_data->step_history[g_step_idx - 1];
 
         const char* kindStr =
-            (step.kind == StepKind::EdgeFlip)
-                ? "2-2 flip"
-                : "1-3 flip";
+            (step.kind == StepKind::EdgeFlip) ? "2-2 flip" : "1-3 flip";
 
-        ImGui::Text("replay (green) step: %d / %d", g_step_idx, n - 1);
+        ImGui::Text("replay (green) step: %d / %d", g_step_idx, n);
         ImGui::Text("kind: %s", kindStr);
         ImGui::Text("vertices: (%zu, %zu, %zu, %zu)",
                     step.a, step.b, step.c, step.d);
     }
-    else {
-        ImGui::Text("initial state (before first step).");
-    }
 
     ImGui::Separator();
 
-    
     if (ImGui::Button("prev") && g_step_idx > 0) {
         rebuild_to_step(g_step_idx - 1);
     }
     ImGui::SameLine();
-    if (ImGui::Button("next") && g_step_idx + 1 < n) {
+    if (ImGui::Button("next") && g_step_idx < n) {   // allow going up to n
         rebuild_to_step(g_step_idx + 1);
     }
 }

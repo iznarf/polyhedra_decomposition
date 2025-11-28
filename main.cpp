@@ -31,6 +31,7 @@ int main() {
 
     df::InputData in = df::make_random_valid_input(n_points, seed0);
 
+
     // current setup: we do not sort the to be inserted vertices by height 
     // we do a conforming insertion check 
 
@@ -40,10 +41,14 @@ int main() {
     //df::InputData in = df::make_random_input(35, 218);
     //df::InputData in = df::make_random_input(40, 40);
     //df::InputData in = df::make_random_input(50, 40);
+    //df::InputData in = df::make_random_input(15,43);
 
 
-    // these are valid inputs where the algorithm with complicated conforming insertion check stucks BUT works if we do simple conforming check only:
+    // these are valid inputs where the algorithm with complicated conforming insertion check gets stuck BUT works if we do simple conforming check only:
     //df::InputData in = df::make_random_input(21, 44); 
+
+    // valid input where algorithm does not terminate: 
+    //df::InputData in = df::make_random_input(55,42);
 
     // -> the order of vertex insertions matters for the algorithm to succeed
     // -> sorting vertices by descending height is not correct 
@@ -51,6 +56,7 @@ int main() {
 
     viz::register_triangulation_as_mesh(in.tri_lower, in.points2d, "lower 2D", "lower lifted");
     viz::register_triangulation_as_mesh(in.tri_upper, in.points2d, "upper 2D", "upper lifted");
+    viz::register_regular_triangulation_as_mesh(in.tri_regular, in.points2d_weighted, "regular 2D", "regular lifted");
 
     viz::show_or_update_current(in);
 
@@ -81,9 +87,13 @@ int main() {
         std::vector<df::vertex_id> insertion_vertex_list = missing; // unsorted version
 
 
+        
         df::vertex_id insertion_vertex = 0; // will only be used if we find a conforming one
+
+        
         bool found_conforming = false;
 
+        
         // try candidates in order until one is BOTH a downflip and conforming
         for (auto id : insertion_vertex_list) {
 
@@ -106,13 +116,29 @@ int main() {
             }
         }
 
-        // if no conforming insertion exists → polyhedron is non-decomposable
+        // if no conforming insertion exists -> polyhedron is non-decomposable
         if (!found_conforming) {
             std::cout << "\n[main] ERROR: all candidate vertex insertions are non-conforming.\n"
                     << "[main] The polyhedron appears to be non-decomposable.\n";
-            break;  // break out of the main while(true) loop
+                    break;  // break out of the main while(true) loop
         }
+        
+        
 
+        
+        /*
+        // check every missing vertex for downflip, we do not check if insertion is conforming since they do not mention that in the paper
+        // pick the first one we find
+        for (auto id : insertion_vertex_list) {
+            if(df::is_insertion_downflip(id,in)){
+                insertion_vertex = id;
+                break;
+            }
+        }
+        
+        */
+
+        // apply the insertion
         std::cout << "Inserting vertex (global id) " << insertion_vertex << "\n";
         df::apply_vertex_insertion(insertion_vertex, in);
 
@@ -138,7 +164,10 @@ int main() {
 
     // visualize debug tetrahedra
     viz::load_debug_tetrahedra(in, debug_tets);
-    
+
+    // visualize flip decomposition
+    viz::init_flip_decomposition(in);
+
 
     // initialize replay data
     df::init_replay(in);

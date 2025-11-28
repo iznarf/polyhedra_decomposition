@@ -27,7 +27,16 @@ CGAL::Orientation oriented_height_sign(
 }
 
 
+inline P3 lift(const P2& p) {
+    return P3(p.x(), p.y(), p.x()*p.x() + p.y()*p.y());
+}
+
+inline P3 lift_regular(const P2_weighted& p) {
+    return P3(p.x(), p.y(), p.x()*p.x() + p.y()*p.y());
+}
 
 
-} // namespace df
+}
+
+
 

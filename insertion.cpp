@@ -154,8 +154,14 @@ namespace df {
         CGAL::Orientation s =
             oriented_height_sign(a2, b2, c2, a3, b3, c3, d3);
 
-        // In your flip test: NEGATIVE = d' is below the face -> allowed
-        return (s == CGAL::NEGATIVE);
+        // NEGATIVE = d' is below the face -> allowed
+        // COPLANAR = on the face -> allowed? -> tetrahedron with zero volume. in the paper they do not say anything about this case
+        if (s == CGAL::COPLANAR || s ==CGAL::NEGATIVE) {
+            return true;
+        }
+        else {
+            return false;
+        }
     }
 
 

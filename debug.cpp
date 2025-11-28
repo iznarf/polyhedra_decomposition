@@ -282,17 +282,29 @@ collect_debug_tetrahedra(const InputData& D)
         vertex_id ia = e[0];
         vertex_id ib = e[1];
 
+        // we should only collect downflippable edges that are not in the target triangulation 
+        // right now we collect all non regular edges 
+
+        bool in_target = df::reg::edge_in_target(ia, ib, D);
+       
+
         std::array<vertex_id,4> quad_ids;
         if (!compute_quad_for_edge(current, ia, ib, quad_ids)) {
             // if we can't build the quad, just skip this one
             continue;
         }
 
-        DebugTetrahedron tet;
-        tet.verts = quad_ids;
-        tet.kind  = DebugTetKind::EdgeFlip;
-        result.push_back(tet);
-    }
+        if(in_target == true){
+            // edge is already in target triangulation, skip it
+            continue;
+        }
+
+            DebugTetrahedron tet;
+            tet.verts = quad_ids;
+            tet.kind  = DebugTetKind::EdgeFlip;
+            result.push_back(tet);
+        }
+    
 
     // collect missing vertices for insertion tetrahedra 
     auto missing = df::find_missing_vertices(current, target);

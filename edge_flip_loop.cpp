@@ -23,25 +23,20 @@ void perform_all_conforming_down_flips(df::InputData& in) {
         std::vector<std::pair<df::vertex_id, df::vertex_id>> flippable_edges;
         flippable_edges.reserve(down_flip_edges.size());
 
-        std::cout << "\n=== Flip iteration " << iteration
-                  << " : locally non-regular (down-flippable) edges ===\n";
-        std::cout << "count: " << down_flip_edges.size() << "\n";
-
 
         // iterate over all down-flippable edges
         for (size_t k = 0; k < down_flip_edges.size(); ++k) {
             const auto [ia, ib] = down_flip_edges[k];
 
-
             // compute flags
             bool in_target = df::reg::edge_in_target(ia, ib, in);
-            bool conf      = df::reg::is_flip_conforming(ia, ib, in);
+            bool conf      = false; 
 
-            // right now also edges which are already in target are checked for conformity, this is unnecessary    
-            // in_target is false and conf is true -> we can flip this edge
-            if (!in_target) {
-                if (conf) {
-                flippable_edges.push_back({ia, ib});
+            if (in_target == false) {
+                conf = df::reg::is_flip_conforming(ia, ib, in);
+                if (conf == true) {
+                    flippable_edges.push_back({ia, ib});
+
                 }
             }
 
@@ -52,6 +47,14 @@ void perform_all_conforming_down_flips(df::InputData& in) {
             std::cout << "\nNo conforming flippable edges left in this phase.\n";
             break;
         }
+
+        // print flippable edges
+        std::cout << "\nConforming flippable edges (global ids): ";
+        for (const auto& [ia, ib] : flippable_edges) {
+            std::cout << "(" << ia << "," << ib << ") ";
+        }
+        std::cout << "\n";
+
 
         // apply an edge flip to the first element in the list of flippable edges
         std::cout << "\n=== Applying conforming flip (iteration " << iteration << ") ===\n";

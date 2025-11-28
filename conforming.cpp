@@ -96,9 +96,8 @@ bool is_flip_conforming(df::vertex_id ia, df::vertex_id ib, const df::InputData&
 
 
         // if (c,d) is already in lower triangulation the flip is conforming
-        // maybe we have to leave this out? 
         if (((iu == ic) && (iv == id)) || ((iu == id) && (iv == ic))) {
-            std::cout << "[conform] (c,d)=(" << ic << "," << id << ") is already in lower -> flip is conforming \n";
+            std::cout << "[conform] (c,d)=(" << ic << "," << id << ") is already in lower -> flip of edge (" << ia << "," << ib << ") is conforming \n";
             return true;
         }
 
@@ -121,11 +120,20 @@ bool is_flip_conforming(df::vertex_id ia, df::vertex_id ib, const df::InputData&
             P3 v3 = lift(v2);
 
             // check if edges intersect in 3D
-            // if they intersect in 3D the flip is non-conforming 
+            // if they intersect in 3D we have to check if the segments lie in one plane
+            // if yes, the flip is conforming since this is only boundary contact which is allowed 
+            // if not, the flip is non-conforming
             if (CGAL::do_intersect(Seg3(c3, d3), Seg3(u3, v3))) {
-                //std::cout << "[conform] BLOCK: segments intersect in 3D with lower (u,v)=(" << iu << "," << iv
-                //          << ")\n";
-                return false;
+                if (CGAL::orientation(c3, d3, u3, v3) == CGAL::COPLANAR) {
+                    // segments intersect in 3D but are coplanar -> allowed
+                    std::cout << "[conform] PASS: segments intersect in 3D but are coplanar with lower (u,v)=(" << iu << "," << iv
+                              << ")\n";
+                    continue;
+                }
+                else {
+                    // segments intersect in 3D and are not coplanar -> non-conforming
+                    return false;
+                }
             }
 
             // (u,v) intersects in 2D but not in 3D -> check height orientation
@@ -142,14 +150,15 @@ bool is_flip_conforming(df::vertex_id ia, df::vertex_id ib, const df::InputData&
             const auto o = CGAL::orientation(c3, d3, u3, v3);
             // CGAL::orientation is positive if v3 is in normal direction of plane (c3,d3,u3)
             // it is negative if v3 is not in normal direction
-            // (c,d) not below (u,v) -> pass this lower edge; v3 lies in normal direction
+            // block -> (c,d) below (u,v); v3 lies in opposite direction of normal
             if (o == CGAL::POSITIVE) {
                 std::cout << "[conform] BLOCK: (c,d)=(" << ic << "," << id << ") "
                         << "below lower (u,v)=(" << iu << "," << iv << ")\n";
                 return false;
             }
-            // block -> (c,d) below (u,v); v3 lies in opposite direction of normal
-            if (o == CGAL::NEGATIVE) {
+            
+            // // (c,d) not below (u,v) -> pass this lower edge; v3 lies in normal direction
+            if (o == CGAL::NEGATIVE || o == CGAL::COPLANAR) {
                 std::cout << "[conform] PASS: (c,d)=(" << ic << "," << id << ") "
                         << "above lower (u,v)=(" << iu << "," << iv << ")\n";
                 continue;
