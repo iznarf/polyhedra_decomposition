@@ -105,8 +105,6 @@ InputData make_random_input(int n_points, unsigned seed) {
     std::mt19937 rng(seed); 
 
     InputData D;
-    // clear flip history from earlier runs
-    D.flip_history.clear(); 
     // 1) random points with interior points
     D.points2d = sample_points_in_disk(n_points, /*R=*/1.0, rng);
 
@@ -172,11 +170,17 @@ InputData make_random_input(int n_points, unsigned seed) {
     // 7) insert into triangulation; each vertex’s info() becomes the global index
     D.tri_upper.clear();
     D.tri_upper.insert(hull_pairs.begin(), hull_pairs.end());
+
+    D.tri_current.clear();
     D.tri_current.insert(hull_pairs.begin(), hull_pairs.end());
 
     // we need this for applying then all recorded flips
     D.tri_replay.clear();
     D.tri_replay.insert(hull_pairs.begin(), hull_pairs.end());
+
+    // we need this for building the poset
+    D.tri_poset.clear();
+    D.tri_poset.insert(hull_pairs.begin(), hull_pairs.end());
 
     using vertex_handle = Tri2::Vertex_handle;
     
@@ -193,11 +197,10 @@ InputData make_random_input(int n_points, unsigned seed) {
     D.tri_lower.clear();
     D.tri_lower.insert(lower_pairs.begin(), lower_pairs.end());
 
-    
-
     return D;
 }
 
+// checks if an edge is part of the convex hull in 2D
 bool is_hull_edge(const InputData& D, vertex_id u, vertex_id v)
 {
     if (u > v) std::swap(u, v);
@@ -211,6 +214,7 @@ bool is_hull_edge(const InputData& D, vertex_id u, vertex_id v)
 
 // checks if the lifted surfaces of lower and upper triangulations intersect
 // returns true if they do intersect since this is invalid input for the algorithm
+// general fix here: we have to avoid the exact intersection cases, we want to check as much as possible using geometry predicates
 bool lifted_triangulations_intersect(const InputData& D)
 {
     const Tri2& upper = D.tri_upper;
@@ -320,7 +324,8 @@ bool lifted_triangulations_intersect(const InputData& D)
                 }
                 if (const Triangle3* t = std::get_if<Triangle3>(&*intersection_object)) {
                     std::cout << "[intersect] lifted triangles share an intersection face\n";
-                    return true; // not allowed, upper and lower can not intersect in whole triangles 
+
+                    continue;
                 }
                 // we have to check if intersection object is a vector of points (coplanar triangles)
                 if (const std::vector<CGAL::Point_3<K>>* pts = std::get_if<std::vector<CGAL::Point_3<K>>>(&*intersection_object)) {

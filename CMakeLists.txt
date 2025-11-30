@@ -36,6 +36,7 @@ add_executable(main
     geometry_utils.cpp
     replay.cpp
     ui_callbacks.cpp
+    poset.cpp
 )
 
 target_include_directories(main PRIVATE ${portable-file-dialogs_SOURCE_DIR})

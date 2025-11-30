@@ -28,7 +28,8 @@ static inline P3 lift(const P2& p) {
 
 bool is_flip_conforming(df::vertex_id ia, df::vertex_id ib, const df::InputData& D)
 {
-    
+    // print which edge we are checking
+    std::cout << "[conform] checking flip of edge (" << ia << "," << ib << ")\n";
     // find the edge with global indices (ia, ib) in the current triangulation by vertex ids 
     Tri::Face_handle fh;
     int i = -1;
@@ -151,14 +152,15 @@ bool is_flip_conforming(df::vertex_id ia, df::vertex_id ib, const df::InputData&
             // CGAL::orientation is positive if v3 is in normal direction of plane (c3,d3,u3)
             // it is negative if v3 is not in normal direction
             // block -> (c,d) below (u,v); v3 lies in opposite direction of normal
-            if (o == CGAL::POSITIVE) {
+            if (o == CGAL::NEGATIVE) {
                 std::cout << "[conform] BLOCK: (c,d)=(" << ic << "," << id << ") "
                         << "below lower (u,v)=(" << iu << "," << iv << ")\n";
                 return false;
             }
             
-            // // (c,d) not below (u,v) -> pass this lower edge; v3 lies in normal direction
-            if (o == CGAL::NEGATIVE || o == CGAL::COPLANAR) {
+            //(c,d) not below (u,v) -> pass this lower edge; v3 lies in normal direction
+            // coplanar case is not allowed i think..
+            if (o == CGAL::POSITIVE || o == CGAL::COPLANAR) {
                 std::cout << "[conform] PASS: (c,d)=(" << ic << "," << id << ") "
                         << "above lower (u,v)=(" << iu << "," << iv << ")\n";
                 continue;

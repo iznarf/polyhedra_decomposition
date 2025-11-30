@@ -48,23 +48,14 @@ namespace df {
     enum class StepKind { EdgeFlip, VertexInsertion };
 
     struct StepRecord {
-    StepKind kind;
+        StepKind kind;
 
-    // For both flip + insertion, we can store 4 ids:
-    // Edge flip: (a,b) edge, (c,d) opposite vertices before flip
-    // Insertion: (a,b,c) is the face containing d, and d is the new vertex
-    vertex_id a, b, c, d;
+        // For both flip + insertion, we can store 4 ids:
+        // Edge flip: (a,b) edge, (c,d) opposite vertices before flip
+        // Insertion: (a,b,c) is the face containing d, and d is the new vertex
+        vertex_id a, b, c, d;
     };
 
-
-    struct FlipRecord {
-        vertex_id a, b;  // edge BEFORE flip  (a,b)
-        vertex_id c, d;  // edge AFTER  flip (c,d)
-
-        FlipRecord() = default;
-        FlipRecord(vertex_id aa, vertex_id bb, vertex_id cc, vertex_id dd)
-            : a(aa), b(bb), c(cc), d(dd) {}
-    };
 
     struct InputData {
         std::vector<P2> points2d;   // all random points of planar point set A
@@ -73,11 +64,10 @@ namespace df {
         Tri2            tri_lower;  // target: triangulation using all points 
         Tri2           tri_current;  // triangulation of the current state in the algorithm
         Tri2          tri_replay;  // triangulation for applying the recorded flips
+        Tri2            tri_poset;  // triangulation for poset computation
         Tri2Regular tri_regular; // regular triangulation of point set A
 
-
-        std::vector<df::FlipRecord> flip_history; // edge flip history 
-        std::vector<std::pair<vertex_id, vertex_id>> hull_edges;
+        std::vector<std::pair<vertex_id, vertex_id>> hull_edges; // this is just for checking if input is valid
         std::vector<StepRecord> step_history;  // sequence of all flips: edge flips and insertions
     };
 

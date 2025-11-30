@@ -19,6 +19,7 @@
 #include "geometry_utils.h"
 #include "replay.h"
 #include "ui_callbacks.h"
+#include "poset.h"
 
 
 int main() {
@@ -36,19 +37,20 @@ int main() {
     // we do a conforming insertion check 
 
     // these are valid inputs where the algorithm works:
-    //df::InputData in = daf::make_random_input(37, 4458);
+    //df::InputData in = df::make_random_input(21, 44); 
     //df::InputData in = df::make_random_input(19, 42);
+    //df::InputData in = df::make_random_input(15,43);
+    //df::InputData in = df::make_random_input(18, 23);
+    //df::InputData in = df::make_random_input(15, 23);
+
+
+    // these are valid inputs where the algorithm fails:
+    //df::InputData in = daf::make_random_input(37, 4458);
     //df::InputData in = df::make_random_input(35, 218);
     //df::InputData in = df::make_random_input(40, 40);
     //df::InputData in = df::make_random_input(50, 40);
-    //df::InputData in = df::make_random_input(15,43);
-
-
-    // these are valid inputs where the algorithm with complicated conforming insertion check gets stuck BUT works if we do simple conforming check only:
-    //df::InputData in = df::make_random_input(21, 44); 
-
-    // valid input where algorithm does not terminate: 
     //df::InputData in = df::make_random_input(55,42);
+
 
     // -> the order of vertex insertions matters for the algorithm to succeed
     // -> sorting vertices by descending height is not correct 
@@ -80,17 +82,9 @@ int main() {
         for (auto id : missing) std::cout << id << " ";
         std::cout << "\n";
 
-        // pick candidates sorted by height (highest first)
-        //std::vector<df::vertex_id> insertion_vertex_list =
-        //df::sorted_insertion_vertices(missing, in);  // global ids sorted by height
 
         std::vector<df::vertex_id> insertion_vertex_list = missing; // unsorted version
-
-
-        
         df::vertex_id insertion_vertex = 0; // will only be used if we find a conforming one
-
-        
         bool found_conforming = false;
 
         
@@ -104,7 +98,6 @@ int main() {
                 continue;
             }
 
-        
             // 2) check global conformance w.r.t. lower triangulation
             if (df::reg::is_insertion_conforming(id, in)) {
                 insertion_vertex = id;
@@ -124,20 +117,6 @@ int main() {
         }
         
         
-
-        
-        /*
-        // check every missing vertex for downflip, we do not check if insertion is conforming since they do not mention that in the paper
-        // pick the first one we find
-        for (auto id : insertion_vertex_list) {
-            if(df::is_insertion_downflip(id,in)){
-                insertion_vertex = id;
-                break;
-            }
-        }
-        
-        */
-
         // apply the insertion
         std::cout << "Inserting vertex (global id) " << insertion_vertex << "\n";
         df::apply_vertex_insertion(insertion_vertex, in);
@@ -159,6 +138,9 @@ int main() {
 
 
     df::print_step_history(in);
+
+    // build poset from upper to lower triangulation
+    //pst::build_poset(in);
 
     std::vector<df::DebugTetrahedron> debug_tets = df::collect_debug_tetrahedra(in);
 

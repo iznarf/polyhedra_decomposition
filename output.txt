@@ -70,6 +70,38 @@ Step 26: VertexInsertion  (face=(4,19,16), new=1)
 // flip 5,4 -> 12, 18 
 
 
+===============================================================================
+[main] SUCCESS: current triangulation matches lower triangulation!
+
+==== Step history (27 steps) ====
+Step 0: EdgeFlip  (a=20, b=12, c=5, d=10)
+Step 1: EdgeFlip  (a=10, b=20, c=7, d=5)
+Step 2: EdgeFlip  (a=5, b=10, c=12, d=7)
+Step 3: EdgeFlip  (a=20, b=7, c=5, d=14)
+Step 4: VertexInsertion  (face=(12,7,5), new=4)
+Step 5: EdgeFlip  (a=12, b=7, c=10, d=4)
+Step 6: EdgeFlip  (a=7, b=5, c=14, d=4)
+Step 7: EdgeFlip  (a=5, b=14, c=4, d=20)
+Step 8: VertexInsertion  (face=(10,7,4), new=9)
+Step 9: VertexInsertion  (face=(4,14,20), new=13)
+Step 10: EdgeFlip  (a=4, b=14, c=7, d=13)
+Step 11: EdgeFlip  (a=20, b=4, c=5, d=13)
+Step 12: VertexInsertion  (face=(4,13,5), new=8)
+Step 13: EdgeFlip  (a=4, b=13, c=7, d=8)
+Step 14: VertexInsertion  (face=(4,7,8), new=2)
+Step 15: EdgeFlip  (a=8, b=4, c=5, d=2)
+Step 16: VertexInsertion  (face=(4,2,5), new=3)
+Step 17: VertexInsertion  (face=(4,2,3), new=0)
+Step 18: VertexInsertion  (face=(3,2,5), new=1)
+Step 19: EdgeFlip  (a=3, b=2, c=0, d=1)
+Step 20: VertexInsertion  (face=(5,2,8), new=6)
+Step 21: VertexInsertion  (face=(4,7,2), new=11)
+Step 22: VertexInsertion  (face=(8,7,13), new=15)
+Step 23: VertexInsertion  (face=(3,0,1), new=16)
+Step 24: VertexInsertion  (face=(4,11,2), new=17)
+Step 25: VertexInsertion  (face=(3,1,5), new=18)
+Step 26: VertexInsertion  (face=(8,13,5), new=19)
+========================================
 
 
 
@@ -90,6 +122,28 @@ Step 26: VertexInsertion  (face=(4,19,16), new=1)
 
 
 
+
+-0.162481 0.0733119
+ -0.298173 -0.30905
+ -0.145629 0.485551
+ -0.226555 -0.480867
+ 0.395333 -0.227664
+ -0.605497 -0.657265
+ -0.409325 -0.0851248
+ 0.377046 0.76915
+ -0.578498 0.421186
+ 0.665912 0.17538
+ 0.892991 0.0607949
+ 0.343988 0.419758
+ 0.545458 -0.70885
+ -0.693843 0.597978
+ -0.615707 0.727424
+ 0.0932439 0.689382
+ -0.253315 -0.389738
+ 0.301544 -0.034362
+ -0.269305 -0.44151
+ -0.637237 -0.0462549
+ -0.77225 0.616529
 
 
 

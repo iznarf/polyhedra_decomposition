@@ -10,8 +10,7 @@
 namespace df {
 
    
-                                           
-
+                                    
     // small helper just for this file
     static inline P3 lift_paraboloid(const P2& p) {
         return P3(p.x(), p.y(), p.x()*p.x() + p.y()*p.y());
@@ -163,10 +162,5 @@ namespace df {
             return false;
         }
     }
-
-
-
-
-
 
 } // namespace df

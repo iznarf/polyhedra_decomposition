@@ -62,7 +62,7 @@ void apply_edge_flip(df::vertex_id ia,
     df::vertex_id id = vd->info();
 
    
-    D.flip_history.emplace_back(ia, ib, ic, id);
+   
     df::StepRecord s;
     s.kind = df::StepKind::EdgeFlip;
     s.a = ia; s.b = ib;
@@ -75,17 +75,6 @@ void apply_edge_flip(df::vertex_id ia,
 
 
 
-void print_flip_history(const df::InputData& D)
-{
-    std::cout << "\n=== edge flip history ===\n";
-    int i = 0;
-    for (const auto& rec : D.flip_history) {
-        std::cout << i++ << ": (" 
-                  << rec.a << "," << rec.b 
-                  << ") -> (" 
-                  << rec.c << "," << rec.d << ")\n";
-    }
-}
 
 
 

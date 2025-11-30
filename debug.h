@@ -27,8 +27,6 @@ namespace df {
     std::vector<DebugTetrahedron>
     collect_debug_tetrahedra(const InputData& D);
 
-
-
     enum class TriKind {
         Current,
         Lower
@@ -40,11 +38,8 @@ namespace df {
 
     void debug_print_edge_list(const df::InputData& D);
 
-
     void debug_print_current_vertex_ids(const df::InputData& D,
                                      const std::vector<int>& local_indices);
-
-
 
     bool edge_diff_with_lower(const df::InputData& D);
 
