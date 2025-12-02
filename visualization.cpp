@@ -1,6 +1,7 @@
 #include "visualization.h"
 #include "input.h"
 #include "debug.h"
+#include "geometry_utils.h"
 
 #include <polyscope/polyscope.h>
 #include <polyscope/surface_mesh.h>
@@ -39,23 +40,26 @@ std::vector<vec3> points_planar_regular(const std::vector<vertex_id>& ids, const
     return V;
 }
 
-// vertices for lifted triangulation z = x^2 + y^2 
+// vertices for lifted triangulation
 std::vector<vec3> points_lifted(const std::vector<vertex_id>& ids, const std::vector<df::P2>& P) {
     std::vector<vec3> V; V.reserve(ids.size());
     for (auto id : ids) {
         const auto& p = P[id];
-        float z = (float)(p.x()*p.x() + p.y()*p.y());
+        // use lifting function here and then get z coordinate
+        auto lifted = df::lift(p);
+        float z = (float)lifted.z();
         V.push_back(vec3((float)p.x(), z, (float)p.y()));
     }
     return V;
 }
 
-// vertices for lifted triangulation z = x^2 + y^2 
+// vertices for lifted triangulation 
 std::vector<vec3> points_lifted_regular(const std::vector<vertex_id>& ids, const std::vector<df::P2_weighted>& P) {
     std::vector<vec3> V; V.reserve(ids.size());
     for (auto id : ids) {
         const auto& p = P[id];
-        float z = (float)(p.x()*p.x() + p.y()*p.y());
+        auto lifted = df::lift_regular(p);
+        float z = (float)lifted.z();
         V.push_back(vec3((float)p.x(), z, (float)p.y()));
     }
     return V;
@@ -169,17 +173,30 @@ void update_debug_tet_mesh() {
 
 namespace viz {
 
-static inline glm::vec3 lift_paraboloid(const df::P2& p) {
+static inline glm::vec3 lift_polyscope(const df::P2& p) {
+  
+  df::P3 lp = df::lift(p);
+
+  // x, y from original 2D point (for consistency with the rest of your code)
   double x = CGAL::to_double(p.x());
   double y = CGAL::to_double(p.y());
-  return glm::vec3((float)x, (float)(x*x + y*y), (float)y); // y-up
+  double z = CGAL::to_double(lp.z());
+
+  // keep Y-up convention: (x, z, y)
+  return glm::vec3((float)x, (float)z, (float)y);
 }
 
-static inline glm::vec3 lift_paraboloid_regular(const df::P2_weighted& p) {
+static inline glm::vec3 lift_polyscope_regular(const df::P2_weighted& p) {
+  // weighted lifting
+  df::P3 lp = df::lift_regular(p);
+
   double x = CGAL::to_double(p.x());
   double y = CGAL::to_double(p.y());
-  return glm::vec3((float)x, (float)(x*x + y*y), (float)y); // y-up
+  double z = CGAL::to_double(lp.z());
+
+  return glm::vec3((float)x, (float)z, (float)y);
 }
+
 
 // collect the global indices present in a triangulation
 std::vector<vertex_id> present_ids(const df::Tri2& t) {
@@ -345,7 +362,7 @@ void load_debug_tetrahedra(const df::InputData& D,
         for (int i = 0; i < 4; ++i) {
             vertex_id vid = t.verts[i];
             const df::P2& p2 = D.points2d[vid];
-            g.pos[i] = lift_paraboloid(p2);
+            g.pos[i] = lift_polyscope(p2);
         }
 
         g_debug_tets.push_back(g);
@@ -432,8 +449,7 @@ void show_or_update_replay(const df::InputData& D) {
 
 // --------------------------------
 // decompostion 
-// Build/update ONE mesh containing the first `prefix_steps` tets
-// from D.step_history. This does NOT touch debug tets.
+// builds one mesh containing the first prefix_steps tets
 void update_flip_decomposition_mesh(const df::InputData& D, int prefix_steps)
 {
     const auto& steps = D.step_history;
@@ -476,7 +492,7 @@ void update_flip_decomposition_mesh(const df::InputData& D, int prefix_steps)
 
         for (int i = 0; i < 4; ++i) {
             const df::P2& p2 = D.points2d[ids[i]];
-            pos[i] = lift_paraboloid(p2);
+            pos[i] = lift_polyscope(p2);
         }
 
         size_t base = V.size();
@@ -569,9 +585,6 @@ void flip_decomposition_ui()
         viz::update_flip_decomposition_mesh(*g_decomp_data, g_decomp_prefix);
     }
 }
-
-
-
 
 
 } // namespace viz

@@ -27,13 +27,76 @@ CGAL::Orientation oriented_height_sign(
 }
 
 
-inline P3 lift(const P2& p) {
+
+
+static inline double debug_height(double x, double y) {
+    constexpr double eps = 1e-9;
+    auto eq = [eps](double a, double b) { return std::abs(a - b) < eps; };
+
+    // z = 2  first 3 points
+    if (eq(x, -2.0) && eq(y, 1.0)) return 2.0;
+    if (eq(x,  2.0) && eq(y, 1.0)) return 2.0;
+    if (eq(x,  0.0) && eq(y, 4.0)) return 2.0;
+
+    // z = 1 last 3 points
+    if (eq(x,  0.1) && eq(y, 3.0)) return 1.0;
+    if (eq(x, -0.8) && eq(y, 1.7)) return 1.0;
+    if (eq(x,  1.0) && eq(y, 1.5)) return 1.0;
+
+    return 0.0; // fallback
+}
+
+
+/*
+
+static inline double debug_height(double x, double y) {
+    constexpr double eps = 1e-9;
+    auto eq = [eps](double a, double b) { return std::abs(a - b) < eps; };
+
+    // z = 2  first 3 points
+    if (eq(x, -2.0) && eq(y, 1.0)) return 2.0;
+    if (eq(x,  2.0) && eq(y, 1.0)) return 2.0;
+    if (eq(x,  0.0) && eq(y, 4.0)) return 2.0;
+
+    // z = 1 last 3 points
+    if (eq(x,  0.0) && eq(y, 3.0)) return 1.0;
+    if (eq(x, -1.0) && eq(y, 2.0)) return 1.0;
+    if (eq(x,  1.0) && eq(y, 2.0)) return 1.0;
+
+    return 0.0; // fallback
+}
+*/
+
+
+P3 lift(const P2& p) {
+    double x = CGAL::to_double(p.x());
+    double y = CGAL::to_double(p.y());
+    double z = debug_height(x, y);
+    return P3(x, y, z);
+}
+
+P3 lift_regular(const P2_weighted& p) {
+    double x = CGAL::to_double(p.x());
+    double y = CGAL::to_double(p.y());
+    double z = debug_height(x, y);
+    return P3(x, y, z);
+}
+
+
+
+/*
+
+P3 lift(const P2& p) {
     return P3(p.x(), p.y(), p.x()*p.x() + p.y()*p.y());
 }
 
-inline P3 lift_regular(const P2_weighted& p) {
+P3 lift_regular(const P2_weighted& p) {
     return P3(p.x(), p.y(), p.x()*p.x() + p.y()*p.y());
 }
+
+*/
+
+
 
 
 }

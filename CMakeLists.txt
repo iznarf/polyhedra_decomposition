@@ -37,7 +37,8 @@ add_executable(main
     replay.cpp
     ui_callbacks.cpp
     poset.cpp
-)
+    height_test.cpp
+   )
 
 target_include_directories(main PRIVATE ${portable-file-dialogs_SOURCE_DIR})
 target_link_libraries(main PRIVATE polyscope CGAL::CGAL)

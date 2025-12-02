@@ -1,5 +1,8 @@
 
 #include "conforming_insertion.h"
+#include "input.h"
+#include "height_test.h"
+#include "geometry_utils.h"
 #include <CGAL/Segment_3.h>
 #include <CGAL/Segment_2.h>
 #include <CGAL/intersections.h>
@@ -23,9 +26,10 @@ using Seg2 = CGAL::Segment_2<K>;
 
 
 // fix: put it in geometry helper
-static inline P3 lift(const P2& p) {
+/*static inline P3 lift(const P2& p) {
     return P3(p.x(), p.y(), p.x()*p.x() + p.y()*p.y());
 }
+*/
 
 // fix: one for loop not three
 bool is_insertion_conforming(df::vertex_id id,
@@ -36,7 +40,7 @@ bool is_insertion_conforming(df::vertex_id id,
 
     // 2D position of the vertex to be inserted
     const P2& d2 = D.points2d[id];
-    P3        d3 = lift(d2);
+    const P3& d3 = df::lift(d2);
 
     // locate in current triangulation
     Tri::Locate_type lt;
@@ -100,9 +104,9 @@ bool is_insertion_conforming(df::vertex_id id,
     }
 
     // lift the triangle vertices
-    P3 a3 = lift(a2);
-    P3 b3 = lift(b2);
-    P3 c3 = lift(c2);
+    P3 a3 = df::lift(a2);
+    P3 b3 = df::lift(b2);
+    P3 c3 = df::lift(c2);
 
     Seg2 edge_ad_2d(a2, d2);
     Seg2 edge_bd_2d(b2, d2);
@@ -136,22 +140,34 @@ bool is_insertion_conforming(df::vertex_id id,
         if (!CGAL::do_intersect(edge_ad_2d, edge_uv_2d)) continue;
 
         // full 3D test
-        P3 u3 = lift(u2);
-        P3 v3 = lift(v2);
+        P3 u3 = df::lift(u2);
+        P3 v3 = df::lift(v2);
 
         Seg3 seg_uv_3d(u3, v3);
         Seg3 seg_ad_3d(a3, d3);
 
         // if they intersect in 3D and are not coplanar, flip is not conforming
         if (CGAL::do_intersect(seg_ad_3d, seg_uv_3d)) {
-            if (CGAL::orientation(a3, d3, u3, v3) != CGAL::COPLANAR) {
-                std::cout << "[conform] WARNING: inserting vertex " << id
-                          << " is non-conforming: 3D intersection on edge ("
-                          << ia << "," << id << ") vs lower edge ("
-                          << u << "," << v << ")\n";
-                return false;
-            }
+            return false;
         }
+
+        int cmp_ad = compare_heights_at_intersection(a2, d2, u2, v2, a3, d3, u3, v3);
+        bool height_test_ad = height_test_orientation_based(a2, d2, u2, v2, a3, d3, u3, v3);
+        if (height_test_ad == false){
+            std::cout << "[conform] BLOCK: (a,d)=(" << ia << "," << id << ") "
+                      << "below lower (u,v)=(" << u << "," << v << ")\n";
+            std::cout << "cmp_ad = " << cmp_ad << "\n";
+            return false;
+        }
+        if (height_test_ad == true){
+            std::cout << "[conform] PASS: (a,d)=(" << ia << "," << id << ") "
+                      << "above lower (u,v)=(" << u << "," << v << ")\n";
+            std::cout << "cmp_ad = " << cmp_ad << "\n";
+            continue;
+        }
+
+
+        /*
 
         // if they do not intersect, then do height/orientation test
         auto o2d = CGAL::orientation(a2, d2, u2); // >0: u left of a->d, <0: right
@@ -159,10 +175,12 @@ bool is_insertion_conforming(df::vertex_id id,
             std::swap(u2, v2);
             std::swap(u3, v3);
         }
+        auto o3d = CGAL::orientation(u3, v3, a3, d3);
 
-        auto o3d = CGAL::orientation(a3, d3, u3, v3);
+        
         // if (a,d) is below (u,v), insertion is non-conforming
-        if (o3d == CGAL::POSITIVE) {
+
+        if (o3d == CGAL::NEGATIVE) {
             std::cout << "[conform] WARNING: inserting vertex with global id "
                       << id << " is non-conforming (edge (a,d))\n";
             std::cout << "  (a,d) = (" << ia << "," << id << ")\n";
@@ -170,6 +188,23 @@ bool is_insertion_conforming(df::vertex_id id,
 
             return false;
         }
+        
+
+        /*
+        int cmp = compare_heights_at_intersection(a2, d2, u2, v2, a3, d3, u3, v3);
+
+        if (cmp < 0) {
+            // (c,d) below (u,v) at their 2D intersection -> non-conforming
+            return false;
+        }
+
+        
+        if (cmp > 0) {
+            // (c,d) above (u,v) at their 2D intersection -> conforming for this edge
+            continue;
+        }
+        */
+        
     }
 }
 
@@ -198,21 +233,34 @@ bool is_insertion_conforming(df::vertex_id id,
 
         if (!CGAL::do_intersect(edge_bd_2d, edge_uv_2d)) continue;
 
-        P3 u3 = lift(u2);
-        P3 v3 = lift(v2);
+        P3 u3 = df::lift(u2);
+        P3 v3 = df::lift(v2);
 
         Seg3 seg_uv_3d(u3, v3);
         Seg3 seg_bd_3d(b3, d3);
 
         if (CGAL::do_intersect(seg_bd_3d, seg_uv_3d)) {
-            if (CGAL::orientation(b3, d3, u3, v3) != CGAL::COPLANAR) {
-                std::cout << "[conform] WARNING: inserting vertex " << id
-                        << " is non-conforming: 3D intersection on edge ("
-                        << ib << "," << id << ") vs lower edge ("
-                        << u << "," << v << ")\n";
-                return false;
-            }
+            return false;
         }
+
+        int cmp_bd = compare_heights_at_intersection(b2, d2, u2, v2, b3, d3, u3, v3);
+        bool height_test_bd = height_test_orientation_based(b2, d2, u2, v2, b3, d3, u3, v3);
+        if (height_test_bd == false){
+            std::cout << "[conform] BLOCK: (b,d)=(" << ib << "," << id << ") "
+                      << "below lower (u,v)=(" << u << "," << v << ")\n";
+            std::cout << "cmp_bd = " << cmp_bd << "\n";
+            return false;
+        }
+        if (height_test_bd == true){
+            std::cout << "[conform] PASS: (b,d)=(" << ib << "," << id << ") "
+                      << "above lower (u,v)=(" << u << "," << v << ")\n";
+            std::cout << "cmp_bd = " << cmp_bd << "\n";
+            continue;
+        }
+
+
+        
+        /*
 
         auto o2d = CGAL::orientation(b2, d2, u2);
         if (o2d == CGAL::NEGATIVE) {
@@ -220,8 +268,8 @@ bool is_insertion_conforming(df::vertex_id id,
             std::swap(u3, v3);
         }
 
-        auto o3d = CGAL::orientation(b3, d3, u3, v3);
-        if (o3d == CGAL::POSITIVE) {
+        auto o3d = CGAL::orientation(u3, v3, b3, d3);
+        if (o3d == CGAL::NEGATIVE) {
             std::cout << "[conform] WARNING: inserting vertex with global id "
                       << id << " is non-conforming (edge (b,d))\n";
             // print vertex ids (b,d) and (u,v)
@@ -229,6 +277,25 @@ bool is_insertion_conforming(df::vertex_id id,
             std::cout << "  (u,v) = (" << u << "," << v << ")\n";
             return false;
         }
+        
+        /*
+        
+        
+        int cmp = compare_heights_at_intersection(b2, d2, u2, v2, b3, d3, u3, v3);
+
+        if (cmp < 0) {
+            // (c,d) below (u,v) at their 2D intersection -> non-conforming
+            return false;
+        }
+
+        /*
+        if (cmp > 0) {
+            // (c,d) above (u,v) at their 2D intersection -> conforming for this edge
+            continue;
+        }
+        */
+       
+
     }
 }
     if (cd_in_lower == false) {
@@ -256,36 +323,67 @@ bool is_insertion_conforming(df::vertex_id id,
 
         if (!CGAL::do_intersect(edge_cd_2d, edge_uv_2d)) continue;
 
-        P3 u3 = lift(u2);
+        P3 u3 = df::lift(u2);
         P3 v3 = lift(v2);
 
         Seg3 seg_uv_3d(u3, v3);
         Seg3 seg_cd_3d(c3, d3);
 
         if (CGAL::do_intersect(seg_cd_3d, seg_uv_3d)) {
-            if (CGAL::orientation(c3, d3, u3, v3) != CGAL::COPLANAR) {
-                std::cout << "[conform] WARNING: inserting vertex " << id
-                        << " is non-conforming: 3D intersection on edge ("
-                        << ic << "," << id << ") vs lower edge ("
-                        << u << "," << v << ")\n";
-                return false;
-            }
+           return false;
         }
 
+        int cmp_cd = compare_heights_at_intersection(c2, d2, u2, v2, c3, d3, u3, v3);
+
+        bool height_test_cd = height_test_orientation_based(c2, d2, u2, v2, c3, d3, u3, v3);
+        if (height_test_cd == false){
+            std::cout << "[conform] BLOCK: (c,d)=(" << ic << "," << id << ") "
+                      << "below lower (u,v)=(" << u << "," << v << ")\n";
+            std::cout << "cmp_cd = " << cmp_cd << "\n";
+            return false;
+        }
+        if (height_test_cd == true){
+            std::cout << "[conform] PASS: (c,d)=(" << ic << "," << id << ") "
+                      << "above lower (u,v)=(" << u << "," << v << ")\n";
+            std::cout << "cmp_cd = " << cmp_cd << "\n";
+            continue;
+        }
+
+        /*
         auto o2d = CGAL::orientation(c2, d2, u2);
         if (o2d == CGAL::NEGATIVE) {
             std::swap(u2, v2);
             std::swap(u3, v3);
         }
-
-        auto o3d = CGAL::orientation(c3, d3, u3, v3);
-        if (o3d == CGAL::POSITIVE) {
+        
+        
+        auto o3d = CGAL::orientation(u3, v3, c3, d3);
+        if (o3d == CGAL::NEGATIVE) {
             std::cout << "[conform] WARNING: inserting vertex with global id "
                       << id << " is non-conforming (edge (c,d))\n";
             std::cout << "  (c,d) = (" << ic << "," << id << ")\n";
             std::cout << "  (u,v) = (" << u << "," << v << ")\n";
             return false;
         }
+        */
+        
+        
+        /*
+        int cmp = compare_heights_at_intersection(c2, d2, u2, v2, c3, d3, u3, v3);
+
+        if (cmp < 0) {
+            // (c,d) below (u,v) at their 2D intersection -> non-conforming
+            return false;
+        }
+        
+        
+        if (cmp > 0) {
+            // (c,d) above (u,v) at their 2D intersection -> conforming for this edge
+            continue;
+        }
+        */
+        
+       
     }
 }
 

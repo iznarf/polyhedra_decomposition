@@ -1,8 +1,10 @@
 #include "input.h"
+#include "geometry_utils.h"
 #include <CGAL/Convex_hull_traits_adapter_2.h> // for convex hull with property map
 #include <CGAL/property_map.h> // for make_property_map
 #include <CGAL/enum.h>
 #include <CGAL/Object.h>
+
 
 #include <algorithm>
 #include <numeric>    
@@ -17,10 +19,45 @@
 
 namespace df {
 
-// fix: put it in geometry helper
-static inline P3 lift(const P2& p) {
-    return P3(p.x(), p.y(), p.x() * p.x() + p.y() * p.y());
-}
+struct Convert_vertex_RT_to_Tri2
+{
+    mutable bool first_vertex = true;  // the first one is the infinite vertex
+
+    df::Tri2::Vertex operator()(const df::Tri2Regular::Vertex&) const {
+        return df::Tri2::Vertex();
+    }
+
+    void operator()(const df::Tri2Regular::Vertex& src,
+                    df::Tri2::Vertex& tgt) const
+    {
+        if (first_vertex) {
+            // this is the infinite vertex: no point/info to set
+            first_vertex = false;
+            return;
+        }
+
+        // src.point() is a Weighted_point_2<K>, get its center point()
+        tgt.point() = src.point().point();   // type: df::P2
+        tgt.info()  = src.info();            // keep vertex_id
+    }
+};
+
+struct Convert_face_RT_to_Tri2
+{
+    df::Tri2::Face operator()(const df::Tri2Regular::Face&) const {
+        return df::Tri2::Face();
+    }
+
+    void operator()(const df::Tri2Regular::Face&,
+                    df::Tri2::Face&) const
+    {
+        // nothing to copy, faces don't store geometry
+    }
+};
+
+
+
+
 
 
 // check if the point p_new is collinear with any pair of points in pts
@@ -106,14 +143,41 @@ InputData make_random_input(int n_points, unsigned seed) {
 
     InputData D;
     // 1) random points with interior points
-    D.points2d = sample_points_in_disk(n_points, /*R=*/1.0, rng);
 
+    /*
+    D.points2d = sample_points_in_disk(n_points, 1.0, rng);
+    
     //print 2d points list
     std::cout << "Generated " << n_points << " random 2D points:\n";
     for (std::size_t i = 0; i < D.points2d.size(); ++i) {
         const P2& p = D.points2d[i];
         std::cout << " " << p.x() << " " << p.y() << "\n";
     }
+    */
+
+    
+
+    D.points2d = {
+        P2(-2,1), //lift to z = 2
+        P2(2,1),   //lift to z = 2
+        P2(0,4),    //lift to z = 2
+        P2(0.1,3),    //lift to z = 1
+        P2(-0.8,1.7),   //lift to z = 1
+        P2(1,1.5)     //lift to z = 1
+    };
+    
+
+    // example points 
+
+    /*
+    P2(-2,1), //lift to z = 2
+    P2(2,1),   //lift to z = 2
+    P2(0,4),    //lift to z = 2
+    P2(0,3),    //lift to z = 1
+    P2(-1,2.0),   //lift to z = 1
+    P2(1,2.0)     //lift to z = 1
+    */
+    
 
     // 2) make an global index array [0,...,n-1]
     std::vector<std::size_t> global_indices(D.points2d.size());
@@ -123,9 +187,9 @@ InputData make_random_input(int n_points, unsigned seed) {
     D.points2d_weighted.clear();
     for (std::size_t i = 0; i < D.points2d.size(); ++i) {
         const P2& p = D.points2d[i];
-        // weight = - (x^2 + y^2)
-        double weight = -(p.x() * p.x() + p.y() * p.y());
-        P2_weighted wp(p, weight);
+        K::FT w = -(p.x() * p.x() + p.y() * p.y());
+        P2_weighted wp(p, w);
+
         auto vh = D.tri_regular.insert(wp);
         vh->info() = i; // set global index as info
         D.points2d_weighted.push_back(wp); 
@@ -167,7 +231,7 @@ InputData make_random_input(int n_points, unsigned seed) {
     for (auto id : hull_ids)
         hull_pairs.emplace_back(D.points2d[id], id);
     
-    // 7) insert into triangulation; each vertex’s info() becomes the global index
+    // 7) insert into triangulation; each vertex info() becomes global index
     D.tri_upper.clear();
     D.tri_upper.insert(hull_pairs.begin(), hull_pairs.end());
 
@@ -189,13 +253,32 @@ InputData make_random_input(int n_points, unsigned seed) {
     std::iota(indices.begin(), indices.end(), 0);
 
     // 8) build full triangulation with all points
+    /*
     std::vector<std::pair<P2, std::size_t>> lower_pairs;
     lower_pairs.reserve(D.points2d.size());
     for (auto id : indices)
         lower_pairs.emplace_back(D.points2d[id], id);
-
+    */
+    
     D.tri_lower.clear();
-    D.tri_lower.insert(lower_pairs.begin(), lower_pairs.end());
+    //D.tri_lower.insert(lower_pairs.begin(), lower_pairs.end());
+
+
+    // make lower triangulation be the (unweighted) copy of the regular triangulation
+
+    df::Convert_vertex_RT_to_Tri2 cv;
+    df::Convert_face_RT_to_Tri2   cf;
+
+    auto inf_v =
+        D.tri_lower.tds().copy_tds(
+            D.tri_regular.tds(),
+            D.tri_regular.infinite_vertex(),
+            cv, cf
+        );
+
+    D.tri_lower.set_infinite_vertex(inf_v);
+    CGAL_assertion(D.tri_lower.is_valid());
+
 
     return D;
 }
@@ -220,7 +303,7 @@ bool lifted_triangulations_intersect(const InputData& D)
     const Tri2& upper = D.tri_upper;
     const Tri2& lower = D.tri_lower;
 
-    using Triangle3 = CGAL::Triangle_3<K>;
+   
     using Segment3  = CGAL::Segment_3<K>;
 
     // Loop over all finite faces in upper
@@ -230,11 +313,11 @@ bool lifted_triangulations_intersect(const InputData& D)
         df::vertex_id bu = fu->vertex(1)->info();
         df::vertex_id cu = fu->vertex(2)->info();
 
-        const P3 a3u = lift(D.points2d[au]);
-        const P3 b3u = lift(D.points2d[bu]);
-        const P3 c3u = lift(D.points2d[cu]);
+        const P3 a3u = df::lift(D.points2d[au]);
+        const P3 b3u = df::lift(D.points2d[bu]);
+        const P3 c3u = df::lift(D.points2d[cu]);
 
-        Triangle3 triangle_upper(a3u, b3u, c3u);
+        CGAL::Triangle_3<K> triangle_upper(a3u, b3u, c3u);
 
         std::array<df::vertex_id,3> up_ids = { au, bu, cu };
 
@@ -246,10 +329,10 @@ bool lifted_triangulations_intersect(const InputData& D)
             df::vertex_id cl = fl->vertex(2)->info();
 
             // make lifted triangle out of it
-            const P3 a3l = lift(D.points2d[al]);
-            const P3 b3l = lift(D.points2d[bl]);
-            const P3 c3l = lift(D.points2d[cl]);
-            Triangle3 triangle_lower(a3l, b3l, c3l);
+            const P3 a3l = df::lift(D.points2d[al]);
+            const P3 b3l = df::lift(D.points2d[bl]);
+            const P3 c3l = df::lift(D.points2d[cl]);
+            CGAL::Triangle_3<K> triangle_lower(a3l, b3l, c3l);
 
             std::array<df::vertex_id,3> low_ids = { al, bl, cl };
            
@@ -322,10 +405,9 @@ bool lifted_triangulations_intersect(const InputData& D)
                         return true;
                     }
                 }
-                if (const Triangle3* t = std::get_if<Triangle3>(&*intersection_object)) {
+                if (const CGAL::Triangle_3<K>* t = std::get_if<CGAL::Triangle_3<K>>(&*intersection_object)) {
                     std::cout << "[intersect] lifted triangles share an intersection face\n";
-
-                    continue;
+                    return true; // intersection is a face -> invalid
                 }
                 // we have to check if intersection object is a vector of points (coplanar triangles)
                 if (const std::vector<CGAL::Point_3<K>>* pts = std::get_if<std::vector<CGAL::Point_3<K>>>(&*intersection_object)) {

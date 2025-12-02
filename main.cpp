@@ -26,15 +26,12 @@ int main() {
     polyscope::init();
 
     // number of vertices in triangulation
-    int n_points = 21;
+    int n_points = 25;
     // random seed to start point generation
-    unsigned seed0 = 44;
+    unsigned seed0 = 84;
 
     df::InputData in = df::make_random_valid_input(n_points, seed0);
 
-
-    // current setup: we do not sort the to be inserted vertices by height 
-    // we do a conforming insertion check 
 
     // these are valid inputs where the algorithm works:
     //df::InputData in = df::make_random_input(21, 44); 
@@ -42,6 +39,8 @@ int main() {
     //df::InputData in = df::make_random_input(15,43);
     //df::InputData in = df::make_random_input(18, 23);
     //df::InputData in = df::make_random_input(15, 23);
+    //df::InputData in = df::make_random_input(25, 84);
+
 
 
     // these are valid inputs where the algorithm fails:
@@ -160,6 +159,21 @@ int main() {
     polyscope::show();
     return 0;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

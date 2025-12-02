@@ -9,13 +9,6 @@
 
 namespace df {
 
-   
-                                    
-    // small helper just for this file
-    static inline P3 lift_paraboloid(const P2& p) {
-        return P3(p.x(), p.y(), p.x()*p.x() + p.y()*p.y());
-    }
-
 
     // helper function: build a set of global ids present in a triangulation
     static std::unordered_set<df::vertex_id>
@@ -54,39 +47,9 @@ namespace df {
         return missing;
     }
 
-    // sort missing vertices by descending lifted height 
-    std::vector<df::vertex_id>
-    sorted_insertion_vertices(const std::vector<df::vertex_id>& missing,
-                                const df::InputData& D)
-    {
-        std::vector<std::pair<double, df::vertex_id>> temp;
-        temp.reserve(missing.size());
-
-        // compute lifted height and store (height, id)
-        for (auto id : missing) {
-            const auto& p = D.points2d[id];
-            double z = p.x()*p.x() + p.y()*p.y();  // lift 
-            temp.emplace_back(z, id);
-        }
-
-        // sort by descending height
-        std::sort(temp.begin(), temp.end(),
-                [](const auto& a, const auto& b) {
-                    return a.first > b.first; // largest height first
-                });
-
-        // extract ids only
-        std::vector<df::vertex_id> sorted_ids;
-        sorted_ids.reserve(temp.size());
-        for (auto& pair : temp)
-            sorted_ids.push_back(pair.second);
-
-        return sorted_ids;
-    }
-
+   
 
     void apply_vertex_insertion(df::vertex_id id, df::InputData& D) {
-
 
         const auto& p = D.points2d[id];
         df::Tri2& T = D.tri_current;
@@ -144,18 +107,15 @@ namespace df {
         const P2& c2 = vc->point();
 
         // lift four points to the paraboloid
-        P3 a3 = lift_paraboloid(a2);
-        P3 b3 = lift_paraboloid(b2);
-        P3 c3 = lift_paraboloid(c2);
-        P3 d3 = lift_paraboloid(d2);
+        P3 a3 = df::lift(a2);
+        P3 b3 = df::lift(b2);
+        P3 c3 = df::lift(c2);
+        P3 d3 = df::lift(d2);
 
-
-        CGAL::Orientation s =
-            oriented_height_sign(a2, b2, c2, a3, b3, c3, d3);
+        CGAL::Orientation s = oriented_height_sign(a2, b2, c2, a3, b3, c3, d3);
 
         // NEGATIVE = d' is below the face -> allowed
-        // COPLANAR = on the face -> allowed? -> tetrahedron with zero volume. in the paper they do not say anything about this case
-        if (s == CGAL::COPLANAR || s ==CGAL::NEGATIVE) {
+        if (s == CGAL::NEGATIVE) {
             return true;
         }
         else {

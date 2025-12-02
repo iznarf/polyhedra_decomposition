@@ -13,9 +13,6 @@ namespace df {
     std::vector<df::vertex_id>
     find_missing_vertices(const Tri2& current, const Tri2& target);
 
-    // pick next vertex to be inserted from the missing set
-    std::vector<df::vertex_id>
-    sorted_insertion_vertices(const std::vector<df::vertex_id>& missing, const df::InputData& D);
 
     // apply vertex insertion into the current triangulation
     void apply_vertex_insertion(const df::vertex_id id, df::InputData& D);

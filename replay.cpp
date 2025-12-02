@@ -93,7 +93,7 @@ void edge_flip_replay(vertex_id ia,
         return;
     }
 
-    // optional sanity: check that opposite vertices match (c,d)
+    // check that opposite vertices match (c,d)
     auto vc = fh->vertex(ei);
     auto gh = fh->neighbor(ei);
     int  j  = T.mirror_index(fh, ei);

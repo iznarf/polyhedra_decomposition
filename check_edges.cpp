@@ -32,7 +32,7 @@ namespace reg {
 
 
   // function 2 
-  // we write another function that checks all locally non regular edges if they are already in the target triangulation
+  // function that checks all locally non regular edges if they are already in the target triangulation
   // here we can again use the global indices to get the vertex handles of the target triangulation
   // then we can simply check with is_edge(vertex_handle a, vertex_handle b) function of CGAL triangulation
   // if the edge is already in the target triangulation we can delete it form the list of edges to flip
@@ -75,8 +75,7 @@ namespace reg {
         P3 c3(c2.x(), c2.y(), c2.x()*c2.x() + c2.y()*c2.y());
         P3 d3(d2.x(), d2.y(), d2.x()*d2.x() + d2.y()*d2.y());
 
-        CGAL::Orientation s =
-            oriented_height_sign(a2, b2, c2, a3, b3, c3, d3);
+        CGAL::Orientation s = oriented_height_sign(a2, b2, c2, a3, b3, c3, d3);
 
         // if negative then edge (a,b) is locally non-regular -> down flip
         if (s == CGAL::NEGATIVE) {
@@ -99,7 +98,6 @@ namespace reg {
 
 // function 2
 bool edge_in_target(const df::vertex_id ia, const df::vertex_id ib, const df::InputData& D) {
-    // iterate over all finite edges in the target triangulation
     const df::Tri2& target = D.tri_lower;  
     for (auto e = target.finite_edges_begin(); e != target.finite_edges_end(); ++e) {
         auto f = e->first;

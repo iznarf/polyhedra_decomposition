@@ -1,4 +1,6 @@
 #include "conforming.h"
+#include "height_test.h"
+#include "geometry_utils.h"
 
 #include <CGAL/Segment_3.h>
 #include <CGAL/intersections.h>
@@ -17,10 +19,11 @@ using P3  = df::P3;
 using Tri = df::Tri2;
 using Seg3  = CGAL::Segment_3<K>;
 
-
+/*
 static inline P3 lift(const P2& p) {
   return P3(p.x(), p.y(), p.x()*p.x() + p.y()*p.y());
 }
+*/ 
 
 // we check if flipping the edge with endpoints ia, ib is conforming to the target triangulation
 // conforming to the target triangulation means that the tetrahedron formed by the lifted points a,b,c,d does not intersect the faces of the target triangulation
@@ -35,8 +38,7 @@ bool is_flip_conforming(df::vertex_id ia, df::vertex_id ib, const df::InputData&
     int i = -1;
     bool found = false;
     
-    for (auto e = D.tri_current.finite_edges_begin(); e != D.tri_current.finite_edges_end(); ++e)
-    {
+    for (auto e = D.tri_current.finite_edges_begin(); e != D.tri_current.finite_edges_end(); ++e) {
         auto f  = e->first; // incident face of the edge
         int ei  = e->second; // local index of the edge in face f
 
@@ -115,28 +117,37 @@ bool is_flip_conforming(df::vertex_id ia, df::vertex_id ib, const df::InputData&
         // if they intersect in 2D and interesction is not at endpoint, we have to check 3D intersection
         if (CGAL::do_intersect(edge_cd_2d, edge_uv_2d)) {
             // lift points to 3D
-            P3 c3 = lift(c2);
-            P3 d3 = lift(d2);
-            P3 u3 = lift(u2);
-            P3 v3 = lift(v2);
+            P3 c3 = df::lift(c2);
+            P3 d3 = df::lift(d2);
+            P3 u3 = df::lift(u2);
+            P3 v3 = df::lift(v2);
 
             // check if edges intersect in 3D
             // if they intersect in 3D we have to check if the segments lie in one plane
             // if yes, the flip is conforming since this is only boundary contact which is allowed 
             // if not, the flip is non-conforming
             if (CGAL::do_intersect(Seg3(c3, d3), Seg3(u3, v3))) {
-                if (CGAL::orientation(c3, d3, u3, v3) == CGAL::COPLANAR) {
-                    // segments intersect in 3D but are coplanar -> allowed
-                    std::cout << "[conform] PASS: segments intersect in 3D but are coplanar with lower (u,v)=(" << iu << "," << iv
-                              << ")\n";
-                    continue;
-                }
-                else {
-                    // segments intersect in 3D and are not coplanar -> non-conforming
-                    return false;
-                }
+                return false;
             }
 
+            int cmp = compare_heights_at_intersection(c2, d2, u2, v2, c3, d3, u3, v3);
+           
+            bool height_test = height_test_orientation_based(c2, d2, u2, v2, c3, d3, u3, v3);
+            if (height_test == false){
+                std::cout << "[conform] BLOCK: (c,d)=(" << ic << "," << id << ") "
+                        << "below lower (u,v)=(" << iu << "," << iv << ")\n";
+                // also print cmp value
+                std::cout << "cmp = " << cmp << "\n";
+                return false;
+            }
+            if (height_test == true){
+                std::cout << "[conform] PASS: (c,d)=(" << ic << "," << id << ") "
+                        << "above lower (u,v)=(" << iu << "," << iv << ")\n";
+                std::cout << "cmp = " << cmp << "\n";
+                continue;
+            }
+
+            /*
             // (u,v) intersects in 2D but not in 3D -> check height orientation
             // for height orientation we need a consistent ordering of (u,v) relative to (c,d)
             // we say u is left of (c,d) and v is right of (c,d)
@@ -147,12 +158,16 @@ bool is_flip_conforming(df::vertex_id ia, df::vertex_id ib, const df::InputData&
                 std::swap(u3, v3);
             }
 
+           
             // orientation-based height test: we check if v3 lies in direction of normal of triangle (c3,d3,u3)
-            const auto o = CGAL::orientation(c3, d3, u3, v3);
+            const auto o = CGAL::orientation(u3, v3, c3, d3);
+           
             // CGAL::orientation is positive if v3 is in normal direction of plane (c3,d3,u3)
             // it is negative if v3 is not in normal direction
             // block -> (c,d) below (u,v); v3 lies in opposite direction of normal
-            if (o == CGAL::POSITIVE) {
+
+            
+            if (o == CGAL::NEGATIVE) {
                 std::cout << "[conform] BLOCK: (c,d)=(" << ic << "," << id << ") "
                         << "below lower (u,v)=(" << iu << "," << iv << ")\n";
                 return false;
@@ -160,11 +175,31 @@ bool is_flip_conforming(df::vertex_id ia, df::vertex_id ib, const df::InputData&
             
             //(c,d) not below (u,v) -> pass this lower edge; v3 lies in normal direction
             // coplanar case is not allowed i think..
-            if (o == CGAL::NEGATIVE || o == CGAL::COPLANAR) {
+            if (o == CGAL::POSITIVE) {
                 std::cout << "[conform] PASS: (c,d)=(" << ic << "," << id << ") "
                         << "above lower (u,v)=(" << iu << "," << iv << ")\n";
                 continue;
             }
+            */
+
+            
+            
+            
+            /*
+            int cmp = compare_heights_at_intersection(c2, d2, u2, v2, c3, d3, u3, v3);
+
+            if (cmp < 0) {
+                // (c,d) below (u,v) at their 2D intersection -> non-conforming
+                return false;
+            }
+            if (cmp > 0) {
+                // (c,d) above (u,v) at their 2D intersection -> conforming for this edge
+                continue;
+            }
+            */
+            
+
+            
         }
     }
 
