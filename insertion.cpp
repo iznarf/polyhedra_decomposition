@@ -47,35 +47,7 @@ namespace df {
         return missing;
     }
 
-    // sort missing vertices by descending lifted height 
-    std::vector<df::vertex_id>
-    sorted_insertion_vertices(const std::vector<df::vertex_id>& missing,
-                                const df::InputData& D)
-    {
-        std::vector<std::pair<double, df::vertex_id>> temp;
-        temp.reserve(missing.size());
 
-        // compute lifted height and store (height, id)
-        for (auto id : missing) {
-            const auto& p = D.points2d[id];
-            double z = p.x()*p.x() + p.y()*p.y();  // lift 
-            temp.emplace_back(z, id);
-        }
-
-        // sort by descending height
-        std::sort(temp.begin(), temp.end(),
-                [](const auto& a, const auto& b) {
-                    return a.first > b.first; // largest height first
-                });
-
-        // extract ids only
-        std::vector<df::vertex_id> sorted_ids;
-        sorted_ids.reserve(temp.size());
-        for (auto& pair : temp)
-            sorted_ids.push_back(pair.second);
-
-        return sorted_ids;
-    }
 
    
 
@@ -116,13 +88,12 @@ namespace df {
         }
     }
 
-    bool is_insertion_downflip(vertex_id id, const InputData& D) {
-        const Tri2& tri = D.tri_current;
+    bool is_insertion_downflip(vertex_id id, const InputData& D, const df::Tri2& tri_current) {
         const P2& d2    = D.points2d[id];
 
         Tri2::Locate_type lt;
         int li;
-        Tri2::Face_handle fh = tri.locate(d2, lt, li);
+        Tri2::Face_handle fh = tri_current.locate(d2, lt, li);
 
         if (lt != Tri2::FACE) {
             return false;

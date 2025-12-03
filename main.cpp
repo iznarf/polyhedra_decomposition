@@ -28,9 +28,9 @@ int main() {
     polyscope::init();
 
     // number of vertices in triangulation
-    int n_points = 9;
+    int n_points = 31;
     // random seed to start point generation
-    unsigned seed0 = 43;
+    unsigned seed0 = 1312;
 
     df::InputData in = df::make_random_valid_input(n_points, seed0);
 
@@ -50,6 +50,7 @@ int main() {
 
 
     // these are valid inputs where the algorithm fails:
+    //df::InputData in = df::make_random_input(31, 1312); // valid input
     //df::InputData in = daf::make_random_input(37, 4458); // upper and lower intersect in more than boundary edges
     //df::InputData in = df::make_random_input(35, 218); // valid input but non-decomposable
     //df::InputData in = df::make_random_input(40, 40);  // upper and lower intersect in more than boundary edges
@@ -99,14 +100,14 @@ int main() {
         for (auto id : insertion_vertex_list) {
 
             // 1) check downflip condition
-            if (!df::is_insertion_downflip(id, in)) {
+            if (!df::is_insertion_downflip(id, in, in.tri_current)) {
                 std::cout << "[main] skipping vertex " << id
                         << " (insertion is not a down-flip)\n";
                 continue;
             }
 
             // 2) check global conformance w.r.t. lower triangulation
-            if (df::reg::is_insertion_conforming(id, in)) {
+            if (df::reg::is_insertion_conforming(id, in, in.tri_current)) {
                 insertion_vertex = id;
                 found_conforming = true;
                 break;

@@ -24,8 +24,8 @@ using Seg3  = CGAL::Segment_3<K>;
 // conforming to the target triangulation means that the tetrahedron formed by the lifted points a,b,c,d does not intersect the faces of the target triangulation
 
 
-bool is_flip_conforming(df::vertex_id ia, df::vertex_id ib, const df::InputData& D)
-{
+bool is_flip_conforming(df::vertex_id ia, df::vertex_id ib, const df::InputData& D, const df::Tri2& tri_current) {
+    
     // print which edge we are checking
     std::cout << "[conform] checking flip of edge (" << ia << "," << ib << ")\n";
     // find the edge with global indices (ia, ib) in the current triangulation by vertex ids 
@@ -33,12 +33,12 @@ bool is_flip_conforming(df::vertex_id ia, df::vertex_id ib, const df::InputData&
     int i = -1;
     bool found = false;
     
-    for (auto e = D.tri_current.finite_edges_begin(); e != D.tri_current.finite_edges_end(); ++e) {
+    for (auto e = tri_current.finite_edges_begin(); e != tri_current.finite_edges_end(); ++e) {
         auto f  = e->first; // incident face of the edge
         int ei  = e->second; // local index of the edge in face f
 
-        auto va = f->vertex(D.tri_current.cw(ei)); // vertex opposite to index ei in face f
-        auto vb = f->vertex(D.tri_current.ccw(ei)); // vertex opposite to index ei in face f
+        auto va = f->vertex(tri_current.cw(ei)); // vertex opposite to index ei in face f
+        auto vb = f->vertex(tri_current.ccw(ei)); // vertex opposite to index ei in face f
 
         df::vertex_id ja = va->info(); // global index of vertex a
         df::vertex_id jb = vb->info(); // global index of vertex b
@@ -62,7 +62,7 @@ bool is_flip_conforming(df::vertex_id ia, df::vertex_id ib, const df::InputData&
     auto gh = fh->neighbor(i);
 
     // if we hit a boundary edge (which should not happen), treat as non-conforming
-    if (D.tri_current.is_infinite(fh) || D.tri_current.is_infinite(gh)) {
+    if (tri_current.is_infinite(fh) || tri_current.is_infinite(gh)) {
         std::cout << "[conform] WARNING: edge (" << ia << "," << ib
                   << ") is on boundary / infinite, treating as non-conforming\n";
         return false; 
@@ -70,7 +70,7 @@ bool is_flip_conforming(df::vertex_id ia, df::vertex_id ib, const df::InputData&
 
     // opposite vertices c (in fh) and d (in gh)
     auto vc = fh->vertex(i);
-    int  j  = D.tri_current.mirror_index(fh, i);
+    int  j  = tri_current.mirror_index(fh, i);
     auto vd = gh->vertex(j);
 
     df::vertex_id ic = vc->info();

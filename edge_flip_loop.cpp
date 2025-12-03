@@ -33,7 +33,7 @@ void perform_all_conforming_down_flips(df::InputData& in) {
             bool conf      = false; 
 
             if (in_target == false) {
-                conf = df::reg::is_flip_conforming(ia, ib, in);
+                conf = df::reg::is_flip_conforming(ia, ib, in, current_triangulation);
                 if (conf == true) {
                     flippable_edges.push_back({ia, ib});
 

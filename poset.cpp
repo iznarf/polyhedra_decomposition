@@ -17,6 +17,8 @@
 #include "check_edges.h"
 #include "insertion.h"
 #include "geometry_utils.h"
+#include "conforming.h"
+#include "conforming_insertion.h"
 
 #include "poset.h"
 #include <algorithm>
@@ -310,6 +312,7 @@ namespace pst {
 
     void build_poset(const df::InputData& D) {
         df::Tri2 tri_root  = D.tri_poset;
+        //df::Tri2 tri_root  = D.tri_current;
         df::Tri2 tri_lower = D.tri_lower;
 
         std::vector<Node> nodes;
@@ -330,6 +333,7 @@ namespace pst {
 
                 // reconstruct triangulation for this node
                 df::Tri2 tri = D.tri_poset;
+                //df::Tri2 tri = D.tri_current;
                 replay_history_poset(tri, current_node.history, D);
 
                 // find down-flips
@@ -339,8 +343,13 @@ namespace pst {
                 // edge-flip children
                 for (const auto& edge : down_flip_edges) {
                     df::Tri2 tri_child = tri;
+                    //only apply conforming flips in poset
                     df::vertex_id ia = edge[0];
                     df::vertex_id ib = edge[1];
+                    bool conf_edge = df::reg::is_flip_conforming(ia, ib, D, tri);
+                    if (!conf_edge) {
+                        continue;
+                    }
                     apply_edge_flip_poset(ia, ib, current_idx, tri_child,
                                         nodes, sig_to_node);
                 }
@@ -348,6 +357,15 @@ namespace pst {
                 // vertex-insertion children
                 for (df::vertex_id v : missing_vertices) {
                     df::Tri2 tri_child = tri;
+                    // check if insertion is a down flip
+                    bool downflip_insert = df::is_insertion_downflip(v, D, tri);
+                    if (!downflip_insert) {
+                        continue;
+                    }
+                    bool conf_insertion = df::reg::is_insertion_conforming(v, D, tri);
+                    if (!conf_insertion) {
+                        continue;
+                    }
                     apply_vertex_insertion_poset(v, current_idx, tri_child,
                                                 D, nodes, sig_to_node);
                 }
@@ -362,6 +380,14 @@ namespace pst {
 
         std::cout << "[poset] finished building flip poset\n";
         debug_print_poset(nodes);
-    }
+
+        std::unordered_set<pst::TriSignature> uniq;
+        for (const auto& n : nodes) {
+            uniq.insert(n.signature);
+        }
+        std::cout << "[poset] nodes.size() = " << nodes.size()
+                << ", unique signatures = " << uniq.size() << "\n";
+
+            }
   
 }

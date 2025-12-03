@@ -28,8 +28,8 @@ using Seg2 = CGAL::Segment_2<K>;
 
 
 // fix: one for loop not three
-bool is_insertion_conforming(df::vertex_id id, const df::InputData& D) {
-    const Tri& current = D.tri_current;
+bool is_insertion_conforming(df::vertex_id id, const df::InputData& D, const df::Tri2& current) {
+  
     const Tri& lower   = D.tri_lower;
 
     // 2D position of the vertex to be inserted
