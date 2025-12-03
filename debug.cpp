@@ -118,33 +118,6 @@ bool edge_diff_with_lower(const df::InputData& D) {
 }
 
 
-// check edge (i,j) against lower triangulation for intersections
-void debug_check_edge_against_lower(df::vertex_id i, df::vertex_id j, const df::InputData& D) {
-    const auto& pts = D.points2d;
-    CGAL::Segment_2<K> e2d(pts[i], pts[j]);
-
-    std::cout << "[post-insert-or-flip-debug] checking edge (" << i << "," << j << ") against lower triangulation\n";
-
-    for (auto e = D.tri_lower.finite_edges_begin();
-         e != D.tri_lower.finite_edges_end(); ++e) {
-
-        auto f  = e->first;
-        int  ei = e->second;
-
-        auto vu = f->vertex(D.tri_lower.cw(ei));
-        auto vv = f->vertex(D.tri_lower.ccw(ei));
-
-        df::vertex_id u = vu->info();
-        df::vertex_id v = vv->info();
-
-        CGAL::Segment_2<K> uv2d(vu->point(), vv->point());
-
-        if (CGAL::do_intersect(e2d, uv2d)) {
-            std::cout << "  --> intersects lower edge (" << u << "," << v << ")\n";
-        }
-    }
-}
-
 void debug_print_local_to_global_map(
     const df::InputData& D,
     TriKind which,

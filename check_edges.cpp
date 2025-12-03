@@ -48,7 +48,7 @@ namespace reg {
 
   // function 1
   std::vector<std::array<df::vertex_id, 2>> find_locally_non_regular_edges(const Tri2& tri) {
-    std::vector<std::array<df::vertex_id, 2>> non_regular_edges;
+        std::vector<std::array<df::vertex_id, 2>> non_regular_edges;
 
     for (auto edge = tri.finite_edges_begin(); edge != tri.finite_edges_end(); ++edge) {
         auto f = edge->first;  // incident face of the edge
@@ -70,11 +70,13 @@ namespace reg {
 
         if (!quad_strictly_convex(a2, b2, c2, d2)) continue;
 
-        P3 a3(a2.x(), a2.y(), a2.x()*a2.x() + a2.y()*a2.y());
-        P3 b3(b2.x(), b2.y(), b2.x()*b2.x() + b2.y()*b2.y());
-        P3 c3(c2.x(), c2.y(), c2.x()*c2.x() + c2.y()*c2.y());
-        P3 d3(d2.x(), d2.y(), d2.x()*d2.x() + d2.y()*d2.y());
+        // lift to 3D using lift in geometry_utils
+        P3 a3 = lift(a2);
+        P3 b3 = lift(b2);
+        P3 c3 = lift(c2);
+        P3 d3 = lift(d2);
 
+       
         CGAL::Orientation s = oriented_height_sign(a2, b2, c2, a3, b3, c3, d3);
 
         // if negative then edge (a,b) is locally non-regular -> down flip

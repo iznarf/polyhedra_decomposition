@@ -47,6 +47,36 @@ namespace df {
         return missing;
     }
 
+    // sort missing vertices by descending lifted height 
+    std::vector<df::vertex_id>
+    sorted_insertion_vertices(const std::vector<df::vertex_id>& missing,
+                                const df::InputData& D)
+    {
+        std::vector<std::pair<double, df::vertex_id>> temp;
+        temp.reserve(missing.size());
+
+        // compute lifted height and store (height, id)
+        for (auto id : missing) {
+            const auto& p = D.points2d[id];
+            double z = p.x()*p.x() + p.y()*p.y();  // lift 
+            temp.emplace_back(z, id);
+        }
+
+        // sort by descending height
+        std::sort(temp.begin(), temp.end(),
+                [](const auto& a, const auto& b) {
+                    return a.first > b.first; // largest height first
+                });
+
+        // extract ids only
+        std::vector<df::vertex_id> sorted_ids;
+        sorted_ids.reserve(temp.size());
+        for (auto& pair : temp)
+            sorted_ids.push_back(pair.second);
+
+        return sorted_ids;
+    }
+
    
 
     void apply_vertex_insertion(df::vertex_id id, df::InputData& D) {
@@ -106,7 +136,7 @@ namespace df {
         const P2& b2 = vb->point();
         const P2& c2 = vc->point();
 
-        // lift four points to the paraboloid
+        // lift four points 
         P3 a3 = df::lift(a2);
         P3 b3 = df::lift(b2);
         P3 c3 = df::lift(c2);

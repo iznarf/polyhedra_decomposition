@@ -144,7 +144,7 @@ InputData make_random_input(int n_points, unsigned seed) {
     InputData D;
     // 1) random points with interior points
 
-    /*
+    
     D.points2d = sample_points_in_disk(n_points, 1.0, rng);
     
     //print 2d points list
@@ -153,9 +153,11 @@ InputData make_random_input(int n_points, unsigned seed) {
         const P2& p = D.points2d[i];
         std::cout << " " << p.x() << " " << p.y() << "\n";
     }
-    */
+    
 
     
+    /*
+    //example points 1
 
     D.points2d = {
         P2(-2,1), //lift to z = 2
@@ -165,17 +167,7 @@ InputData make_random_input(int n_points, unsigned seed) {
         P2(-0.8,1.7),   //lift to z = 1
         P2(1,1.5)     //lift to z = 1
     };
-    
 
-    // example points 
-
-    /*
-    P2(-2,1), //lift to z = 2
-    P2(2,1),   //lift to z = 2
-    P2(0,4),    //lift to z = 2
-    P2(0,3),    //lift to z = 1
-    P2(-1,2.0),   //lift to z = 1
-    P2(1,2.0)     //lift to z = 1
     */
     
 
@@ -253,19 +245,19 @@ InputData make_random_input(int n_points, unsigned seed) {
     std::iota(indices.begin(), indices.end(), 0);
 
     // 8) build full triangulation with all points
-    /*
+    
     std::vector<std::pair<P2, std::size_t>> lower_pairs;
     lower_pairs.reserve(D.points2d.size());
     for (auto id : indices)
         lower_pairs.emplace_back(D.points2d[id], id);
-    */
+    
     
     D.tri_lower.clear();
-    //D.tri_lower.insert(lower_pairs.begin(), lower_pairs.end());
+    D.tri_lower.insert(lower_pairs.begin(), lower_pairs.end());
 
-
+    /*
+    
     // make lower triangulation be the (unweighted) copy of the regular triangulation
-
     df::Convert_vertex_RT_to_Tri2 cv;
     df::Convert_face_RT_to_Tri2   cf;
 
@@ -278,10 +270,11 @@ InputData make_random_input(int n_points, unsigned seed) {
 
     D.tri_lower.set_infinite_vertex(inf_v);
     CGAL_assertion(D.tri_lower.is_valid());
-
-
+    /**/
     return D;
 }
+
+
 
 // checks if an edge is part of the convex hull in 2D
 bool is_hull_edge(const InputData& D, vertex_id u, vertex_id v)
@@ -336,7 +329,7 @@ bool lifted_triangulations_intersect(const InputData& D)
 
             std::array<df::vertex_id,3> low_ids = { al, bl, cl };
            
-            // Count common vertices between these two faces (in 2D).
+            // count common vertices between these two faces (in 2D)
             int common = 0;
             std::vector<df::vertex_id> common_ids;
             for (auto iu : up_ids) {
@@ -358,8 +351,8 @@ bool lifted_triangulations_intersect(const InputData& D)
             if (intersection_object) {
                 if  (const CGAL::Point_3<K>* s = std::get_if<CGAL::Point_3<K>>(&*intersection_object)) {
                     if(common == 1) {
-                    // intersection is a point -> allowed
-                    continue;
+                        // intersection is a point -> allowed
+                        continue;
                     }
                 }
                 if (const CGAL::Segment_3<K>* s = std::get_if<CGAL::Segment_3<K>>(&*intersection_object)) {
@@ -416,6 +409,74 @@ bool lifted_triangulations_intersect(const InputData& D)
             }
         }
     }
+    // loop over edges in upper triangulation
+    for (auto eu = upper.finite_edges_begin(); eu != upper.finite_edges_end(); ++eu) {
+        Tri2::Face_handle fu = eu->first;
+        int idxu = eu->second;
+
+        df::vertex_id au = fu->vertex(upper.cw(idxu))->info();
+        df::vertex_id bu = fu->vertex(upper.ccw(idxu))->info();
+
+        const P3 a3u = df::lift(D.points2d[au]);
+        const P3 b3u = df::lift(D.points2d[bu]);
+
+        Segment3 seg_upper(a3u, b3u);
+
+        // loop over edges in lower triangulation
+        for (auto el = lower.finite_edges_begin(); el != lower.finite_edges_end(); ++el) {
+            Tri2::Face_handle fl = el->first;
+            int idxl = el->second;
+
+            df::vertex_id al = fl->vertex(lower.cw(idxl))->info();
+            df::vertex_id bl = fl->vertex(lower.ccw(idxl))->info();
+
+            const P3 a3l = df::lift(D.points2d[al]);
+            const P3 b3l = df::lift(D.points2d[bl]);
+
+            Segment3 seg_lower(a3l, b3l);
+
+
+
+            // check intersection of these two segments
+            if (CGAL::do_intersect(seg_upper, seg_lower)) {
+                // check if they share endpoints and how many and which ones since we have to check if the edge is hull edge 
+                int counter = 0;
+                std::vector<df::vertex_id> common_ids_edge;
+                
+                if (au == al || au == bl) {
+                    ++counter;
+                    common_ids_edge.push_back(au);
+                }
+                if (bu == al || bu == bl) {
+                    ++counter;
+                    common_ids_edge.push_back(bu);
+                }
+                // check if the edge is hull edge if they share two endpoints
+                if (counter == 2) {
+                    df::vertex_id u = common_ids_edge[0];
+                    df::vertex_id v = common_ids_edge[1];
+                    // now check if they form a hull edge
+                    if (!is_hull_edge(D, u, v)) {
+                        return true;
+                    }
+                    else {
+                        // intersection is a hull edge -> allowed
+                        continue;
+                    }
+                }
+                if (counter == 1) {
+                    // intersection is a point -> allowed
+                    continue;
+                }
+                else {
+                    // invalid intersection
+                    std::cout << "[intersect] lifted edges intersect\n";
+                    return true;
+                }
+            }
+        }
+    }
+     
     // no interior intersections found
     return false;
 }

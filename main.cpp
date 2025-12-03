@@ -20,15 +20,17 @@
 #include "replay.h"
 #include "ui_callbacks.h"
 #include "poset.h"
+#include "flip.h"
+
 
 
 int main() {
     polyscope::init();
 
     // number of vertices in triangulation
-    int n_points = 25;
+    int n_points = 9;
     // random seed to start point generation
-    unsigned seed0 = 84;
+    unsigned seed0 = 43;
 
     df::InputData in = df::make_random_valid_input(n_points, seed0);
 
@@ -40,20 +42,23 @@ int main() {
     //df::InputData in = df::make_random_input(18, 23);
     //df::InputData in = df::make_random_input(15, 23);
     //df::InputData in = df::make_random_input(25, 84);
+    //df::InputData in = df::make_random_input(29, 4234);
+    //df::InputData in = df::make_random_input(31, 4234);
+    //df::InputData in = df::make_random_input(34, 4234);
+    //df::InputData in = df::make_random_input(45, 4234);
 
 
 
     // these are valid inputs where the algorithm fails:
-    //df::InputData in = daf::make_random_input(37, 4458);
-    //df::InputData in = df::make_random_input(35, 218);
-    //df::InputData in = df::make_random_input(40, 40);
-    //df::InputData in = df::make_random_input(50, 40);
-    //df::InputData in = df::make_random_input(55,42);
+    //df::InputData in = daf::make_random_input(37, 4458); // upper and lower intersect in more than boundary edges
+    //df::InputData in = df::make_random_input(35, 218); // valid input but non-decomposable
+    //df::InputData in = df::make_random_input(40, 40);  // upper and lower intersect in more than boundary edges
+    //df::InputData in = df::make_random_input(50, 40); // valid input but non-decomposable
+    //df::InputData in = df::make_random_input(55,42);  // valid input but non-decomposable
 
 
-    // -> the order of vertex insertions matters for the algorithm to succeed
-    // -> sorting vertices by descending height is not correct 
-    // what is the 'correct' order of vertex insertions?
+  
+  
 
     viz::register_triangulation_as_mesh(in.tri_lower, in.points2d, "lower 2D", "lower lifted");
     viz::register_triangulation_as_mesh(in.tri_upper, in.points2d, "upper 2D", "upper lifted");
@@ -83,6 +88,9 @@ int main() {
 
 
         std::vector<df::vertex_id> insertion_vertex_list = missing; // unsorted version
+
+        // sort missing vertices by descending lifted height
+        //std::vector<df::vertex_id> insertion_vertex_list = df::sorted_insertion_vertices(missing, in);
         df::vertex_id insertion_vertex = 0; // will only be used if we find a conforming one
         bool found_conforming = false;
 
@@ -112,7 +120,7 @@ int main() {
         if (!found_conforming) {
             std::cout << "\n[main] ERROR: all candidate vertex insertions are non-conforming.\n"
                     << "[main] The polyhedron appears to be non-decomposable.\n";
-                    break;  // break out of the main while(true) loop
+            break;  // break out of the main while(true) loop
         }
         
         
@@ -122,6 +130,7 @@ int main() {
 
         viz::show_or_update_current(in);
         df::debug_print_edge_list(in);
+
     }
     
     // compare triangulations now 
@@ -132,6 +141,12 @@ int main() {
         std::cout << "\n[main] SUCCESS: current triangulation matches lower triangulation!\n";
     }
 
+    /*
+    df::apply_edge_flip(5, 0, in);
+    df::apply_edge_flip(4, 2, in);
+    df::apply_edge_flip(3, 1, in);
+    */
+
     //df::debug_print_local_to_global_map(in, df::TriKind::Lower);
     //df::debug_print_local_to_global_map(in, df::TriKind::Current);
 
@@ -139,7 +154,7 @@ int main() {
     df::print_step_history(in);
 
     // build poset from upper to lower triangulation
-    //pst::build_poset(in);
+    pst::build_poset(in);
 
     std::vector<df::DebugTetrahedron> debug_tets = df::collect_debug_tetrahedra(in);
 

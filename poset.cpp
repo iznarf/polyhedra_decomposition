@@ -201,13 +201,14 @@ namespace pst {
         return child_idx;
     }
 
-    static const char* step_kind_name(df::StepKind k) {
+   static const char* step_kind_name(df::StepKind k) {
         switch (k) {
-            case df::StepKind::EdgeFlip:         return "EdgeFlip";
-            case df::StepKind::VertexInsertion:  return "VertexInsertion";
-        
+            case df::StepKind::EdgeFlip:        return "EdgeFlip";
+            case df::StepKind::VertexInsertion: return "VertexInsertion";
         }
+        return "Unknown";
     }
+
 
     void debug_print_poset(const std::vector<Node>& nodes) {
         std::cout << "[poset] total nodes: " << nodes.size() << "\n";
@@ -240,64 +241,127 @@ namespace pst {
 
 
 
+    static void replay_step_poset(const df::StepRecord& step, df::Tri2& tri, const df::InputData& D) {
+        if (step.kind == df::StepKind::EdgeFlip) {
+            df::vertex_id ia = step.a;
+            df::vertex_id ib = step.b;
 
+            df::Tri2::Face_handle fh;
+            int ei = -1;
+            bool found = false;
 
+            for (auto e = tri.finite_edges_begin(); e != tri.finite_edges_end(); ++e) {
+                auto f = e->first;
+                int  i = e->second;
 
+                auto va = f->vertex(tri.cw(i));
+                auto vb = f->vertex(tri.ccw(i));
 
+                df::vertex_id ja = va->info();
+                df::vertex_id jb = vb->info();
+
+                if ((ja == ia && jb == ib) || (ja == ib && jb == ia)) {
+                    fh    = f;
+                    ei    = i;
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found) {
+                std::cerr << "[replay] edge (" << ia << "," << ib
+                        << ") not found during replay\n";
+                return;
+            }
+            if (tri.is_infinite(fh) || tri.is_infinite(fh->neighbor(ei))) {
+                std::cerr << "[replay] edge (" << ia << "," << ib
+                        << ") is boundary / infinite during replay\n";
+                return;
+            }
+
+            tri.flip(fh, ei);
+        } else { // VertexInsertion
+            df::vertex_id v  = step.d;
+            const df::P2& p2 = D.points2d[v];
+
+            df::Tri2::Locate_type lt;
+            int li = -1;
+            df::Tri2::Face_handle fh = tri.locate(p2, lt, li);
+
+            if (lt != df::Tri2::FACE) {
+                std::cerr << "[replay] WARNING: insertion point " << v
+                        << " not in FACE during replay\n";
+                return;
+            }
+
+            auto vh_new = tri.insert_in_face(p2, fh);
+            vh_new->info() = v;
+        }
+    }
+
+    static void replay_history_poset(df::Tri2& tri,
+                            const std::vector<df::StepRecord>& history,
+                            const df::InputData& D)
+    {
+        for (const auto& step : history) {
+            replay_step_poset(step, tri, D);
+        }
+    }
 
     void build_poset(const df::InputData& D) {
-        // we strart with upper triangulation
-        df::Tri2 tri_root = D.tri_poset;
+        df::Tri2 tri_root  = D.tri_poset;
         df::Tri2 tri_lower = D.tri_lower;
 
-        // create root node
         std::vector<Node> nodes;
-        nodes.reserve(300); // arbitrary
+        nodes.reserve(300);
 
         Node root;
-        root.history.clear();  // no steps from upper to upper
+        root.history.clear();
         root.signature = make_signature(tri_root);
-
         nodes.push_back(root);
 
-        // map from signature to node index
-        // does this have to be a global variable?
         std::unordered_map<TriSignature, int> sig_to_node;
         sig_to_node.emplace(root.signature, 0);
 
+        std::size_t current_idx = 0; // start at root
 
-        // collect all possible down-flips
-        // first edge flips
-        std::vector<std::array<df::vertex_id,2>> down_flip_edges = df::reg::find_locally_non_regular_edges(tri_root);
-        // then vertex insertions
-        std::vector<df::vertex_id> missing_vertices = df::find_missing_vertices(tri_root, tri_lower);
+        while (current_idx < nodes.size()) {
+                Node& current_node = nodes[current_idx];
 
-        // for every down-flip we create a new triangulation which is a node in the poset
-        for (const auto& edge : down_flip_edges) {
-            tri_root = D.tri_poset; // reset to root triangulation
-            df::vertex_id ia = edge[0];
-            df::vertex_id ib = edge[1];
-            int child_idx = apply_edge_flip_poset(ia, ib, /*parent_idx=*/0,
-            tri_root, nodes, sig_to_node);
-            // apply every edge flip in the list to the current triangulation
-            // create a node for every new triangulation
-            // create signature for each new triangulation
-            // at this point we do not have to check if signature already exists since this are the first triangulations after the root
-            // add the flip to the history of the node
-            // update parents (root) 
-            // update children of root
+                // reconstruct triangulation for this node
+                df::Tri2 tri = D.tri_poset;
+                replay_history_poset(tri, current_node.history, D);
+
+                // find down-flips
+                auto down_flip_edges  = df::reg::find_locally_non_regular_edges(tri);
+                auto missing_vertices = df::find_missing_vertices(tri, tri_lower);
+
+                // edge-flip children
+                for (const auto& edge : down_flip_edges) {
+                    df::Tri2 tri_child = tri;
+                    df::vertex_id ia = edge[0];
+                    df::vertex_id ib = edge[1];
+                    apply_edge_flip_poset(ia, ib, current_idx, tri_child,
+                                        nodes, sig_to_node);
+                }
+
+                // vertex-insertion children
+                for (df::vertex_id v : missing_vertices) {
+                    df::Tri2 tri_child = tri;
+                    apply_vertex_insertion_poset(v, current_idx, tri_child,
+                                                D, nodes, sig_to_node);
+                }
+
+                ++current_idx;
+                if (current_idx % 100 == 0) {
+                    std::cout << "[poset] current_idx = " << current_idx
+                    << ", nodes.size() = " << nodes.size() << "\n";
+}
+
         }
 
-        // we have to do the same for every missing vertex (insertion)
-        for (df::vertex_id v : missing_vertices) {
-            df::Tri2 tri = tri_root; // start from upper triangulation
-            int child_idx = apply_vertex_insertion_poset(v, /*parent_idx=*/0, tri, D, nodes, sig_to_node);
-        }
-
-        // after the edge + insertion loops
-        std::cout << "[poset] after first layer:\n";
+        std::cout << "[poset] finished building flip poset\n";
         debug_print_poset(nodes);
-
     }
-    
+  
 }
