@@ -24,47 +24,6 @@ collect_vertex_ids_in_order(const df::Tri2& tri) {
     return ids;
 }
 
-
- // helper function to collect edges in current but not in target
-std::vector<std::pair<vertex_id, vertex_id>>
-edges_in_current_not_in_target(const Tri2& current, const Tri2& target)
-{
-    auto canon = [](vertex_id a, vertex_id b) {
-        if (b < a) std::swap(a, b);
-        return std::make_pair(a, b);
-    };
-
-    // Store all edges of target triangulation
-    std::set<std::pair<vertex_id, vertex_id>> target_edges;
-
-    for (auto e = target.finite_edges_begin(); e != target.finite_edges_end(); ++e) {
-        auto f  = e->first;
-        int ei  = e->second;
-
-        vertex_id a = f->vertex(target.cw(ei))->info();
-        vertex_id b = f->vertex(target.ccw(ei))->info();
-
-        target_edges.insert(canon(a, b));
-    }
-
-    std::vector<std::pair<vertex_id, vertex_id>> diff;
-        for (auto e = current.finite_edges_begin(); e != current.finite_edges_end(); ++e) {
-            auto f  = e->first;
-            int ei  = e->second;
-
-            vertex_id a = f->vertex(current.cw(ei))->info();
-            vertex_id b = f->vertex(current.ccw(ei))->info();
-
-            auto ce = canon(a, b);
-            if (target_edges.find(ce) == target_edges.end()) { 
-                diff.push_back(ce);
-            }
-        }
-
-        return diff;
-}
-
-
 // prints all edges in the current triangulation
 void debug_print_edge_list(const InputData& D) {
     const auto& tri = D.tri_current;
@@ -96,27 +55,36 @@ void debug_print_edge_list(const InputData& D) {
     std::cout << "\n";
 }
 
-// checks whether there are edges in current triangulation that are not in lower triangulation
-// if returns true, there are differences
-bool edge_diff_with_lower(const df::InputData& D) {
-    auto diff = edges_in_current_not_in_target(D.tri_current, D.tri_lower);
-    auto ids      = viz::present_ids(D.tri_current);
 
-    
+    // returns all undirected edges of a triangulation as normalized (min,max) pairs
+    static std::vector<std::pair<vertex_id, vertex_id>> collect_edges(const Tri2& T) {
+        std::vector<std::pair<vertex_id, vertex_id>> edges;
 
-    std::cout << "\n=== Edges in current but NOT in lower (global ids)===\n";
-    if (diff.empty()) {
-        std::cout << "(none)\n";
-        return false;
+        for (auto e = T.finite_edges_begin(); e != T.finite_edges_end(); ++e) {
+            auto f = e->first;
+            int i  = e->second;
+
+            auto va = f->vertex(T.cw(i));
+            auto vb = f->vertex(T.ccw(i));
+
+            vertex_id a = va->info();
+            vertex_id b = vb->info();
+            if (a > b) std::swap(a, b);
+
+            edges.emplace_back(a, b);
+        }
+
+        std::sort(edges.begin(), edges.end());
+        edges.erase(std::unique(edges.begin(), edges.end()), edges.end());
+        return edges;
     }
 
-    for (auto [a, b] : diff) {
-        std::cout << "(" << a << "," << b << ")\n";
-    }
-    // if difference was found, return true 
-    return true;
-}
 
+    bool triangulations_equal(const Tri2& A, const Tri2& B) {
+        auto EA = collect_edges(A);
+        auto EB = collect_edges(B);
+        return EA == EB;
+    }
 
 void debug_print_local_to_global_map(
     const df::InputData& D,

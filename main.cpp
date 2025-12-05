@@ -21,6 +21,7 @@
 #include "ui_callbacks.h"
 #include "poset.h"
 #include "flip.h"
+#include "vis_poset.h"
 
 
 
@@ -28,11 +29,23 @@ int main() {
     polyscope::init();
 
     // number of vertices in triangulation
-    int n_points = 31;
+    int n_points = 21;
     // random seed to start point generation
-    unsigned seed0 = 1312;
+    unsigned seed0 = 44;
 
     df::InputData in = df::make_random_valid_input(n_points, seed0);
+
+    /*
+
+    df::apply_edge_flip(5, 0, in, in.tri_lower);
+    df::apply_edge_flip(4, 2, in, in.tri_lower);
+    df::apply_edge_flip(3, 1, in, in.tri_lower);
+
+    */
+
+    // clear steop history to start fresh
+    in.step_history.clear();
+    
 
 
     // these are valid inputs where the algorithm works:
@@ -88,10 +101,7 @@ int main() {
         std::cout << "\n";
 
 
-        std::vector<df::vertex_id> insertion_vertex_list = missing; // unsorted version
-
-        // sort missing vertices by descending lifted height
-        //std::vector<df::vertex_id> insertion_vertex_list = df::sorted_insertion_vertices(missing, in);
+        std::vector<df::vertex_id> insertion_vertex_list = missing; 
         df::vertex_id insertion_vertex = 0; // will only be used if we find a conforming one
         bool found_conforming = false;
 
@@ -135,18 +145,14 @@ int main() {
     }
     
     // compare triangulations now 
-    if (df::edge_diff_with_lower(in) == true){
+    if (df::triangulations_equal(in.tri_current, in.tri_lower) == false){
         std::cout << "\n[main] ERROR: after all flips and insertions, current triangulation differs from lower triangulation!\n";
         
     } else {
         std::cout << "\n[main] SUCCESS: current triangulation matches lower triangulation!\n";
     }
 
-    /*
-    df::apply_edge_flip(5, 0, in);
-    df::apply_edge_flip(4, 2, in);
-    df::apply_edge_flip(3, 1, in);
-    */
+  
 
     //df::debug_print_local_to_global_map(in, df::TriKind::Lower);
     //df::debug_print_local_to_global_map(in, df::TriKind::Current);
@@ -154,8 +160,31 @@ int main() {
 
     df::print_step_history(in);
 
-    // build poset from upper to lower triangulation
-    pst::build_poset(in);
+    // build poset and visualize it
+    std::vector<pst::Node> poset_nodes;
+    //pst::build_poset(in, poset_nodes);
+    //viz_poset::register_poset(in, poset_nodes);
+
+    /*
+    std::vector<df::StepRecord> alt_path;
+    bool has_path = pst::find_conforming_path_dfs(in, alt_path, 2000, 50);
+
+    if (has_path) {
+        std::cout << "\n[dfs] FOUND a conforming path from upper to lower!\n";
+        for (std::size_t i = 0; i < alt_path.size(); ++i) {
+            const auto& s = alt_path[i];
+            std::cout << "  step " << i << " : "
+                    << (s.kind == df::StepKind::EdgeFlip ? "EdgeFlip" : "VertexInsertion")
+                    << " (a=" << s.a
+                    << ", b=" << s.b
+                    << ", c=" << s.c
+                    << ", d=" << s.d << ")\n";
+        }
+    } else {
+        std::cout << "\n[dfs] No conforming path found (or search aborted by limits).\n";
+    }
+    
+    */
 
     std::vector<df::DebugTetrahedron> debug_tets = df::collect_debug_tetrahedra(in);
 

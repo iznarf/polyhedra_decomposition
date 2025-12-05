@@ -38,6 +38,7 @@ add_executable(main
     ui_callbacks.cpp
     poset.cpp
     height_test.cpp
+    vis_poset.cpp
    )
 
 target_include_directories(main PRIVATE ${portable-file-dialogs_SOURCE_DIR})

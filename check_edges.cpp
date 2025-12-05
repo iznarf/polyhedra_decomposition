@@ -39,12 +39,7 @@ namespace reg {
 
 
 
-  // quad strictly convex around edge ab: c and d on opposite sides of ab, neither collinear
-  static inline bool quad_strictly_convex(const P2& a, const P2& b, const P2& c, const P2& d) {
-    auto oc = CGAL::orientation(a, b, c);
-    auto od = CGAL::orientation(a, b, d);
-    return (oc != CGAL::COLLINEAR) && (od != CGAL::COLLINEAR) && (oc != od);
-  }
+
 
   // function 1
   std::vector<std::array<df::vertex_id, 2>> find_locally_non_regular_edges(const Tri2& tri) {
@@ -68,7 +63,7 @@ namespace reg {
 
         const P2 &a2 = va->point(), &b2 = vb->point(), &c2 = vc->point(), &d2 = vd->point();
 
-        if (!quad_strictly_convex(a2, b2, c2, d2)) continue;
+        if (!df::quad_strictly_convex(a2, b2, c2, d2)) continue;
 
         // lift to 3D using lift in geometry_utils
         P3 a3 = lift(a2);

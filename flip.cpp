@@ -12,9 +12,9 @@ namespace df {
 
 void apply_edge_flip(df::vertex_id ia,
                      df::vertex_id ib,
-                     df::InputData& D)
+                     df::InputData& D, df::Tri2& tri)
 {
-    df::Tri2& tri = D.tri_current;
+   
 
     // Find the edge (ia, ib) in the current triangulation by vertex ids
     df::Tri2::Face_handle fh;

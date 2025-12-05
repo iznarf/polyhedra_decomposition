@@ -6,7 +6,7 @@ namespace df {
 
 void apply_edge_flip(df::vertex_id ia,
                 df::vertex_id ib,
-                df::InputData& D);
+                df::InputData& D, df::Tri2& tri);
 
 
 } // namespace df

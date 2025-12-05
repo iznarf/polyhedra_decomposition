@@ -3,10 +3,36 @@
 
 namespace df {
 
+bool quad_strictly_convex(const P2& a, const P2& b,
+                          const P2& c, const P2& d)
+{
+    // 1) C and D on opposite sides of AB
+    auto oc = CGAL::orientation(a, b, c);
+    auto od = CGAL::orientation(a, b, d);
+
+    if (oc == CGAL::COLLINEAR || od == CGAL::COLLINEAR || oc == od)
+        return false;
+
+    // 2) A and B on opposite sides of CD
+    auto oa = CGAL::orientation(c, d, a);
+    auto ob = CGAL::orientation(c, d, b);
+
+    if (oa == CGAL::COLLINEAR || ob == CGAL::COLLINEAR || oa == ob)
+        return false;
+
+    // if both conditions hold, the diagonals intersect in the interior
+    // and the quadrilateral is strictly convex (no collinearity, no reflex angle)
+    return true;
+}
+
+
+
+
 // we take the triangle (a,b,c) in 2D and make sure it is ccw oriented
 // then we compute the 3D orientation of (a3,b3,c3,d3)
 // if it is positive then d3 lies in the normal direction of (a3,b3,c3): convetion "above plane"
 // if it is negative then d3 lies in the opposite direction of the normal "below plane"
+
 
 CGAL::Orientation oriented_height_sign(
     const P2& a2, const P2& b2, const P2& c2,
@@ -27,8 +53,8 @@ CGAL::Orientation oriented_height_sign(
 }
 
 
-/*
 
+/*
 static inline double debug_height(double x, double y) {
     constexpr double eps = 1e-9;
     auto eq = [eps](double a, double b) { return std::abs(a - b) < eps; };
@@ -47,9 +73,6 @@ static inline double debug_height(double x, double y) {
 }
 
 
-
-
-
 P3 lift(const P2& p) {
     double x = CGAL::to_double(p.x());
     double y = CGAL::to_double(p.y());
@@ -66,9 +89,6 @@ P3 lift_regular(const P2_weighted& p) {
 
 
 */
-
-
-
 P3 lift(const P2& p) {
     return P3(p.x(), p.y(), p.x()*p.x() + p.y()*p.y());
 }
@@ -76,6 +96,10 @@ P3 lift(const P2& p) {
 P3 lift_regular(const P2_weighted& p) {
     return P3(p.x(), p.y(), p.x()*p.x() + p.y()*p.y());
 }
+
+
+
+
 
 
 

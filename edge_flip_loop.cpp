@@ -62,7 +62,7 @@ void perform_all_conforming_down_flips(df::InputData& in) {
         const auto [ia, ib] = flippable_edges.front();
         std::cout << "flipping edge (" << ia << "," << ib << ")\n";
 
-        df::apply_edge_flip(ia, ib, in);
+        df::apply_edge_flip(ia, ib, in, in.tri_current);
 
         // update the visualization 
         viz::show_or_update_current(in);

@@ -13,11 +13,12 @@ namespace pst {
         std::vector<FaceTriple> faces;
     };
 
-    // equality for use in std::map / std::unordered_map
+    // equality for use in std::unordered_map (signature map)
     inline bool operator==(const TriSignature& a, const TriSignature& b) {
         return a.faces == b.faces;
     }
 
+    // poset node structure
     struct Node {
         std::vector<df::StepRecord> history;  // steps from upper to here
         TriSignature                signature; // triangulation signature at this node
@@ -26,12 +27,21 @@ namespace pst {
 
     };
 
-    void build_poset(const df::InputData& D);
+    // builds the conforming flip poset from upper to lower triangulation
+    void build_poset(const df::InputData& D, std::vector<Node>& nodes);
+
+    // depth-first search for a conforming path from upper to lower triangulation
+    bool find_conforming_path_dfs(const df::InputData& D, std::vector<df::StepRecord>& out_history, std::size_t max_nodes, std::size_t max_depth);
+    
+    void replay_step_poset(const df::StepRecord& step, df::Tri2& tri, const df::InputData& D);
+
+    void replay_history_poset(df::Tri2& tri, const std::vector<df::StepRecord>& history, const df::InputData& D);
+
 
 } // namespace pst
 
 
-// hash function for TriSignature for use in unordered_map
+// hash function for signatures for use in unordered_map
 namespace std {
     template <>
     struct hash<pst::TriSignature> {

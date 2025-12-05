@@ -146,17 +146,21 @@ InputData make_random_input(int n_points, unsigned seed) {
 
     
     D.points2d = sample_points_in_disk(n_points, 1.0, rng);
-    
+    /*
     //print 2d points list
     std::cout << "Generated " << n_points << " random 2D points:\n";
     for (std::size_t i = 0; i < D.points2d.size(); ++i) {
         const P2& p = D.points2d[i];
         std::cout << " " << p.x() << " " << p.y() << "\n";
     }
-    
+    */
 
     
+    
+    
+
     /*
+    
     //example points 1
 
     D.points2d = {
@@ -240,7 +244,7 @@ InputData make_random_input(int n_points, unsigned seed) {
 
     using vertex_handle = Tri2::Vertex_handle;
     
-    // indices of all points for shuffling
+    // indices of all points 
     std::vector<std::size_t> indices(D.points2d.size());
     std::iota(indices.begin(), indices.end(), 0);
 
@@ -270,7 +274,9 @@ InputData make_random_input(int n_points, unsigned seed) {
 
     D.tri_lower.set_infinite_vertex(inf_v);
     CGAL_assertion(D.tri_lower.is_valid());
-    /**/
+    */
+
+    
     return D;
 }
 
@@ -497,6 +503,7 @@ InputData make_random_valid_input(int n_points, unsigned seed_start)
         if (!lifted_triangulations_intersect(D)) {
             std::cout << "[input] using seed " << seed
                       << " (lifted triangulations are non-intersecting)\n";
+
             return D;
         }
 

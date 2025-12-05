@@ -46,6 +46,9 @@
     <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\height_test.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\vis_poset.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="C:\Users\franz\Desktop\polyhedra_decomposition\CMakeLists.txt" />
