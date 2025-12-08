@@ -145,7 +145,7 @@ InputData make_random_input(int n_points, unsigned seed) {
     // 1) random points with interior points
 
     
-    D.points2d = sample_points_in_disk(n_points, 1.0, rng);
+    //D.points2d = sample_points_in_disk(n_points, 1.0, rng);
     /*
     //print 2d points list
     std::cout << "Generated " << n_points << " random 2D points:\n";
@@ -159,7 +159,7 @@ InputData make_random_input(int n_points, unsigned seed) {
     
     
 
-    /*
+    
     
     //example points 1
 
@@ -172,7 +172,7 @@ InputData make_random_input(int n_points, unsigned seed) {
         P2(1,1.5)     //lift to z = 1
     };
 
-    */
+    
     
 
     // 2) make an global index array [0,...,n-1]
@@ -226,6 +226,7 @@ InputData make_random_input(int n_points, unsigned seed) {
     hull_pairs.reserve(hull_ids.size());
     for (auto id : hull_ids)
         hull_pairs.emplace_back(D.points2d[id], id);
+
     
     // 7) insert into triangulation; each vertex info() becomes global index
     D.tri_upper.clear();
@@ -257,9 +258,9 @@ InputData make_random_input(int n_points, unsigned seed) {
     
     
     D.tri_lower.clear();
-    D.tri_lower.insert(lower_pairs.begin(), lower_pairs.end());
+    //D.tri_lower.insert(lower_pairs.begin(), lower_pairs.end());
 
-    /*
+    
     
     // make lower triangulation be the (unweighted) copy of the regular triangulation
     df::Convert_vertex_RT_to_Tri2 cv;
@@ -274,7 +275,7 @@ InputData make_random_input(int n_points, unsigned seed) {
 
     D.tri_lower.set_infinite_vertex(inf_v);
     CGAL_assertion(D.tri_lower.is_valid());
-    */
+    
 
     
     return D;

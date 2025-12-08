@@ -64,7 +64,7 @@ void apply_edge_flip(df::vertex_id ia,
    
    
     df::StepRecord s;
-    s.kind = df::StepKind::EdgeFlip;
+    s.kind = df::StepKind::EdgeFlip_down;
     s.a = ia; s.b = ib;
     s.c = ic; s.d = id;
     D.step_history.push_back(s);

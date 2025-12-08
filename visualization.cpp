@@ -561,7 +561,7 @@ void flip_decomposition_ui()
         const df::StepRecord& step = steps[g_decomp_prefix - 1];
 
         const char* kindStr =
-            (step.kind == df::StepKind::EdgeFlip) ? "2-2 flip" : "1-3 flip";
+            (step.kind == df::StepKind::EdgeFlip_down || step.kind == df::StepKind::EdgeFlip_up) ? "2-2 flip" : "1-3 flip";
 
         ImGui::Text("flip decomposition (cyan) step: %d / %d",
                     g_decomp_prefix, n);

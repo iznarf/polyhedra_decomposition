@@ -29,18 +29,19 @@ int main() {
     polyscope::init();
 
     // number of vertices in triangulation
-    int n_points = 35;
+    int n_points = 31;
     // random seed to start point generation
-    unsigned seed0 = 218;
+    unsigned seed0 = 1312;
     df::InputData in = df::make_random_valid_input(n_points, seed0);
 
-    /*
-
+   
+    
     df::apply_edge_flip(5, 0, in, in.tri_lower);
     df::apply_edge_flip(4, 2, in, in.tri_lower);
     df::apply_edge_flip(3, 1, in, in.tri_lower);
+    
 
-    */
+    
 
     // clear steop history to start fresh
     in.step_history.clear();
@@ -161,8 +162,8 @@ int main() {
 
     // build poset and visualize it
     std::vector<pst::Node> poset_nodes;
-    //pst::build_poset(in, poset_nodes);
-    //viz_poset::register_poset(in, poset_nodes);
+    pst::build_poset(in, poset_nodes);
+    viz_poset::register_poset(in, poset_nodes);
 
     /*
     std::vector<df::StepRecord> alt_path;

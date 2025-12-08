@@ -2,7 +2,7 @@
 #include "input.h"
 #include <vector>
 #include <array>
-#include <cstddef> // for std::size_t
+#include <cstddef> 
 
 namespace pst {
 
@@ -24,8 +24,11 @@ namespace pst {
         TriSignature                signature; // triangulation signature at this node
         std::vector<int> parents;          // all poset parents
         std::vector<int> children;         // all poset children
+        std::vector<df::StepRecord> child_steps; // steps to each child
 
     };
+
+    TriSignature make_signature(const df::Tri2& T);
 
     // builds the conforming flip poset from upper to lower triangulation
     void build_poset(const df::InputData& D, std::vector<Node>& nodes);

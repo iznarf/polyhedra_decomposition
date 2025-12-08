@@ -132,13 +132,13 @@ void print_step_history(const df::InputData& D) {
     for (const auto& s : D.step_history) {
         std::cout << "Step " << i++ << ": ";
 
-        if (s.kind == df::StepKind::EdgeFlip) {
+        if (s.kind == df::StepKind::EdgeFlip_down) {
             std::cout << "EdgeFlip  (a=" << s.a 
                       << ", b=" << s.b
                       << ", c=" << s.c
                       << ", d=" << s.d << ")";
         } else {
-            std::cout << "VertexInsertion  (face=(" 
+            std::cout << "VertexInsertion_down  (face=(" 
                       << s.a << "," << s.b << "," << s.c 
                       << "), new=" << s.d << ")";
         }

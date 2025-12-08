@@ -60,6 +60,15 @@ namespace df {
         int li; // index used if the point lies on an edge
         df::Tri2::Face_handle fh = T.locate(p, lt, li);
 
+        if (lt == df::Tri2::EDGE) {
+            std::cerr << "[insertion] insertion point is on an edge, skipping\n";
+            return;
+        }
+
+        if (lt == df::Tri2::VERTEX) {
+            std::cerr << "[insertion] insertion point is on a vertex, skipping\n";
+            return;
+        }
         if (lt == df::Tri2::FACE) {
             // p is strictly inside this triangle
             std::cout << "[locate] point is inside a face\n";
@@ -76,7 +85,7 @@ namespace df {
 
             // record flip
             df::StepRecord s;
-            s.kind = df::StepKind::VertexInsertion;
+            s.kind = df::StepKind::VertexInsertion_down;
             s.a = ia; s.b = ib; s.c = ic; s.d = id;  // face (a,b,c) and new vertex d
             D.step_history.push_back(s);
 

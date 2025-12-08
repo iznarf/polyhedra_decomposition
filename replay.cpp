@@ -130,12 +130,12 @@ void vertex_insertion_replay(vertex_id ia, vertex_id ib, vertex_id ic, vertex_id
 
 
 void apply_step(const StepRecord& step, InputData& D) {
-    if (step.kind == StepKind::EdgeFlip) {
+    if (step.kind == StepKind::EdgeFlip_down) {
 
         // apply the flip on tri_replay
         edge_flip_replay(step.a, step.b, step.c, step.d, D);
 
-    } else if (step.kind == StepKind::VertexInsertion) {
+    } else if (step.kind == StepKind::VertexInsertion_down) {
 
         // insert vertex d into face (a,b,c) on tri_replay
         vertex_insertion_replay(step.a, step.b, step.c, step.d, D);
@@ -176,7 +176,7 @@ void replay_ui() {
         const StepRecord& step = g_replay_data->step_history[g_step_idx - 1];
 
         const char* kindStr =
-            (step.kind == StepKind::EdgeFlip) ? "2-2 flip" : "1-3 flip";
+            (step.kind == StepKind::EdgeFlip_down) ? "2-2 flip" : "1-3 flip";
 
         ImGui::Text("replay (green) step: %d / %d", g_step_idx, n);
         ImGui::Text("kind: %s", kindStr);

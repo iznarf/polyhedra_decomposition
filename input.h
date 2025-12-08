@@ -45,7 +45,7 @@ namespace df {
 
     inline constexpr double PI = 3.14159265358979323846;
 
-    enum class StepKind { EdgeFlip, VertexInsertion, VertexDeletion };
+    enum class StepKind { EdgeFlip_down, EdgeFlip_up, VertexInsertion_down, VertexInsertion_up, VertexDeletion_down, VertexDeletion_up };
 
     struct StepRecord {
         StepKind kind;
@@ -53,6 +53,7 @@ namespace df {
         // For both flip + insertion, we can store 4 ids:
         // Edge flip: (a,b) edge, (c,d) opposite vertices before flip
         // Insertion: (a,b,c) is the face containing d, and d is the new vertex
+        // Deletion: (a,b,c) is the face created by deleting d, and d is the deleted vertex
         vertex_id a, b, c, d;
     };
 
