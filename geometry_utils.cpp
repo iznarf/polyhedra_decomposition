@@ -21,7 +21,7 @@ bool quad_strictly_convex(const P2& a, const P2& b,
         return false;
 
     // if both conditions hold, the diagonals intersect in the interior
-    // and the quadrilateral is strictly convex (no collinearity, no reflex angle)
+    // and the quadrilateral is strictly convex 
     return true;
 }
 

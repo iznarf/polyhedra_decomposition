@@ -29,10 +29,9 @@ int main() {
     polyscope::init();
 
     // number of vertices in triangulation
-    int n_points = 21;
+    int n_points = 35;
     // random seed to start point generation
-    unsigned seed0 = 44;
-
+    unsigned seed0 = 218;
     df::InputData in = df::make_random_valid_input(n_points, seed0);
 
     /*

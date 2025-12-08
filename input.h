@@ -45,7 +45,7 @@ namespace df {
 
     inline constexpr double PI = 3.14159265358979323846;
 
-    enum class StepKind { EdgeFlip, VertexInsertion };
+    enum class StepKind { EdgeFlip, VertexInsertion, VertexDeletion };
 
     struct StepRecord {
         StepKind kind;
@@ -62,7 +62,6 @@ namespace df {
         std::vector<P2_weighted> points2d_weighted; // weighted points for regular triangulation of planar point set A
         Tri2            tri_upper;  // source: triangulation using hull only (no interior vertices)
         Tri2            tri_lower;  // target: triangulation using all points 
-        //Tri2Regular   tri_lower;  // target: triangulation using all points
         Tri2           tri_current;  // triangulation of the current state in the algorithm
         Tri2          tri_replay;  // triangulation for applying the recorded flips
         Tri2            tri_poset;  // triangulation for poset computation
