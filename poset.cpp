@@ -402,9 +402,9 @@ namespace pst {
             df::P3 c3 = df::lift(c2);
             df::P3 d3 = df::lift(d2);
 
-            // the orientation here was not consistent -> fix this properly, not just randomly swap b and a
+            // the orientation here was not consistent -> fix this properly, not just randomly swap b and a!!!
 
-            CGAL::Orientation orient = df::oriented_height_sign(b2, a2, c2, a3, b3, c3, d3);
+            CGAL::Orientation orient = df::oriented_height_sign(a2, b2, c2, a3, b3, c3, d3);
 
             if (orient == CGAL::COLLINEAR) {
                 std::cerr << "[deletion] WARNING: oriented_height_sign == COLLINEAR, skipping\n";
@@ -418,12 +418,13 @@ namespace pst {
             df::StepRecord step;
             if (orient == CGAL::NEGATIVE) {
                 // print down deletion
+                std::cout << "[deletion] UP deletion\n";
+                // if d lies below the plane and we delete d, then we make an up flip
+                step.kind = df::StepKind::VertexDeletion_up;
+            } else if (orient == CGAL::POSITIVE) {
+                // if d lies above the plane and we delete d, then we make a down flip
                 std::cout << "[deletion] DOWN deletion\n";
                 step.kind = df::StepKind::VertexDeletion_down;
-            } else if (orient == CGAL::POSITIVE) {
-                // UP deletion
-                std::cout << "[deletion] UP deletion\n";
-                step.kind = df::StepKind::VertexDeletion_up;
             }
            
           
@@ -759,33 +760,6 @@ namespace pst {
         
 
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     // DFS for a conforming path from upper to lower triangulation
