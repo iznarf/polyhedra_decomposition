@@ -41,5 +41,10 @@ namespace df {
     void print_step_history(const df::InputData& D);
 
 
+    void print_step_record(const df::StepRecord& s);
+
+
+
+
 
 } // namespace df

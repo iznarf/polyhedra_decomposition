@@ -1,5 +1,6 @@
 #include "check_edges.h"
 #include "geometry_utils.h"
+#include "height_test.h"
 
 #include <CGAL/enum.h>
 #include <unordered_map>
@@ -41,56 +42,52 @@ namespace reg {
 
 
 
-  // function 1
-  std::vector<std::array<df::vertex_id, 2>> find_locally_non_regular_edges(const Tri2& tri) {
+// function 1
+std::vector<std::array<df::vertex_id, 2>> find_locally_non_regular_edges(const Tri2& tri) {
         std::vector<std::array<df::vertex_id, 2>> non_regular_edges;
 
-    for (auto edge = tri.finite_edges_begin(); edge != tri.finite_edges_end(); ++edge) {
-        auto f = edge->first;  // incident face of the edge
-        int  i = edge->second; // index of opposite vertex in face f
+        for (auto edge = tri.finite_edges_begin(); edge != tri.finite_edges_end(); ++edge) {
+            auto f = edge->first;  // incident face of the edge
+            int  i = edge->second; // index of opposite vertex in face f
 
-        // internal edge? both incident faces must be finite
-        if (tri.is_infinite(f)) continue;
-        auto g = f->neighbor(i);
-        if (tri.is_infinite(g)) continue;
+            // internal edge? both incident faces must be finite
+            if (tri.is_infinite(f)) continue;
+            auto g = f->neighbor(i);
+            if (tri.is_infinite(g)) continue;
 
-        // extract the quad around the edge
-        auto va = f->vertex(tri.cw(i));
-        auto vb = f->vertex(tri.ccw(i));
-        auto vc = f->vertex(i);
-        int  j  = tri.mirror_index(f, i);
-        auto vd = g->vertex(j);
+            // extract the quad around the edge
+            auto va = f->vertex(tri.cw(i));
+            auto vb = f->vertex(tri.ccw(i));
+            auto vc = f->vertex(i);
+            int  j  = tri.mirror_index(f, i);
+            auto vd = g->vertex(j);
 
-        const P2 &a2 = va->point(), &b2 = vb->point(), &c2 = vc->point(), &d2 = vd->point();
+            const P2 &a2 = va->point(), &b2 = vb->point(), &c2 = vc->point(), &d2 = vd->point();
 
-        if (!df::quad_strictly_convex(a2, b2, c2, d2)) continue;
+            if (!df::quad_strictly_convex(a2, b2, c2, d2)) continue;
 
-        // lift to 3D using lift in geometry_utils
-        P3 a3 = lift(a2);
-        P3 b3 = lift(b2);
-        P3 c3 = lift(c2);
-        P3 d3 = lift(d2);
+            // lift to 3D using lift in geometry_utils
+            P3 a3 = lift(a2);
+            P3 b3 = lift(b2);
+            P3 c3 = lift(c2);
+            P3 d3 = lift(d2);
 
        
-        CGAL::Orientation s = oriented_height_sign(a2, b2, c2, a3, b3, c3, d3);
+            CGAL::Orientation s = oriented_height_sign(a2, b2, c2, d2, a3, b3, c3, d3);
+            auto height = compare_heights_at_intersection(a2, b2, c2, d2, a3, b3, c3, d3);
 
-        // if negative then edge (a,b) is locally non-regular -> down flip
-        if (s == CGAL::NEGATIVE) {
-            df::vertex_id ia = va->info();
-            df::vertex_id ib = vb->info();
-            non_regular_edges.push_back({ia, ib});
-        }
+            
+            // if negative then edge (a,b) is locally non-regular -> down flip
+            if (s == CGAL::NEGATIVE) {
+                df::vertex_id ia = va->info();
+                df::vertex_id ib = vb->info();
+                non_regular_edges.push_back({ia, ib});
+            }
+            
 
-        if (s == CGAL::COPLANAR) {
-            // just print that there is a colplanar quad 
-            df::vertex_id ia = va->info();
-            df::vertex_id ib = vb->info();
-            std::cout << "[check_edges] WARNING: edge (" << ia << "," << ib
-                      << ") is in a coplanar quad\n";
         }
+        return non_regular_edges;
     }
-    return non_regular_edges;
-}
 
 
 // function 2

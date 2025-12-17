@@ -1,5 +1,11 @@
+
+#include "input.h"
 #include "geometry_utils.h"
+#include <CGAL/intersections.h>
+#include <boost/variant/get.hpp>
+#include <iostream>
 #include <CGAL/enum.h>
+#include <variant>   
 
 namespace df {
 
@@ -35,14 +41,14 @@ bool quad_strictly_convex(const P2& a, const P2& b,
 
 
 CGAL::Orientation oriented_height_sign(
-    const P2& a2, const P2& b2, const P2& c2,
+    const P2& a2, const P2& b2, const P2& c2, const P2& d2,
     const P3& a3, const P3& b3, const P3& c3, const P3& d3)
 {
     auto o2 = CGAL::orientation(a2, b2, c2);
 
     // make a,b,c ccw in 2D 
     if (o2 == CGAL::RIGHT_TURN) {
-        // swap b and c in 3D
+        
         return CGAL::orientation(a3, c3, b3, d3);
     }
     if (o2 == CGAL::COLLINEAR) {
@@ -54,7 +60,72 @@ CGAL::Orientation oriented_height_sign(
 
 
 
+void debug_segment_intersection_2d(
+    const CGAL::Segment_2<K>& cd,
+    const CGAL::Segment_2<K>& uv,
+    const std::string& tag )
+{
+    if (!CGAL::do_intersect(cd, uv)) {
+        std::cout << "[debug] no 2D intersection\n";
+        return;
+    }
 
+    auto inter = CGAL::intersection(cd, uv);
+    if (!inter) {
+        std::cout << "[debug] do_intersect but no intersection object?\n";
+        return;
+    }
+
+    // IMPORTANT: in your setup, *inter is a std::variant<Point_2, Segment_2>
+    using P2 = CGAL::Point_2<K>;
+    using S2 = CGAL::Segment_2<K>;
+
+    // ---- Point intersection ----
+    if (const P2* p = std::get_if<P2>(&*inter)) {
+        bool is_c = (*p == cd.source());
+        bool is_d = (*p == cd.target());
+        bool is_u = (*p == uv.source());
+        bool is_v = (*p == uv.target());
+
+        std::cout << "[debug] 2D intersection POINT";
+        if (!tag.empty()) std::cout << " (" << tag << ")";
+        std::cout << "\n";
+        std::cout << "        p = " << *p << "\n";
+        std::cout << "        equals c: " << is_c
+                  << ", d: " << is_d
+                  << ", u: " << is_u
+                  << ", v: " << is_v << "\n";
+
+        if ((is_c || is_d) && (is_u || is_v))
+            std::cout << "        -> shared endpoint\n";
+        else if (is_c || is_d)
+            std::cout << "        -> endpoint of (c,d) only\n";
+        else if (is_u || is_v)
+            std::cout << "        -> endpoint of (u,v) only\n";
+        else
+            std::cout << "        -> interior-interior point (TRUE CROSS)\n";
+
+        return;
+    }
+
+    // ---- Segment intersection (collinear overlap) ----
+    if (const S2* s = std::get_if<S2>(&*inter)) {
+        std::cout << "[debug] 2D intersection SEGMENT";
+        if (!tag.empty()) std::cout << " (" << tag << ")";
+        std::cout << "\n";
+        std::cout << "        overlap = " << *s << "\n";
+        std::cout << "        degenerate = " << s->is_degenerate() << "\n";
+        return;
+    }
+
+    std::cout << "[debug] 2D intersection of unexpected type\n";
+}
+
+
+
+
+
+/*
 static inline double debug_height(double x, double y) {
     constexpr double eps = 1e-9;
     auto eq = [eps](double a, double b) { return std::abs(a - b) < eps; };
@@ -86,9 +157,9 @@ P3 lift_regular(const P2_weighted& p) {
     double z = debug_height(x, y);
     return P3(x, y, z);
 }
+*/
 
 
-/*
 P3 lift(const P2& p) {
     return P3(p.x(), p.y(), p.x()*p.x() + p.y()*p.y());
 }
@@ -98,7 +169,7 @@ P3 lift_regular(const P2_weighted& p) {
 }
 
 
-*/
+
 
 
 

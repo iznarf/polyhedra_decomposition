@@ -145,7 +145,7 @@ InputData make_random_input(int n_points, unsigned seed) {
     // 1) random points with interior points
 
     
-    //D.points2d = sample_points_in_disk(n_points, 1.0, rng);
+    D.points2d = sample_points_in_disk(n_points, 1.0, rng);
     /*
     //print 2d points list
     std::cout << "Generated " << n_points << " random 2D points:\n";
@@ -159,7 +159,7 @@ InputData make_random_input(int n_points, unsigned seed) {
     
     
 
-    
+    /*
     
     //example points 1
 
@@ -173,12 +173,13 @@ InputData make_random_input(int n_points, unsigned seed) {
     };
 
     
-    
+    */
 
     // 2) make an global index array [0,...,n-1]
     std::vector<std::size_t> global_indices(D.points2d.size());
     std::iota(global_indices.begin(), global_indices.end(), 0);
 
+    /* build regular triangulation
     // build weighted points for regular triangulation
     D.points2d_weighted.clear();
     for (std::size_t i = 0; i < D.points2d.size(); ++i) {
@@ -190,6 +191,7 @@ InputData make_random_input(int n_points, unsigned seed) {
         vh->info() = i; // set global index as info
         D.points2d_weighted.push_back(wp); 
     }
+    */
 
     // 3) build convex hull: We use the property map to then give CGAL just the global indices for the convex hull
     // since we have the property map, CGAL can then build the convex hull based on the indices
@@ -227,21 +229,56 @@ InputData make_random_input(int n_points, unsigned seed) {
     for (auto id : hull_ids)
         hull_pairs.emplace_back(D.points2d[id], id);
 
+
     
     // 7) insert into triangulation; each vertex info() becomes global index
     D.tri_upper.clear();
-    D.tri_upper.insert(hull_pairs.begin(), hull_pairs.end());
+    //D.tri_upper.insert(hull_pairs.begin(), hull_pairs.end());
+
+
+    // make farthest point regular triangulation of hull points
+    D.tri_far_regular.clear();
+    for (auto id: hull_ids) {
+        const P2& p = D.points2d[id];
+        K::FT w = 2*(p.x() * p.x() + p.y() * p.y());
+        P2_weighted wp(p, w);
+
+        auto vh = D.tri_far_regular.insert(wp);
+        vh->info() = id; // set global index as info
+       
+    }
+
+
+    df::Convert_vertex_RT_to_Tri2 cv_far;
+    df::Convert_face_RT_to_Tri2   cf_far;
+
+    auto inf_v_far =
+        D.tri_upper.tds().copy_tds(
+            D.tri_far_regular.tds(),
+            D.tri_far_regular.infinite_vertex(),
+            cv_far, cf_far
+    );
+
+    D.tri_upper.set_infinite_vertex(inf_v_far);
+    CGAL_assertion(D.tri_upper.is_valid());
+
+
+
+
 
     D.tri_current.clear();
-    D.tri_current.insert(hull_pairs.begin(), hull_pairs.end());
+    D.tri_current = D.tri_upper;
+    //D.tri_current.insert(hull_pairs.begin(), hull_pairs.end());
 
     // we need this for applying then all recorded flips
     D.tri_replay.clear();
-    D.tri_replay.insert(hull_pairs.begin(), hull_pairs.end());
+    D.tri_replay = D.tri_upper;
+    //D.tri_replay.insert(hull_pairs.begin(), hull_pairs.end());
 
     // we need this for building the poset
     D.tri_poset.clear();
-    D.tri_poset.insert(hull_pairs.begin(), hull_pairs.end());
+    D.tri_poset = D.tri_upper;
+    //D.tri_poset.insert(hull_pairs.begin(), hull_pairs.end());
 
     using vertex_handle = Tri2::Vertex_handle;
     
@@ -258,9 +295,9 @@ InputData make_random_input(int n_points, unsigned seed) {
     
     
     D.tri_lower.clear();
-    //D.tri_lower.insert(lower_pairs.begin(), lower_pairs.end());
+    D.tri_lower.insert(lower_pairs.begin(), lower_pairs.end());
 
-    
+    /*
     
     // make lower triangulation be the (unweighted) copy of the regular triangulation
     df::Convert_vertex_RT_to_Tri2 cv;
@@ -276,7 +313,7 @@ InputData make_random_input(int n_points, unsigned seed) {
     D.tri_lower.set_infinite_vertex(inf_v);
     CGAL_assertion(D.tri_lower.is_valid());
     
-
+    */
     
     return D;
 }

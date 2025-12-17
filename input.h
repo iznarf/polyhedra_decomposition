@@ -7,6 +7,7 @@
 
 
 
+
 #include <CGAL/Regular_triangulation_2.h>
 #include <CGAL/Regular_triangulation_vertex_base_2.h>
 #include <CGAL/Regular_triangulation_face_base_2.h>
@@ -25,6 +26,7 @@ namespace df {
     // simple cartesian kernel with double would be better 
     //using K  = CGAL::Simple_cartesian<double>; // cartesian kernel
     using K  = CGAL::Exact_predicates_inexact_constructions_kernel;
+    //using K = CGAL::Exact_predicates_exact_constructions_kernel;
     using P2 = K::Point_2;
     using P3 = K::Point_3;
     using vertex_id = std::size_t;  // global vertex id
@@ -67,6 +69,7 @@ namespace df {
         Tri2          tri_replay;  // triangulation for applying the recorded flips
         Tri2            tri_poset;  // triangulation for poset computation
         Tri2Regular tri_regular; // regular triangulation of point set A
+        Tri2Regular tri_far_regular; // regular triangulation of convex hull of A 
 
         std::vector<std::pair<vertex_id, vertex_id>> hull_edges; // this is just for checking if input is valid
         std::vector<StepRecord> step_history;  // sequence of all flips: edge flips and insertions

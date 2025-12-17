@@ -86,76 +86,90 @@ void debug_print_edge_list(const InputData& D) {
         return EA == EB;
     }
 
-void debug_print_local_to_global_map(
-    const df::InputData& D,
-    TriKind which,
-    const std::vector<int>& local_indices)
-{
-    const df::Tri2& tri = (which == TriKind::Current)
-                        ? D.tri_current
-                        : D.tri_lower;
+    void debug_print_local_to_global_map(const df::InputData& D, TriKind which, const std::vector<int>& local_indices) {
+        const df::Tri2& tri = (which == TriKind::Current)
+                            ? D.tri_current
+                            : D.tri_lower;
 
-    // get global ids in polyscope order for this triangulation
-    auto ids = collect_vertex_ids_in_order(tri);
+        // get global ids in polyscope order for this triangulation
+        auto ids = collect_vertex_ids_in_order(tri);
 
-    const char* label = (which == TriKind::Current) ? "current" : "lower";
+        const char* label = (which == TriKind::Current) ? "current" : "lower";
 
-    std::cout << "\n[debug] " << label
-              << " polyscope local -> global mapping:\n";
+        std::cout << "\n[debug] " << label
+                << " polyscope local -> global mapping:\n";
 
-    // if no subset given: dump full map
-    if (local_indices.empty()) {
-        for (int li = 0; li < static_cast<int>(ids.size()); ++li) {
+        // if no subset given: dump full map
+        if (local_indices.empty()) {
+            for (int li = 0; li < static_cast<int>(ids.size()); ++li) {
+                df::vertex_id gid = ids[li];
+                std::cout << "  local " << li << " -> global " << gid << "\n";
+            }
+            return;
+        }
+
+        // otherwise: only print the requested local indices
+        for (int li : local_indices) {
+            if (li < 0 || li >= static_cast<int>(ids.size())) {
+                std::cout << "  local " << li << " : out of range (0.."
+                        << (ids.size() - 1) << ")\n";
+                continue;
+            }
             df::vertex_id gid = ids[li];
             std::cout << "  local " << li << " -> global " << gid << "\n";
         }
-        return;
     }
 
-    // otherwise: only print the requested local indices
-    for (int li : local_indices) {
-        if (li < 0 || li >= static_cast<int>(ids.size())) {
-            std::cout << "  local " << li << " : out of range (0.."
-                      << (ids.size() - 1) << ")\n";
-            continue;
+    void print_step_history(const df::InputData& D) {
+        std::cout << "\n==== Step history (" 
+                << D.step_history.size() << " steps) ====\n";
+
+        int i = 0;
+        for (const auto& s : D.step_history) {
+            std::cout << "Step " << i++ << ": ";
+
+            if (s.kind == df::StepKind::EdgeFlip_down) {
+                std::cout << "EdgeFlip  (a=" << s.a 
+                        << ", b=" << s.b
+                        << ", c=" << s.c
+                        << ", d=" << s.d << ")";
+            } else {
+                std::cout << "VertexInsertion_down  (face=(" 
+                        << s.a << "," << s.b << "," << s.c 
+                        << "), new=" << s.d << ")";
+            }
+
+            std::cout << "\n";
         }
-        df::vertex_id gid = ids[li];
-        std::cout << "  local " << li << " -> global " << gid << "\n";
+
+        std::cout << "========================================\n\n";
+    }
+
+
+void print_step_record(const df::StepRecord& s)
+{
+    if (s.kind == df::StepKind::EdgeFlip_down ||
+        s.kind == df::StepKind::EdgeFlip_up) {
+
+        std::cout << "EdgeFlip  (a=" << s.a
+                  << ", b=" << s.b
+                  << ", c=" << s.c
+                  << ", d=" << s.d << ")";
+    }
+    else {
+        // insertion (down or up)
+        std::cout << "VertexInsertion_down  (face=("
+                  << s.a << "," << s.b << "," << s.c
+                  << "), new=" << s.d << ")";
     }
 }
 
-void print_step_history(const df::InputData& D) {
-    std::cout << "\n==== Step history (" 
-              << D.step_history.size() << " steps) ====\n";
 
-    int i = 0;
-    for (const auto& s : D.step_history) {
-        std::cout << "Step " << i++ << ": ";
 
-        if (s.kind == df::StepKind::EdgeFlip_down) {
-            std::cout << "EdgeFlip  (a=" << s.a 
-                      << ", b=" << s.b
-                      << ", c=" << s.c
-                      << ", d=" << s.d << ")";
-        } else {
-            std::cout << "VertexInsertion_down  (face=(" 
-                      << s.a << "," << s.b << "," << s.c 
-                      << "), new=" << s.d << ")";
-        }
-
-        std::cout << "\n";
-    }
-
-    std::cout << "========================================\n\n";
-}
 
 // helper: given an edge (ia, ib), find the 4 vertices of the quad around it
 // in current triangulation (a,b,c,d) with edge (a,b) and opposite vertices (c,d)
-static bool
-compute_quad_for_edge(const Tri2& tri,
-                      vertex_id ia, vertex_id ib,
-                      std::array<vertex_id,4>& out)
-{
+static bool compute_quad_for_edge(const Tri2& tri, vertex_id ia, vertex_id ib, std::array<vertex_id,4>& out) {
     // find the edge in the triangulation
     Tri2::Face_handle f;
     int edge_idx = -1;
@@ -208,9 +222,7 @@ compute_quad_for_edge(const Tri2& tri,
 
 
 // this function collects the tetrahedra that correspond to edge flips and vertex insertions if the algorithm did not terminate correctly
-std::vector<DebugTetrahedron>
-collect_debug_tetrahedra(const InputData& D)
-{
+std::vector<DebugTetrahedron> collect_debug_tetrahedra(const InputData& D) {
     std::vector<DebugTetrahedron> result;
 
     const Tri2& current = D.tri_current;

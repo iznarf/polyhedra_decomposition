@@ -23,6 +23,8 @@
 #include "poset.h"
 #include <algorithm>
 #include <unordered_map>
+#include <queue>
+
 
 namespace pst {
     // signature of a triangulation: sorted list of face triples (each triple sorted)
@@ -117,7 +119,7 @@ namespace pst {
     df::P3 d3 = df::lift(d2);
 
     // 4) decide local up/down orientation using the same convention as insertion
-    CGAL::Orientation orient = df::oriented_height_sign(a2, b2, c2,a3, b3, c3, d3);
+    CGAL::Orientation orient = df::oriented_height_sign(a2, b2, c2, d2, a3, b3, c3, d3);
 
     // 5) perform the flip
     tri.flip(fh, ei);
@@ -254,7 +256,7 @@ namespace pst {
         df::P3 c3 = df::lift(c2);
         df::P3 d3 = df::lift(d2);
 
-        CGAL::Orientation orient = df::oriented_height_sign(a2, b2, c2, a3, b3, c3, d3);
+        CGAL::Orientation orient = df::oriented_height_sign(a2, b2, c2, d2, a3, b3, c3, d3);
 
         // 6) build the step record
         df::StepRecord step;
@@ -345,154 +347,153 @@ namespace pst {
     }
 
 
-    // apply a vertex deletion of vertex v to triangulation tri at node parent_idx in the poset
-    // checks if the resulting triangulation already exists in the poset
+   int apply_vertex_deletion_poset(df::vertex_id vid,
+                                int current_idx,
+                                df::Tri2& tri,
+                                const df::InputData& D,
+                                std::vector<Node>& nodes,
+                                std::unordered_map<TriSignature, int>& sig_to_node)
+{
+    // 1) find vertex handle
+    df::Tri2::Vertex_handle vh = nullptr;
+    for (auto vit = tri.finite_vertices_begin();
+         vit != tri.finite_vertices_end(); ++vit) {
+        if (vit->info() == vid) {
+            vh = vit;
+            break;
+        }
+    }
+    if (vh == nullptr) {
+        std::cerr << "[deletion] ERROR: vertex " << vid
+                  << " not found in triangulation\n";
+        return -1;
+    }
 
-      int apply_vertex_deletion_poset(df::vertex_id vid, int current_idx, df::Tri2& tri, const df::InputData& D, std::vector<Node>& nodes, std::unordered_map<TriSignature, int>& sig_to_node) {
-            // 1) find vertex handle
-            df::Tri2::Vertex_handle vh = nullptr;
-            for (auto vit = tri.finite_vertices_begin(); vit != tri.finite_vertices_end(); ++vit) {
-                if (vit->info() == vid) {
-                    vh = vit;
-                    break;
-                }
+    // 2) collect 3 finite neighbors (we know degree == 3 and not boundary)
+    std::array<df::Tri2::Vertex_handle, 3> neighbor_vertices;
+    {
+        auto vc = tri.incident_vertices(vh);
+        auto start = vc;
+        int k = 0;
+
+        do {
+            if (!tri.is_infinite(vc)) {
+                if (k < 3) neighbor_vertices[k] = vc;
+                ++k;
             }
-            if (vh == nullptr) {
-                    std::cerr << "[deletion] ERROR: vertex " << vid << " not found in triangulation\n";
-                    return -1;
-            }
+            ++vc;
+        } while (vc != start);
 
-            // 2) collect 3 finite neighbors (we know degree == 3 and not boundary)
-            std::array<df::Tri2::Vertex_handle, 3> neighbor_vertices;
-            {
-                auto vc = tri.incident_vertices(vh);
-                auto start = vc;
-                int k = 0;
+        if (k != 3) {
+            std::cerr << "[deletion] vertex " << vid
+                      << " does not have 3 finite neighbors\n";
+            return -1;
+        }
+    }
 
-                do {
-                    if (!tri.is_infinite(vc)) {
-                        if (k < 3) neighbor_vertices[k] = vc;
-                        ++k;
-                    }
-                    ++vc;
-                } while (vc != start);
+    auto va = neighbor_vertices[0];
+    auto vb = neighbor_vertices[1];
+    auto vc = neighbor_vertices[2];
 
-                if (k != 3) {
-                    std::cerr << "[deletion] vertex " << vid << " does not have 3 finite neighbors\n";
-                    return -1;
-                }
-            }
+    df::vertex_id ia = va->info();
+    df::vertex_id ib = vb->info();
+    df::vertex_id ic = vc->info();
 
-            auto va = neighbor_vertices[0];
-            auto vb = neighbor_vertices[1];
-            auto vc = neighbor_vertices[2];
+    // 3) collect points *before* deletion
+    const df::P2& a2 = va->point();
+    const df::P2& b2 = vb->point();
+    const df::P2& c2 = vc->point();
+    const df::P2& d2 = vh->point(); // to be deleted
 
-            df::vertex_id ia = va->info();
-            df::vertex_id ib = vb->info();
-            df::vertex_id ic = vc->info();
+    df::P3 a3 = df::lift(a2);
+    df::P3 b3 = df::lift(b2);
+    df::P3 c3 = df::lift(c2);
+    df::P3 d3 = df::lift(d2);
 
-            // 3) collect points *before* deletion
-            const df::P2& a2 = va->point();
-            const df::P2& b2 = vb->point();
-            const df::P2& c2 = vc->point();
-            const df::P2& d2 = vh->point(); // to be deleted
+    CGAL::Orientation orient =
+        df::oriented_height_sign(a2, b2, c2, d2, a3, b3, c3, d3);
+    if (orient == CGAL::COLLINEAR) {
+        std::cerr << "[deletion] WARNING: oriented_height_sign == COLLINEAR, skipping\n";
+        return -1;
+    }
 
-            df::P3 a3 = df::lift(a2);
-            df::P3 b3 = df::lift(b2);
-            df::P3 c3 = df::lift(c2);
-            df::P3 d3 = df::lift(d2);
+    // 4) delete the vertex
+    tri.remove_degree_3(vh);
 
-            // the orientation here was not consistent -> fix this properly, not just randomly swap b and a!!!
+    // 5) build step record
+    df::StepRecord step;
+    if (orient == CGAL::NEGATIVE) {
+        // d below plane -> UP deletion
+        std::cout << "[deletion] UP deletion\n";
+        step.kind = df::StepKind::VertexDeletion_up;
+    } else { // CGAL::POSITIVE
+        std::cout << "[deletion] DOWN deletion\n";
+        step.kind = df::StepKind::VertexDeletion_down;
+    }
 
-            CGAL::Orientation orient = df::oriented_height_sign(a2, b2, c2, a3, b3, c3, d3);
+    step.a = ia;
+    step.b = ib;
+    step.c = ic;
+    step.d = vid;  // deleted vertex global id
 
-            if (orient == CGAL::COLLINEAR) {
-                std::cerr << "[deletion] WARNING: oriented_height_sign == COLLINEAR, skipping\n";
-                return -1;
-            }
+    // 6) compute signature of new triangulation
+    TriSignature sig = make_signature(tri);
 
-            // 4) delete the vertex
-            tri.remove_degree_3(vh); 
+    // 7) dedup / create node
+    auto it = sig_to_node.find(sig);
+    int idx;
+    bool is_down = (step.kind == df::StepKind::VertexDeletion_down);
 
-            // 6) build step record
-            df::StepRecord step;
-            if (orient == CGAL::NEGATIVE) {
-                // print down deletion
-                std::cout << "[deletion] UP deletion\n";
-                // if d lies below the plane and we delete d, then we make an up flip
-                step.kind = df::StepKind::VertexDeletion_up;
-            } else if (orient == CGAL::POSITIVE) {
-                // if d lies above the plane and we delete d, then we make a down flip
-                std::cout << "[deletion] DOWN deletion\n";
-                step.kind = df::StepKind::VertexDeletion_down;
-            }
-           
-          
-           
-           
-            step.a = ia;
-            step.b = ib;
-            step.c = ic;
-            step.d = vid;   // deleted vertex id
+    if (is_down) {
+        // DOWN deletion: new node is child of current_idx
+        if (it == sig_to_node.end()) {
+            std::cout << "[deletion] Creating new node (DOWN)\n";
+            idx = static_cast<int>(nodes.size());
 
-            // 5) compute signature of new triangulation
-            TriSignature sig = make_signature(tri);
+            Node child;
+            child.history = nodes[current_idx].history;
+            child.history.push_back(step);
+            child.signature = std::move(sig);
+            child.parents.push_back(current_idx);
 
-            // 7) dedup / create node
-            auto it = sig_to_node.find(sig);
-            int idx;
-
-            if (orient == CGAL::NEGATIVE) {
-                // DOWN deletion: new node is child of current_idx
-                if (it == sig_to_node.end()) {
-                    std::cout << "[deletion] Creating new node\n";
-                    idx = static_cast<int>(nodes.size());
-
-                    Node child;
-                    child.history = nodes[current_idx].history;
-                    child.history.push_back(step);
-                    child.signature = std::move(sig);
-                    child.parents.push_back(current_idx);
-
-                    nodes.push_back(std::move(child));
-                    sig_to_node[nodes[idx].signature] = idx;
-                } else {
-                    std::cout << "[deletion] Reusing existing node\n";
-                    idx = it->second;
-                    nodes[idx].parents.push_back(current_idx);
-                }
-                nodes[current_idx].children.push_back(idx);
-                nodes[current_idx].child_steps.push_back(step);
-
-            } if (orient == CGAL::POSITIVE) { 
-                // UP deletion: new node is *parent* of current_idx
-                if (it == sig_to_node.end()) {
-                    std::cout << "[deletion] Creating new node\n";
-                    idx = static_cast<int>(nodes.size());
-
-                    Node parent;
-                    parent.history = nodes[current_idx].history;
-                    parent.history.push_back(step);
-                    parent.signature = std::move(sig);
-                    //parent.children.push_back(current_idx);
-                   
-
-                    nodes.push_back(std::move(parent));
-                    sig_to_node[nodes[idx].signature] = idx;
-                } else {
-                    std::cout << "[deletion] Reusing existing node\n";
-                    idx = it->second;
-                    //nodes[idx].children.push_back(current_idx);
-                   
-                }
-                //nodes[current_idx].parents.push_back(idx);
-
-            }
-
-            return idx;
+            nodes.push_back(std::move(child));
+            sig_to_node[nodes[idx].signature] = idx;
+        } else {
+            std::cout << "[deletion] Reusing existing node (DOWN)\n";
+            idx = it->second;
+            nodes[idx].parents.push_back(current_idx);
         }
 
+        nodes[current_idx].children.push_back(idx);
+        nodes[current_idx].child_steps.push_back(step);
+    } else {
+        // UP deletion: new node is *parent* of current_idx
+        if (it == sig_to_node.end()) {
+            std::cout << "[deletion] Creating new node (UP)\n";
+            idx = static_cast<int>(nodes.size());
 
+            Node parent;
+            parent.history = nodes[current_idx].history;
+            parent.history.push_back(step);
+            parent.signature = std::move(sig);
+            // parent.children.push_back(current_idx);  
+
+            nodes.push_back(std::move(parent));
+            sig_to_node[nodes[idx].signature] = idx;
+        } else {
+            std::cout << "[deletion] Reusing existing node (UP)\n";
+            idx = it->second;
+            // nodes[idx].children.push_back(current_idx); 
+        }
+        // nodes[current_idx].parents.push_back(idx);    
+    }
+
+    return idx;
+}
+
+
+
+  
 
     // replay a single step (edge flip or vertex insertion) on triangulation tri
     // we need this to reconstruct triangulations at poset nodes from step histories
@@ -610,8 +611,7 @@ namespace pst {
             df::P3 c3 = df::lift(c2);
             df::P3 d3 = df::lift(d2);
 
-            CGAL::Orientation orient = df::oriented_height_sign(a2, b2, c2,
-                                                                a3, b3, c3, d3);
+            CGAL::Orientation orient = df::oriented_height_sign(a2, b2, c2, d2, a3, b3, c3, d3);
 
             if (orient == CGAL::COLLINEAR) continue; // degenerate, skip
 
@@ -646,6 +646,7 @@ namespace pst {
     }
 
 
+
     std::vector<df::vertex_id>
     find_deletion_vertices(const df::Tri2& current) {
         std::vector<df::vertex_id> deletion_vertices;
@@ -659,6 +660,14 @@ namespace pst {
         }
         return deletion_vertices;
     }
+
+    // helper: is this step a DOWN step in the poset?
+    static bool is_down_step(df::StepKind k) {
+        return k == df::StepKind::EdgeFlip_down
+            || k == df::StepKind::VertexInsertion_down
+            || k == df::StepKind::VertexDeletion_down;
+    }
+
 
     // builds the conforming flip poset from upper to lower triangulation
     // can easily be adapted to build full poset including non-conforming flips/insertions
@@ -732,6 +741,7 @@ namespace pst {
         }
 
         std::cout << "[poset] finished building flip poset\n";
+
         /*
         //print signature of every node
         for (std::size_t i = 0; i < nodes.size(); ++i) {
@@ -761,140 +771,449 @@ namespace pst {
 
     }
 
+    std::vector<int> nodes_with_no_incoming_down_flips(const std::vector<Node>& nodes) {
+        const int n = static_cast<int>(nodes.size());
+        std::vector<int> indeg(n, 0);
 
-    // DFS for a conforming path from upper to lower triangulation
-    // returns true if found, false if not found or aborted (max nodes/depth)
-    // does not build the full poset, only explores reachable conforming nodes
-    bool find_conforming_path_dfs(const df::InputData& D, std::vector<df::StepRecord>& out_history, std::size_t max_nodes, std::size_t max_depth) {
-        // start from upper triangulation
-        df::Tri2 tri_root  = D.tri_poset;
-        df::Tri2 tri_lower = D.tri_lower;
+        auto is_down = [](df::StepKind k) {
+            return k == df::StepKind::EdgeFlip_down
+                || k == df::StepKind::VertexInsertion_down
+                || k == df::StepKind::VertexDeletion_down;
+        };
 
-        // signature of the lower triangulation
-        TriSignature sig_lower = make_signature(tri_lower);
-
-        // poset nodes: we will NOT build the full poset, enough to explore paths
-        std::vector<Node> nodes;
-        nodes.reserve(300);
-
-        Node root;
-        root.history.clear();              // no steps from upper to upper
-        root.signature = make_signature(tri_root);
-        nodes.push_back(root);
-
-        // map signatures to node indices so we don't create duplicates
-        std::unordered_map<TriSignature, int> sig_to_node;
-        sig_to_node.emplace(root.signature, 0);
-
-        // stack for DFS storing node indices
-        std::vector<int> stack;
-        stack.push_back(0); // start at root
-
-        // track which indices we have "expanded"
-        // but with this pattern each node is expanded at most once
-        while (!stack.empty()) {
-
-            int idx = stack.back();
-            stack.pop_back();
-
-            if (idx < 0 || idx >= (int)nodes.size())
-                continue;
-
-            Node& current_node = nodes[idx];
-
-            // depth = number of flips/insertions from upper
-            if (current_node.history.size() > max_depth) {
-                continue; // don't expand beyond this depth
-            }
-
-            // if this node already is the lower triangulation we are done
-            if (current_node.signature == sig_lower) {
-                out_history = current_node.history;
-                std::cout << "[dfs] found lower triangulation at node " << idx
-                        << ", depth " << current_node.history.size() << "\n";
-                return true;
-            }
-
-            // reconstruct triangulation for this node
-            df::Tri2 tri = D.tri_poset;
-            replay_history_poset(tri, current_node.history, D);
-
-            // collect candidate moves from this triangulation
-            auto down_flip_edges  = df::reg::find_locally_non_regular_edges(tri);
-            auto missing_vertices = df::find_missing_vertices(tri, tri_lower);
-
-            // conforming edge flip children
-            for (const auto& edge : down_flip_edges) {
-                if (nodes.size() >= max_nodes) {
-                    std::cout << "[dfs] reached max_nodes = " << max_nodes << "\n";
-                    return false; // aborted
-                }
-
-                df::vertex_id ia = edge[0];
-                df::vertex_id ib = edge[1];
-
-                // only explore conforming flips (your new check)
-                if (!df::reg::is_flip_conforming(ia, ib, D, tri))
-                    continue;
-
-                df::Tri2 tri_child = tri;
-                int child_idx = apply_edge_flip_poset(ia, ib, idx, tri_child, nodes, sig_to_node);
-
-                if (child_idx < 0)
-                    continue;
-
-                // if this triangulation is new, push it on the stack
-                if ((std::size_t)child_idx == nodes.size() - 1) {
-                    stack.push_back(child_idx);
-                }
-
-                // early exit if child is lower
-                if (nodes[child_idx].signature == sig_lower) {
-                    out_history = nodes[child_idx].history;
-                    std::cout << "[dfs] found lower via edge flip at node "
-                            << child_idx << "\n";
-                    return true;
-                }
-            }
-
-            // conforming vertex insertion children
-            for (df::vertex_id v : missing_vertices) {
-                if (nodes.size() >= max_nodes) {
-                    std::cout << "[dfs] reached max_nodes = " << max_nodes << "\n";
-                    return false; // aborted
-                }
-
-                // 1) check down-flip condition
-                if (!df::is_insertion_downflip(v, D, tri))
-                    continue;
-
-                // 2) check global conformance w.r.t. lower triangulation
-                if (!df::reg::is_insertion_conforming(v, D, tri))
-                    continue;
-
-                df::Tri2 tri_child = tri;
-                int child_idx = apply_vertex_insertion_poset(v, idx, tri_child, D, nodes, sig_to_node);
-                
-                if (child_idx < 0)
-                    continue;
-
-                if ((std::size_t)child_idx == nodes.size() - 1) {
-                    stack.push_back(child_idx);
-                }
-
-                if (nodes[child_idx].signature == sig_lower) {
-                    out_history = nodes[child_idx].history;
-                    std::cout << "[dfs] found lower via insertion at node "
-                            << child_idx << "\n";
-                    return true;
-                }
+        // count incoming down-flip edges
+        for (int u = 0; u < n; ++u) {
+            const auto& kids  = nodes[u].children;
+            const auto& steps = nodes[u].child_steps;
+            for (std::size_t e = 0; e < kids.size(); ++e) {
+                if (!is_down(steps[e].kind)) continue;
+                int v = kids[e];
+                indeg[v] += 1;
             }
         }
 
-    // DFS exhausted all reachable conforming nodes from upper, never hit lower
-    std::cout << "[dfs] no conforming path from upper to lower found.\n";
+        // collect nodes with zero incoming down flips
+        std::vector<int> roots;
+        for (int i = 0; i < n; ++i) {
+            if (indeg[i] == 0)
+                roots.push_back(i);
+        }
+
+        return roots;
+    }
+
+
+
+    PosetTriIndices find_special_triangulations_in_poset(
+        const df::InputData& D,
+        const std::vector<pst::Node>& nodes)
+    {
+        PosetTriIndices out;
+
+        // IMPORTANT: these must correspond to what you mean by “target/current/lower”
+        // - target: the triangulation you start the poset from (in your build_poset this is D.tri_poset)
+        // - current: whatever your algorithm currently has at the time you call this (D.tri_current)
+        // - lower: D.tri_lower
+        const TriSignature sig_upper  = make_signature(D.tri_upper);
+        const TriSignature sig_current = make_signature(D.tri_current);
+        const TriSignature sig_lower   = make_signature(D.tri_lower);
+
+        for (int i = 0; i < (int)nodes.size(); ++i) {
+            if (out.upper  < 0 && nodes[i].signature == sig_upper)  out.upper  = i;
+            if (out.current < 0 && nodes[i].signature == sig_current) out.current = i;
+            if (out.lower   < 0 && nodes[i].signature == sig_lower)   out.lower   = i;
+
+            if (out.upper >= 0 && out.current >= 0 && out.lower >= 0)
+                break;
+        }
+
+        return out;
+    }
+
+
+
+
+
+bool exists_path_via_children(
+    const std::vector<pst::Node>& nodes,
+    int source_idx,
+    int target_idx)
+{
+    const int n = (int)nodes.size();
+    if (source_idx < 0 || source_idx >= n) return false;
+    if (target_idx < 0 || target_idx >= n) return false;
+    if (source_idx == target_idx) return true;
+
+    std::vector<char> visited(n, 0);
+    std::queue<int> q;
+
+    visited[source_idx] = 1;
+    q.push(source_idx);
+
+    while (!q.empty()) {
+        int u = q.front();
+        q.pop();
+
+        for (int v : nodes[u].children) {
+            if (v < 0 || v >= n) continue;
+            if (visited[v]) continue;
+            if (v == target_idx) return true;
+            visited[v] = 1;
+            q.push(v);
+        }
+    }
+
     return false;
 }
+
+
+
+
+
+
+
+
+
+
+void build_poset_local_down_from_history(
+    const df::InputData& D,
+    const std::vector<df::StepRecord>& center_history,
+    std::size_t max_depth,
+    std::vector<Node>& nodes,
+    std::size_t max_nodes
+) {
+    // 1) reconstruct triangulation for the chosen center node
+    df::Tri2 tri_center = D.tri_poset;     // start from upper
+    replay_history_poset(tri_center, center_history, D);
+    df::Tri2 tri_lower  = D.tri_lower;
+
+    // 2) init nodes: root = chosen node
+    nodes.clear();
+    nodes.reserve(600);
+
+    Node root;
+    root.history   = center_history;       // full history from upper
+    root.signature = make_signature(tri_center);
+    nodes.push_back(root);
+
+    std::unordered_map<TriSignature, int> sig_to_node;
+    sig_to_node.emplace(root.signature, 0);
+
+    // we expand nodes by increasing index
+    std::size_t current_idx = 0;
+
+    while (current_idx < nodes.size()) {
+
+        if (nodes.size() >= max_nodes) {
+            std::cout << "[poset local DOWN] reached max_nodes = "
+                      << max_nodes << "\n";
+            break;
+        }
+
+        Node& current_node = nodes[current_idx];
+
+        // depth measured *relative* to the chosen center node
+        std::size_t depth_from_center =
+            current_node.history.size() - center_history.size();
+
+        if (depth_from_center >= max_depth) {
+            ++current_idx;
+            continue; // do not expand this node further
+        }
+
+        // 3) reconstruct triangulation for this node
+        df::Tri2 tri = D.tri_poset;
+        replay_history_poset(tri, current_node.history, D);
+
+        // 4) collect possible moves
+        auto flip_edges        = find_flip_edges(tri);
+        auto missing_vertices  = df::find_missing_vertices(tri, tri_lower);
+        auto deletion_vertices = find_deletion_vertices(tri);
+
+        // ---- EDGE FLIPS ----
+        for (const auto& edge : flip_edges) {
+            if (nodes.size() >= max_nodes) break;
+
+            df::Tri2 tri_child = tri;
+            df::vertex_id ia = edge[0];
+            df::vertex_id ib = edge[1];
+
+            int child_idx = apply_edge_flip_poset(
+                ia, ib,
+                static_cast<int>(current_idx),
+                tri_child,
+                nodes, sig_to_node
+            );
+
+            // if child_idx < 0, move was invalid; otherwise:
+            //  - if it was DOWN, apply_edge_flip_poset already added
+            //    children/child_steps.
+            //  - if it was UP, it created (or reused) a node but *no*
+            //    down-edge; that node will still be expanded later.
+        }
+
+        // ---- VERTEX INSERTIONS ----
+        for (df::vertex_id v : missing_vertices) {
+            if (nodes.size() >= max_nodes) break;
+
+            df::Tri2 tri_child = tri;
+
+            int child_idx = apply_vertex_insertion_poset(
+                v,
+                static_cast<int>(current_idx),
+                tri_child,
+                D,
+                nodes, sig_to_node
+            );
+
+            // same logic: DOWN insertions give edges, UP insertions
+            // just create/reuse a node with no down-edge.
+        }
+
+        // ---- VERTEX DELETIONS ----
+        for (df::vertex_id v : deletion_vertices) {
+            if (nodes.size() >= max_nodes) break;
+
+            df::Tri2 tri_child = tri;
+
+            int child_idx = apply_vertex_deletion_poset(
+                v,
+                static_cast<int>(current_idx),
+                tri_child,
+                D,
+                nodes, sig_to_node
+            );
+
+            // same again: DOWN deletions add down-edges, UP deletions
+            // keep the node but no down-edge.
+        }
+
+        ++current_idx;
+    }
+
+    std::cout << "[poset local DOWN] finished building local poset, nodes = "
+              << nodes.size() << "\n";
+}
+
+static const char* step_kind_to_string(df::StepKind k)
+{
+    switch (k) {
+    case df::StepKind::EdgeFlip_down:        return "EdgeFlip_down";
+    case df::StepKind::EdgeFlip_up:          return "EdgeFlip_up";
+    case df::StepKind::VertexInsertion_down: return "VertexInsertion_down";
+    case df::StepKind::VertexInsertion_up:   return "VertexInsertion_up";
+    case df::StepKind::VertexDeletion_down:  return "VertexDeletion_down";
+    case df::StepKind::VertexDeletion_up:    return "VertexDeletion_up";
+    default:                                 return "UnknownStepKind";
+    }
+}
+
+
+void debug_print_local_poset_histories(
+    const std::vector<Node>& nodes,
+    std::size_t center_history_len)
+{
+    std::cout << "\n[local poset] node histories (relative to center)\n";
+
+    for (std::size_t i = 0; i < nodes.size(); ++i) {
+        const auto& node = nodes[i];
+        std::cout << "Node " << i
+                  << "  (total history length = " << node.history.size()
+                  << ")\n";
+
+        if (node.history.size() <= center_history_len) {
+            // This is the center node itself (or before)
+            std::cout << "  [no extra steps beyond center]\n\n";
+            continue;
+        }
+
+        // Only print the steps AFTER the chosen center history
+        for (std::size_t j = center_history_len; j < node.history.size(); ++j) {
+            const auto& s = node.history[j];
+            std::cout << "  step " << (j - center_history_len)
+                      << " : " << step_kind_to_string(s.kind)
+                      << " (a=" << s.a
+                      << ", b=" << s.b
+                      << ", c=" << s.c
+                      << ", d=" << s.d << ")\n";
+        }
+        std::cout << "\n";
+    }
+}
+
+
+
+
+
+std::vector<int> map_history_to_global_poset_indices(
+    const df::InputData& D,
+    const std::vector<pst::Node>& global_poset_nodes,
+    const std::vector<df::StepRecord>& history)
+{
+    // 1) build signature -> global index map
+    std::unordered_map<TriSignature, int> sig_to_global;
+    sig_to_global.reserve(global_poset_nodes.size());
+
+    for (int i = 0; i < (int)global_poset_nodes.size(); ++i) {
+        sig_to_global.emplace(global_poset_nodes[i].signature, i);
+    }
+
+    // 2) walk along the history incrementally and map each prefix
+    std::vector<int> out;
+    out.reserve(history.size() + 1);
+
+    df::Tri2 tri = D.tri_poset; // same root as your global poset build :contentReference[oaicite:3]{index=3}
+
+    // prefix length 0
+    {
+        TriSignature sig0 = make_signature(tri);
+        auto it = sig_to_global.find(sig0);
+        out.push_back(it == sig_to_global.end() ? -1 : it->second);
+    }
+
+    // prefixes 1..k
+    for (const auto& step : history) {
+        replay_step_poset(step, tri, D);
+        TriSignature sig = make_signature(tri);
+
+        auto it = sig_to_global.find(sig);
+        out.push_back(it == sig_to_global.end() ? -1 : it->second);
+    }
+
+    return out;
+}
+
+
+
+bool find_conforming_down_path_in_global_poset(
+    const df::InputData& D,
+    const std::vector<pst::Node>& nodes,
+    int source_idx,
+    int target_idx,
+    std::vector<int>& out_node_path,
+    std::vector<df::StepRecord>& out_step_path)
+{
+    out_node_path.clear();
+    out_step_path.clear();
+
+    const int n = (int)nodes.size();
+    if (source_idx < 0 || source_idx >= n) return false;
+    if (target_idx < 0 || target_idx >= n) return false;
+    if (source_idx == target_idx) {
+        out_node_path.push_back(source_idx);
+        return true;
+    }
+
+    // BFS over global poset nodes
+    std::vector<char> visited(n, 0);
+    std::vector<int> parent(n, -1);
+    std::vector<int> parent_edge_idx(n, -1); // which child edge from parent was used
+
+    std::queue<int> q;
+    visited[source_idx] = 1;
+    q.push(source_idx);
+
+    while (!q.empty()) {
+        int u = q.front(); q.pop();
+
+        // reconstruct triangulation at u (needed for conforming checks)
+        df::Tri2 tri_u = D.tri_poset;
+        replay_history_poset(tri_u, nodes[u].history, D);
+
+        const auto& kids  = nodes[u].children;
+        const auto& steps = nodes[u].child_steps;
+        const std::size_t m = std::min(kids.size(), steps.size());
+
+        for (std::size_t e = 0; e < m; ++e) {
+            const df::StepRecord& s = steps[e];
+            if (!is_down_step(s.kind)) continue;
+
+            int v = kids[e];
+            if (v < 0 || v >= n) continue;
+            if (visited[v]) continue;
+
+            bool ok = false;
+
+            if (s.kind == df::StepKind::EdgeFlip_down) {
+                // edge is (a,b)
+                ok = df::reg::is_flip_conforming(s.a, s.b, D, tri_u);
+            }
+            else if (s.kind == df::StepKind::VertexInsertion_down) {
+                // inserted vertex is d
+                // down-ness is already guaranteed by kind, so only check conforming
+                ok = df::reg::is_insertion_conforming(s.d, D, tri_u);
+            }
+            else {
+                // VertexDeletion_down: not handled here (define conforming deletion first)
+                ok = false;
+            }
+
+            if (!ok) continue;
+
+            visited[v] = 1;
+            parent[v] = u;
+            parent_edge_idx[v] = (int)e;
+
+            if (v == target_idx) {
+                // reconstruct node path
+                std::vector<int> rev_nodes;
+                for (int x = v; x != -1; x = parent[x]) rev_nodes.push_back(x);
+                std::reverse(rev_nodes.begin(), rev_nodes.end());
+                out_node_path = rev_nodes;
+
+                // reconstruct step path from parent_edge_idx
+                out_step_path.clear();
+                for (std::size_t i = 1; i < out_node_path.size(); ++i) {
+                    int cur = out_node_path[i];
+                    int par = out_node_path[i - 1];
+                    int ei  = parent_edge_idx[cur];
+                    out_step_path.push_back(nodes[par].child_steps[ei]);
+                }
+                return true;
+            }
+
+            q.push(v);
+        }
+    }
+
+    return false;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   
+
+
+
+
+
+
+
+
+
+
+
 
   
 }

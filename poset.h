@@ -33,9 +33,70 @@ namespace pst {
     // builds the conforming flip poset from upper to lower triangulation
     void build_poset(const df::InputData& D, std::vector<Node>& nodes);
 
-    // depth-first search for a conforming path from upper to lower triangulation
-    bool find_conforming_path_dfs(const df::InputData& D, std::vector<df::StepRecord>& out_history, std::size_t max_nodes, std::size_t max_depth);
-    
+    // Build a local poset reachable from a given node by DOWN steps only.
+    // - center_history: history from the upper triangulation to the chosen node.
+    // - max_depth:      maximum number of additional steps from that node.
+    // - max_nodes:      safety cap on the number of nodes.
+    void build_poset_local_down_from_history(
+        const df::InputData& D,
+        const std::vector<df::StepRecord>& center_history,
+        std::size_t max_depth,
+        std::vector<Node>& nodes,
+        std::size_t max_nodes = 600
+    );
+
+    std::vector<int> nodes_with_no_incoming_down_flips(const std::vector<Node>& nodes); 
+
+ 
+    struct PosetTriIndices {
+        int upper  = -1;
+        int current = -1;
+        int lower   = -1;
+    };
+
+    PosetTriIndices find_special_triangulations_in_poset(
+        const df::InputData& D,
+        const std::vector<pst::Node>& nodes
+    );
+
+
+
+    bool exists_path_via_children(
+        const std::vector<pst::Node>& nodes,
+        int source_idx,
+        int target_idx
+    );
+
+    std::vector<int> map_history_to_global_poset_indices(
+    const df::InputData& D,
+    const std::vector<pst::Node>& global_poset_nodes,
+    const std::vector<df::StepRecord>& history
+    );
+
+
+    bool find_conforming_down_path_in_global_poset(
+        const df::InputData& D,
+        const std::vector<pst::Node>& nodes,
+        int source_idx,
+        int target_idx,
+        std::vector<int>& out_node_path,             // global poset indices (mesh numbers)
+        std::vector<df::StepRecord>& out_step_path   // steps along that path
+    );
+
+
+
+
+
+
+
+
+
+
+    void debug_print_local_poset_histories(
+    const std::vector<Node>& nodes,
+    std::size_t center_history_len);
+
+        
     void replay_step_poset(const df::StepRecord& step, df::Tri2& tri, const df::InputData& D);
 
     void replay_history_poset(df::Tri2& tri, const std::vector<df::StepRecord>& history, const df::InputData& D);

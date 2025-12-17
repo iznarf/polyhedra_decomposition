@@ -29,17 +29,17 @@ int main() {
     polyscope::init();
 
     // number of vertices in triangulation
-    int n_points = 31;
+    int n_points = 8;
     // random seed to start point generation
-    unsigned seed0 = 1312;
+    unsigned seed0 = 495934895;
     df::InputData in = df::make_random_valid_input(n_points, seed0);
 
    
-    
+    /**
     df::apply_edge_flip(5, 0, in, in.tri_lower);
     df::apply_edge_flip(4, 2, in, in.tri_lower);
     df::apply_edge_flip(3, 1, in, in.tri_lower);
-    
+    */
 
     
 
@@ -49,6 +49,7 @@ int main() {
 
 
     // these are valid inputs where the algorithm works:
+    //df::InputData in = df::make_random_input(7, 495934895);
     //df::InputData in = df::make_random_input(21, 44); 
     //df::InputData in = df::make_random_input(19, 42);
     //df::InputData in = df::make_random_input(15,43);
@@ -63,15 +64,43 @@ int main() {
 
 
     // these are valid inputs where the algorithm fails:
-    //df::InputData in = df::make_random_input(31, 1312); // valid input
-    //df::InputData in = daf::make_random_input(37, 4458); // upper and lower intersect in more than boundary edges
-    //df::InputData in = df::make_random_input(35, 218); // valid input but non-decomposable
-    //df::InputData in = df::make_random_input(40, 40);  // upper and lower intersect in more than boundary edges
-    //df::InputData in = df::make_random_input(50, 40); // valid input but non-decomposable
-    //df::InputData in = df::make_random_input(55,42);  // valid input but non-decomposable
+    //df::InputData in = df::make_random_input(8, 495934895);
+    //df::InputData in = df::make_random_input(9, 495934895);
+    //df::InputData in = df::make_random_input(10, 495934895);
+    //df::InputData in = df::make_random_input(11, 495934895); 
+    //df::InputData in = df::make_random_valid_input(15, 495934895);
+    //df::InputData in = df::make_random_input(25, 44); 
+    //df::InputData in = df::make_random_input(31, 1312); 
+    //df::InputData in = daf::make_random_input(37, 4458); 
+    //df::InputData in = df::make_random_input(35, 218); 
+    //df::InputData in = df::make_random_input(40, 40);  
+    //df::InputData in = df::make_random_input(50, 40); 
+    //df::InputData in = df::make_random_input(55,42);  
 
 
-  
+    //these are inputs where the algorithm succeeds and the upper triangulation is the farthees point triangulation
+   
+    
+    //df::InputData in = df::make_random_valid_input(8, 495934895);
+    //df::InputData in = df::make_random_valid_input(9, 495934895);
+    //df::InputData in = df::make_random_valid_input(10, 495934895);
+    //df::InputData in = df::make_random_valid_input(40, 40);
+
+
+
+
+    //these are inputs where the algorithm fails and the upper triangulation is the farthees point triangulation
+    // lower triangulation has then to be a local maximum in the poset
+    //df::InputData in = df::make_random_valid_input(37, 4458);
+    //df::InputData in = df::make_random_valid_input(55, 42);
+    //df::InputData in = df::make_random_valid_input(31, 1312);
+    //df::InputData in = df::make_random_valid_input(15, 495934895);
+    //df::InputData in = df::make_random_valid_input(11, 495934895);
+
+
+
+
+
   
 
     viz::register_triangulation_as_mesh(in.tri_lower, in.points2d, "lower 2D", "lower lifted");
@@ -127,6 +156,8 @@ int main() {
             }
         }
 
+
+
         // if no conforming insertion exists -> polyhedron is non-decomposable
         if (!found_conforming) {
             std::cout << "\n[main] ERROR: all candidate vertex insertions are non-conforming.\n"
@@ -152,39 +183,99 @@ int main() {
         std::cout << "\n[main] SUCCESS: current triangulation matches lower triangulation!\n";
     }
 
-  
+    // print all global indices of current vertices in current triangulation as a list
+    std::cout << "Current triangulation vertex global ids: ";
+    for (auto vit = in.tri_current.finite_vertices_begin(); vit != in.tri_current.finite_vertices_end(); ++vit) {
+        std::cout << vit->info() << " ";
+    }
+    std::cout << "\n";
+
+    // print all global indices of current vertices in lower triangulation as a list
+    std::cout << "Lower triangulation vertex global ids: ";
+    for (auto vit = in.tri_lower.finite_vertices_begin(); vit != in.tri_lower.finite_vertices_end(); ++vit) {
+        std::cout << vit->info() << " ";
+    }
+    std::cout << "\n";
+
 
     //df::debug_print_local_to_global_map(in, df::TriKind::Lower);
     //df::debug_print_local_to_global_map(in, df::TriKind::Current);
 
 
     df::print_step_history(in);
-
-    // build poset and visualize it
     std::vector<pst::Node> poset_nodes;
+
+
+
+    
+    // build the whole down flip poset from upper triangulation
     pst::build_poset(in, poset_nodes);
     viz_poset::register_poset(in, poset_nodes);
 
-    /*
-    std::vector<df::StepRecord> alt_path;
-    bool has_path = pst::find_conforming_path_dfs(in, alt_path, 2000, 50);
+    // find minimal nodes in the poset (no incoming down-flips)
+    auto mins = pst::nodes_with_no_incoming_down_flips(poset_nodes);
+    std::cout << "Minimal nodes: ";
+    for (int u : mins) std::cout << u << " ";
+    std::cout << "\n";
 
-    if (has_path) {
-        std::cout << "\n[dfs] FOUND a conforming path from upper to lower!\n";
-        for (std::size_t i = 0; i < alt_path.size(); ++i) {
-            const auto& s = alt_path[i];
-            std::cout << "  step " << i << " : "
-                    << (s.kind == df::StepKind::EdgeFlip ? "EdgeFlip" : "VertexInsertion")
-                    << " (a=" << s.a
-                    << ", b=" << s.b
-                    << ", c=" << s.c
-                    << ", d=" << s.d << ")\n";
-        }
-    } else {
-        std::cout << "\n[dfs] No conforming path found (or search aborted by limits).\n";
-    }
+    // gives us indices of special triangulations in the poset
+    auto idx = pst::find_special_triangulations_in_poset(in, poset_nodes);
+    std::cout << "poset index of upper (tri_upper):  " << idx.upper  << "\n";
+    std::cout << "poset index of current (tri_current): " << idx.current << "\n";
+    std::cout << "poset index of lower (tri_lower):   " << idx.lower   << "\n";
+
+
+    // finds path from upper to lower triangulation in the poset (not necesessarily conforming)
+    bool ok = pst::exists_path_via_children(poset_nodes, idx.upper, idx.lower);
+    std::cout << "Path upper -> lower exists? " << std::boolalpha << ok << "\n";
     
+    std::vector<int> node_path;
+    std::vector<df::StepRecord> step_path;
+
+    // finds conforming path in the poset from upper to lower triangulation
+    bool ok_2 = pst::find_conforming_down_path_in_global_poset(
+        in, poset_nodes, idx.upper, idx.lower, node_path, step_path);
+
+    std::cout << "conforming down path exists? " << std::boolalpha << ok_2 << "\n";
+    if (ok_2) {
+        std::cout << "global mesh indices: ";
+        for (int u : node_path) std::cout << u << " ";
+        std::cout << "\n";
+    }
+
+    // print the steps along the conforming path
+    std::cout << "\nConforming down path:\n";
+    for (std::size_t i = 0; i < step_path.size(); ++i) {
+        std::cout << "  " << node_path[i]
+                << " -> " << node_path[i+1]
+                << " : ";
+        df::print_step_record(step_path[i]);
+        std::cout << "\n";
+    }
+
+    
+
+
+
+
+    
+    /* this is for building the local poset around a chosen root node
+
+    // empty history = upper triangulation as root
+    std::vector<df::StepRecord> empty_history;
+
+    pst::build_poset_local_down_from_history(in, empty_history, 1, poset_nodes, 1000);
+
+    viz_poset::register_poset(in, poset_nodes);
+
+    pst::debug_print_local_poset_histories(
+    poset_nodes,
+    empty_history.size()  // center_history_len
+    );
     */
+
+
+
 
     std::vector<df::DebugTetrahedron> debug_tets = df::collect_debug_tetrahedra(in);
 

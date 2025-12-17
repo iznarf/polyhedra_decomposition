@@ -10,15 +10,12 @@ namespace df {
 
 
 
-void apply_edge_flip(df::vertex_id ia,
-                     df::vertex_id ib,
-                     df::InputData& D, df::Tri2& tri)
-{
-   
+void apply_edge_flip(df::vertex_id ia, df::vertex_id ib, df::InputData& D, df::Tri2& tri) {
+
 
     // Find the edge (ia, ib) in the current triangulation by vertex ids
     df::Tri2::Face_handle fh;
-    int ei = -1;
+    int ei = -1; 
     bool found = false;
 
     for (auto e = tri.finite_edges_begin(); e != tri.finite_edges_end(); ++e) {
@@ -61,15 +58,12 @@ void apply_edge_flip(df::vertex_id ia,
     df::vertex_id ic = vc->info();
     df::vertex_id id = vd->info();
 
-   
-   
     df::StepRecord s;
     s.kind = df::StepKind::EdgeFlip_down;
     s.a = ia; s.b = ib;
     s.c = ic; s.d = id;
     D.step_history.push_back(s);
 
-    
     tri.flip(fh, ei);
 }
 

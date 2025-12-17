@@ -76,8 +76,7 @@ bool is_flip_conforming(df::vertex_id ia, df::vertex_id ib, const df::InputData&
     df::vertex_id ic = vc->info();
     df::vertex_id id = vd->info();
 
-
-    // candidate (c,d)
+    // the flipped edge is the edge (c,d)
     P2 c2 = vc->point();
     P2 d2 = vd->point();
     const CGAL::Segment_2<K> edge_cd_2d(c2, d2);
@@ -91,7 +90,6 @@ bool is_flip_conforming(df::vertex_id ia, df::vertex_id ib, const df::InputData&
         auto vv = f->vertex(D.tri_lower.ccw(ei));
         df::vertex_id iu = vu->info();
         df::vertex_id iv = vv->info();
-
 
         // if (c,d) is already in lower triangulation the flip is conforming
         if (((iu == ic) && (iv == id)) || ((iu == id) && (iv == ic))) {
@@ -110,17 +108,20 @@ bool is_flip_conforming(df::vertex_id ia, df::vertex_id ib, const df::InputData&
         const CGAL::Segment_2<K> edge_uv_2d(u2, v2);
 
         // if they intersect in 2D and interesction is not at endpoint, we have to check 3D intersection
+       
+       
+       
         if (CGAL::do_intersect(edge_cd_2d, edge_uv_2d)) {
+
             // lift points to 3D
             P3 c3 = df::lift(c2);
             P3 d3 = df::lift(d2);
             P3 u3 = df::lift(u2);
             P3 v3 = df::lift(v2);
 
+
+
             // check if edges intersect in 3D
-            // if they intersect in 3D we have to check if the segments lie in one plane
-            // if yes, the flip is conforming since this is only boundary contact which is allowed 
-            // if not, the flip is non-conforming
             if (CGAL::do_intersect(Seg3(c3, d3), Seg3(u3, v3))) {
                 // print that segments intersect in 3D and that this is not allowed
                 std::cout << "[conform] BLOCK: (c,d)=(" << ic << "," << id << ") "
@@ -128,25 +129,22 @@ bool is_flip_conforming(df::vertex_id ia, df::vertex_id ib, const df::InputData&
                 return false;
             }
 
-           
-
-            auto height = oriented_height_sign(u2, v2, c2, u3, v3, c3, d3);
+            auto orientation = oriented_height_sign(c2, d2, u2, v2, c3, d3, u3, v3);
             int cmp = compare_heights_at_intersection(c2, d2, u2, v2, c3, d3, u3, v3);
-           
-        
-            if (height < 0){
-                std::cout << "[conform] BLOCK: (c,d)=(" << ic << "," << id << ") "
-                        << "below lower (u,v)=(" << iu << "," << iv << ")\n";
-                // also print cmp value
-                std::cout << "cmp = " << cmp << "\n";
-                return false;
-            }
-            if (height > 0){
+            
+            if (orientation == CGAL::NEGATIVE){
                 std::cout << "[conform] PASS: (c,d)=(" << ic << "," << id << ") "
                         << "above lower (u,v)=(" << iu << "," << iv << ")\n";
                 std::cout << "cmp = " << cmp << "\n";
                 continue;
             }
+            if (orientation == CGAL::POSITIVE){
+                std::cout << "[conform] BLOCK: (c,d)=(" << ic << "," << id << ") "
+                        << "below lower (u,v)=(" << iu << "," << iv << ")\n";
+                std::cout << "cmp = " << cmp << "\n";
+                return false;
+            }
+            
             
         }
     }

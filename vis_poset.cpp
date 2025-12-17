@@ -53,7 +53,7 @@ namespace {
 // compute level as "longest number of DOWN-steps from root (node 0)"
 // along any path in the down-edge DAG
 static std::vector<int>
-compute_levels(const std::vector<pst::Node>& nodes)
+compute_levels_local_poset(const std::vector<pst::Node>& nodes)
 {
     const int n = static_cast<int>(nodes.size());
     std::vector<int> level(n, 0);
@@ -130,15 +130,219 @@ compute_levels(const std::vector<pst::Node>& nodes)
                   << "(cycle detected); longest-path levels may be invalid.\n";
     }
 
+    //visualize nodes that are not reachable from root
     // Convert NEG_INF (unreachable via down-edges from root) to 0
     for (int i = 0; i < n; ++i) {
         if (dist[i] == NEG_INF) dist[i] = 0;
         level[i] = dist[i];
     }
+    
+
+    /* keep this for the local poset version
+    // mark nodes that are unreachable from root via DOWN edges with level -1
+    for (int i = 0; i < n; ++i) {
+        if (dist[i] == NEG_INF) {
+            level[i] = -1;            // unreachable from the chosen root
+        } else {
+            level[i] = dist[i];       // longest DOWN-distance from root
+        }
+    }
+    */
 
     return level;
 }
 
+
+
+
+
+
+
+
+
+// compute level as a tight layering of the DOWN-edge DAG:
+// level(u) = level(v) - 1 for edges u->v whenever possible.
+// Implementation: compute height[u] = longest path length from u to any sink,
+// then level[u] = maxHeight - height[u].
+static std::vector<int>
+compute_levels(const std::vector<pst::Node>& nodes)
+{
+    const int n = static_cast<int>(nodes.size());
+    std::vector<int> level(n, 0);
+    if (n == 0) return level;
+
+    auto is_down = [](df::StepKind k) {
+        return k == df::StepKind::EdgeFlip_down
+            || k == df::StepKind::VertexInsertion_down
+            || k == df::StepKind::VertexDeletion_down;
+    };
+
+    std::vector<std::vector<int>> adj(n);
+    std::vector<std::vector<int>> radj(n); // reverse edges
+    std::vector<int> indeg(n, 0);
+
+    for (int u = 0; u < n; ++u) {
+        const auto& kids  = nodes[u].children;
+        const auto& steps = nodes[u].child_steps;
+        for (std::size_t e = 0; e < kids.size(); ++e) {
+            if (!is_down(steps[e].kind)) continue;
+            int v = kids[e];
+            adj[u].push_back(v);
+            radj[v].push_back(u);
+            indeg[v] += 1;
+        }
+    }
+
+    // Topological order (Kahn)
+    std::queue<int> q;
+    std::vector<int> indeg_work = indeg;
+    for (int i = 0; i < n; ++i) if (indeg_work[i] == 0) q.push(i);
+
+    std::vector<int> topo;
+    topo.reserve(n);
+    while (!q.empty()) {
+        int u = q.front(); q.pop();
+        topo.push_back(u);
+        for (int v : adj[u]) {
+            if (--indeg_work[v] == 0) q.push(v);
+        }
+    }
+
+    if ((int)topo.size() < n) {
+        std::cerr << "[vis_poset] WARNING: down-edge subgraph is not a DAG "
+                  << "(cycle detected); level layout may be invalid.\n";
+        // fall back: keep all at 0
+        return level;
+    }
+
+    // height[u] = longest path from u to any sink
+    std::vector<int> height(n, 0);
+    for (int i = n - 1; i >= 0; --i) {
+        int u = topo[i];
+        int best = 0;
+        for (int v : adj[u]) {
+            best = std::max(best, height[v] + 1);
+        }
+        height[u] = best;
+    }
+
+    int maxH = 0;
+    for (int h : height) maxH = std::max(maxH, h);
+
+    for (int u = 0; u < n; ++u) {
+        level[u] = maxH - height[u];
+    }
+
+    return level;
+}
+
+// Levels:
+//  (A) reachable from root (0): longest DOWN-path length from root
+//  (B) unreachable: place using children levels if possible,
+//      otherwise start new "block" below everything.
+static std::vector<int>
+compute_levels_longest_root_with_unreachable(const std::vector<pst::Node>& nodes)
+{
+    const int n = (int)nodes.size();
+    std::vector<int> level(n, -1);
+    if (n == 0) return level;
+
+    auto is_down = [](df::StepKind k) {
+        return k == df::StepKind::EdgeFlip_down
+            || k == df::StepKind::VertexInsertion_down
+            || k == df::StepKind::VertexDeletion_down;
+    };
+
+    // Build DOWN adjacency + indegrees for topo sort
+    std::vector<std::vector<int>> adj(n);
+    std::vector<int> indeg(n, 0);
+
+    for (int u = 0; u < n; ++u) {
+        const auto& kids  = nodes[u].children;
+        const auto& steps = nodes[u].child_steps;
+        const std::size_t m = std::min(kids.size(), steps.size());
+
+        for (std::size_t e = 0; e < m; ++e) {
+            if (!is_down(steps[e].kind)) continue;
+            int v = kids[e];
+            if (v < 0 || v >= n) continue;
+            adj[u].push_back(v);
+            indeg[v] += 1;
+        }
+    }
+
+    // Kahn topo order on DOWN subgraph
+    std::queue<int> q;
+    std::vector<int> indeg_work = indeg;
+    for (int i = 0; i < n; ++i) if (indeg_work[i] == 0) q.push(i);
+
+    std::vector<int> topo;
+    topo.reserve(n);
+    while (!q.empty()) {
+        int u = q.front(); q.pop();
+        topo.push_back(u);
+        for (int v : adj[u]) {
+            if (--indeg_work[v] == 0) q.push(v);
+        }
+    }
+
+    if ((int)topo.size() < n) {
+        std::cerr << "[vis_poset] WARNING: down-edge subgraph is not a DAG "
+                  << "(cycle detected); level layout may be invalid.\n";
+        // fallback: keep everything at 0
+        std::fill(level.begin(), level.end(), 0);
+        return level;
+    }
+
+    // (A) Longest-path-from-root DP over topo
+    const int NEG_INF = std::numeric_limits<int>::min();
+    std::vector<int> dist(n, NEG_INF);
+    dist[0] = 0;
+
+    for (int u : topo) {
+        if (dist[u] == NEG_INF) continue;
+        for (int v : adj[u]) {
+            dist[v] = std::max(dist[v], dist[u] + 1);
+        }
+    }
+
+    int max_level = 0;
+    for (int i = 0; i < n; ++i) {
+        if (dist[i] != NEG_INF) {
+            level[i] = dist[i];
+            max_level = std::max(max_level, level[i]);
+        }
+    }
+
+    // (B) Place unreachable nodes in reverse topo (children processed before parents)
+    // Rule: if any child has a level, put u at (min_child_level - 1).
+    // If u has no children with levels (sink in its component), start a new block below.
+    for (int ti = (int)topo.size() - 1; ti >= 0; --ti) {
+        int u = topo[ti];
+        if (level[u] != -1) continue; // already placed (reachable)
+
+        int min_child = std::numeric_limits<int>::max();
+        for (int v : adj[u]) {
+            if (level[v] != -1) {
+                min_child = std::min(min_child, level[v]);
+            }
+        }
+
+        if (min_child != std::numeric_limits<int>::max()) {
+            level[u] = min_child - 1;
+        } else {
+            // new unreachable sink block
+            level[u] = ++max_level;
+        }
+
+        max_level = std::max(max_level, level[u]);
+    }
+
+    // Safety: clamp anything still -1 (shouldn't happen) to 0
+    for (int& lv : level) if (lv < 0) lv = 0;
+
+    return level;
+}
 
 
 
@@ -257,6 +461,20 @@ compute_levels(const std::vector<pst::Node>& nodes)
     bool g_show_poset_2d = true;
     bool g_show_poset_3d = true;
     bool g_show_down_flips = true;
+
+
+    // --- global state so we can rebuild local posets from the UI ---
+
+    // keep input + nodes so the UI can rebuild local neighborhoods
+    const df::InputData*       g_input_for_poset = nullptr;
+    std::vector<pst::Node>     g_nodes_for_ui;
+    int                        g_center_node_idx = 0;
+    int                        g_max_local_depth = 5;
+
+
+
+
+
 } // anonymous namespace
 
 
@@ -279,6 +497,13 @@ void register_poset(const df::InputData& D, const std::vector<pst::Node>& nodes)
         g_downflip_network = nullptr;
     }
 
+    // remember input + nodes for the local-poset UI
+    g_input_for_poset = &D;
+    g_nodes_for_ui    = nodes;
+    g_center_node_idx = 0;
+
+
+
     if (nodes.empty()) {
         std::cout << "[vis_poset] no nodes to visualize.\n";
         return;
@@ -291,8 +516,11 @@ void register_poset(const df::InputData& D, const std::vector<pst::Node>& nodes)
 
     // Compute level for each node
     // (your compute_levels() should now count DOWN steps in history)
-    auto level = compute_levels(nodes);
+    auto level = compute_levels_longest_root_with_unreachable(nodes);
 
+
+
+    // keep this for the whole poset version -> visualize nodes that are not reachable from root
     int max_level = 0;
     for (int lv : level) {
         max_level = std::max(max_level, lv);
@@ -305,6 +533,27 @@ void register_poset(const df::InputData& D, const std::vector<pst::Node>& nodes)
         if (lv < 0) lv = 0;
         byLevel[lv].push_back(i);
     }
+    
+
+
+    /* keep this for the local poset version
+    int max_level = 0;
+    for (int lv : level) {
+        if (lv >= 0) {                     // ignore unreachable nodes
+            max_level = std::max(max_level, lv);
+        }
+    }
+    
+
+    // Build list of nodes per level, but skip unreachable nodes
+    std::vector<std::vector<int>> byLevel(max_level + 1);
+    for (int i = 0; i < n; ++i) {
+        int lv = level[i];
+        if (lv < 0) continue;             // do NOT display parents / unreachable
+        byLevel[lv].push_back(i);
+    }
+    */
+
 
     // Grid layout parameters
     const float LEVEL_SPACING   = 4.0f;  // vertical spacing between levels (in Z)
@@ -406,17 +655,14 @@ void register_poset(const df::InputData& D, const std::vector<pst::Node>& nodes)
             "poset down flips", g_node_centers, down_edges);
 
         g_downflip_network->setEnabled(g_show_down_flips);
-        g_downflip_network->setRadius(0.03f, true);              // constant screen size
-        g_downflip_network->setColor(glm::vec3(1.0f, 0.0f, 0.0f)); // red
+        g_downflip_network->setRadius(0.00037f, true);              // constant screen size
+
+        g_downflip_network->setColor(glm::vec3(1.0f, 0.0f, 0.0f)); // 
     }
 
     std::cout << "[vis_poset] registered " << g_poset_meshes_2d.size()
               << " poset nodes (2D+3D meshes).\n";
 }
-
-
-
-
 
 
 void poset_ui() {
@@ -441,6 +687,56 @@ void poset_ui() {
             g_downflip_network->setEnabled(g_show_down_flips);
         }
     }
+
+    ImGui::Separator();
+    ImGui::Text("local down flip poset from chosen root");
+
+    if (!g_input_for_poset || g_nodes_for_ui.empty()) {
+        ImGui::Text("no poset data available.");
+        return;
+    }
+
+    int max_index = static_cast<int>(g_nodes_for_ui.size()) - 1;
+    if (max_index < 0) return;
+
+    if (g_center_node_idx > max_index) g_center_node_idx = max_index;
+    if (g_center_node_idx < 0)        g_center_node_idx = 0;
+
+    ImGui::SliderInt("center node index",
+                     &g_center_node_idx,
+                     0, max_index);
+
+    ImGui::SliderInt("max local depth",
+                     &g_max_local_depth,
+                     1, 10);
+
+    if (ImGui::Button("rebuild local poset")) {
+        const auto& center_hist =
+            g_nodes_for_ui[g_center_node_idx].history;
+
+        std::vector<pst::Node> local_nodes;
+        pst::build_poset_local_down_from_history(
+            *g_input_for_poset,
+            center_hist,
+            static_cast<std::size_t>(g_max_local_depth),
+            local_nodes,
+            /*max_nodes=*/600
+        );
+
+        pst::debug_print_local_poset_histories(
+        local_nodes,
+        center_hist.size()  // center_history_len
+        );
+
+        // show this local poset instead
+        register_poset(*g_input_for_poset, local_nodes);
+    }
+
 }
+
+
+
+
+
 
 } // namespace viz_poset
