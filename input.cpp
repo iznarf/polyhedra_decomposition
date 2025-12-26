@@ -146,6 +146,7 @@ InputData make_random_input(int n_points, unsigned seed) {
 
     
     D.points2d = sample_points_in_disk(n_points, 1.0, rng);
+
     /*
     //print 2d points list
     std::cout << "Generated " << n_points << " random 2D points:\n";
@@ -155,8 +156,6 @@ InputData make_random_input(int n_points, unsigned seed) {
     }
     */
 
-    
-    
     
 
     /*

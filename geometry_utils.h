@@ -16,10 +16,4 @@ namespace df {
     P3 lift(const P2& p);
     P3 lift_regular(const P2_weighted& p);
 
-
-    void debug_segment_intersection_2d(
-    const CGAL::Segment_2<K>& cd,
-    const CGAL::Segment_2<K>& uv,
-    const std::string& tag = "");
-
 } // namespace df

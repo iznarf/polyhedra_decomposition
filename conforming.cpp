@@ -27,7 +27,7 @@ using Seg3  = CGAL::Segment_3<K>;
 bool is_flip_conforming(df::vertex_id ia, df::vertex_id ib, const df::InputData& D, const df::Tri2& tri_current) {
     
     // print which edge we are checking
-    std::cout << "[conform] checking flip of edge (" << ia << "," << ib << ")\n";
+    //std::cout << "[conform] checking flip of edge (" << ia << "," << ib << ")\n";
     // find the edge with global indices (ia, ib) in the current triangulation by vertex ids 
     Tri::Face_handle fh;
     int i = -1;
@@ -93,7 +93,7 @@ bool is_flip_conforming(df::vertex_id ia, df::vertex_id ib, const df::InputData&
 
         // if (c,d) is already in lower triangulation the flip is conforming
         if (((iu == ic) && (iv == id)) || ((iu == id) && (iv == ic))) {
-            std::cout << "[conform] (c,d)=(" << ic << "," << id << ") is already in lower -> flip of edge (" << ia << "," << ib << ") is conforming \n";
+            //std::cout << "[conform] (c,d)=(" << ic << "," << id << ") is already in lower -> flip of edge (" << ia << "," << ib << ") is conforming \n";
             return true;
         }
 
@@ -124,8 +124,8 @@ bool is_flip_conforming(df::vertex_id ia, df::vertex_id ib, const df::InputData&
             // check if edges intersect in 3D
             if (CGAL::do_intersect(Seg3(c3, d3), Seg3(u3, v3))) {
                 // print that segments intersect in 3D and that this is not allowed
-                std::cout << "[conform] BLOCK: (c,d)=(" << ic << "," << id << ") "
-                          << "intersects lower (u,v)=(" << iu << "," << iv << ") in 3D\n";
+                //std::cout << "[conform] BLOCK: (c,d)=(" << ic << "," << id << ") "
+                //          << "intersects lower (u,v)=(" << iu << "," << iv << ") in 3D\n";
                 return false;
             }
 
@@ -133,15 +133,15 @@ bool is_flip_conforming(df::vertex_id ia, df::vertex_id ib, const df::InputData&
             int cmp = compare_heights_at_intersection(c2, d2, u2, v2, c3, d3, u3, v3);
             
             if (orientation == CGAL::NEGATIVE){
-                std::cout << "[conform] PASS: (c,d)=(" << ic << "," << id << ") "
-                        << "above lower (u,v)=(" << iu << "," << iv << ")\n";
-                std::cout << "cmp = " << cmp << "\n";
+                //std::cout << "[conform] PASS: (c,d)=(" << ic << "," << id << ") "
+                //        << "above lower (u,v)=(" << iu << "," << iv << ")\n";
+                //std::cout << "cmp = " << cmp << "\n";
                 continue;
             }
             if (orientation == CGAL::POSITIVE){
-                std::cout << "[conform] BLOCK: (c,d)=(" << ic << "," << id << ") "
-                        << "below lower (u,v)=(" << iu << "," << iv << ")\n";
-                std::cout << "cmp = " << cmp << "\n";
+                //std::cout << "[conform] BLOCK: (c,d)=(" << ic << "," << id << ") "
+                //        << "below lower (u,v)=(" << iu << "," << iv << ")\n";
+                //std::cout << "cmp = " << cmp << "\n";
                 return false;
             }
             

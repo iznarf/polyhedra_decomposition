@@ -39,6 +39,9 @@ add_executable(main
     poset.cpp
     height_test.cpp
     vis_poset.cpp
+    poset2.cpp
+    compare.cpp
+    vis_poset2.cpp
    )
 
 target_include_directories(main PRIVATE ${portable-file-dialogs_SOURCE_DIR})

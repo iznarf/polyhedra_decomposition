@@ -50,193 +50,9 @@ namespace {
         mesh->addVertexScalarQuantity("global id", values);
     }
 
-// compute level as "longest number of DOWN-steps from root (node 0)"
-// along any path in the down-edge DAG
-static std::vector<int>
-compute_levels_local_poset(const std::vector<pst::Node>& nodes)
-{
-    const int n = static_cast<int>(nodes.size());
-    std::vector<int> level(n, 0);
-    if (n == 0) return level;
 
-    auto is_down = [](df::StepKind k) {
-        return k == df::StepKind::EdgeFlip_down
-            || k == df::StepKind::VertexInsertion_down
-            || k == df::StepKind::VertexDeletion_down;
-    };
-
-    // Build adjacency list for DOWN edges only, and indegrees for topological sort
-    std::vector<std::vector<int>> adj_down(n);
-    std::vector<int> indeg(n, 0);
-
-    for (int u = 0; u < n; ++u) {
-        const auto& kids  = nodes[u].children;
-        const auto& steps = nodes[u].child_steps;
-
-        for (std::size_t e = 0; e < kids.size(); ++e) {
-            const df::StepRecord& step = steps[e];
-            if (!is_down(step.kind))
-                continue; // ignore up-edges
-
-            int v = kids[e];
-            adj_down[u].push_back(v);
-            indeg[v] += 1;
-        }
-    }
-
-    // Longest-path DP on DAG using Kahn topological order
-    const int NEG_INF = std::numeric_limits<int>::min();
-    std::vector<int> dist(n, NEG_INF);
-
-    // root is node 0
-    dist[0] = 0;
-
-    std::queue<int> q;
-    // push all nodes with indegree 0 into topo queue
-    for (int i = 0; i < n; ++i) {
-        if (indeg[i] == 0) {
-            q.push(i);
-        }
-    }
-
-    int visited_count = 0;
-    while (!q.empty()) {
-        int u = q.front();
-        q.pop();
-        ++visited_count;
-
-        // Relax outgoing down-edges
-        if (dist[u] != NEG_INF) {
-            for (int v : adj_down[u]) {
-                // each down-edge adds 1
-                int cand = dist[u] + 1;
-                if (cand > dist[v]) {
-                    dist[v] = cand;
-                }
-            }
-        }
-
-        // standard Kahn update
-        for (int v : adj_down[u]) {
-            indeg[v] -= 1;
-            if (indeg[v] == 0) {
-                q.push(v);
-            }
-        }
-    }
-
-    if (visited_count < n) {
-        std::cerr << "[vis_poset] WARNING: down-edge subgraph is not a DAG "
-                  << "(cycle detected); longest-path levels may be invalid.\n";
-    }
-
-    //visualize nodes that are not reachable from root
-    // Convert NEG_INF (unreachable via down-edges from root) to 0
-    for (int i = 0; i < n; ++i) {
-        if (dist[i] == NEG_INF) dist[i] = 0;
-        level[i] = dist[i];
-    }
-    
-
-    /* keep this for the local poset version
-    // mark nodes that are unreachable from root via DOWN edges with level -1
-    for (int i = 0; i < n; ++i) {
-        if (dist[i] == NEG_INF) {
-            level[i] = -1;            // unreachable from the chosen root
-        } else {
-            level[i] = dist[i];       // longest DOWN-distance from root
-        }
-    }
-    */
-
-    return level;
-}
-
-
-
-
-
-
-
-
-
-// compute level as a tight layering of the DOWN-edge DAG:
-// level(u) = level(v) - 1 for edges u->v whenever possible.
-// Implementation: compute height[u] = longest path length from u to any sink,
-// then level[u] = maxHeight - height[u].
-static std::vector<int>
-compute_levels(const std::vector<pst::Node>& nodes)
-{
-    const int n = static_cast<int>(nodes.size());
-    std::vector<int> level(n, 0);
-    if (n == 0) return level;
-
-    auto is_down = [](df::StepKind k) {
-        return k == df::StepKind::EdgeFlip_down
-            || k == df::StepKind::VertexInsertion_down
-            || k == df::StepKind::VertexDeletion_down;
-    };
-
-    std::vector<std::vector<int>> adj(n);
-    std::vector<std::vector<int>> radj(n); // reverse edges
-    std::vector<int> indeg(n, 0);
-
-    for (int u = 0; u < n; ++u) {
-        const auto& kids  = nodes[u].children;
-        const auto& steps = nodes[u].child_steps;
-        for (std::size_t e = 0; e < kids.size(); ++e) {
-            if (!is_down(steps[e].kind)) continue;
-            int v = kids[e];
-            adj[u].push_back(v);
-            radj[v].push_back(u);
-            indeg[v] += 1;
-        }
-    }
-
-    // Topological order (Kahn)
-    std::queue<int> q;
-    std::vector<int> indeg_work = indeg;
-    for (int i = 0; i < n; ++i) if (indeg_work[i] == 0) q.push(i);
-
-    std::vector<int> topo;
-    topo.reserve(n);
-    while (!q.empty()) {
-        int u = q.front(); q.pop();
-        topo.push_back(u);
-        for (int v : adj[u]) {
-            if (--indeg_work[v] == 0) q.push(v);
-        }
-    }
-
-    if ((int)topo.size() < n) {
-        std::cerr << "[vis_poset] WARNING: down-edge subgraph is not a DAG "
-                  << "(cycle detected); level layout may be invalid.\n";
-        // fall back: keep all at 0
-        return level;
-    }
-
-    // height[u] = longest path from u to any sink
-    std::vector<int> height(n, 0);
-    for (int i = n - 1; i >= 0; --i) {
-        int u = topo[i];
-        int best = 0;
-        for (int v : adj[u]) {
-            best = std::max(best, height[v] + 1);
-        }
-        height[u] = best;
-    }
-
-    int maxH = 0;
-    for (int h : height) maxH = std::max(maxH, h);
-
-    for (int u = 0; u < n; ++u) {
-        level[u] = maxH - height[u];
-    }
-
-    return level;
-}
-
-// Levels:
+// function for computing levels for global poset visualization
+// levels:
 //  (A) reachable from root (0): longest DOWN-path length from root
 //  (B) unreachable: place using children levels if possible,
 //      otherwise start new "block" below everything.
@@ -450,6 +266,8 @@ compute_levels_longest_root_with_unreachable(const std::vector<pst::Node>& nodes
         return V;
     }
 
+
+
     // global storage of registered poset meshes for UI toggling
     std::vector<polyscope::SurfaceMesh*> g_poset_meshes_2d;
     std::vector<polyscope::SurfaceMesh*> g_poset_meshes_3d;
@@ -462,6 +280,10 @@ compute_levels_longest_root_with_unreachable(const std::vector<pst::Node>& nodes
     bool g_show_poset_3d = true;
     bool g_show_down_flips = true;
 
+    polyscope::CurveNetwork* g_poset2_cover_network = nullptr;
+    bool g_show_poset2_covers = true;
+
+
 
     // --- global state so we can rebuild local posets from the UI ---
 
@@ -472,10 +294,9 @@ compute_levels_longest_root_with_unreachable(const std::vector<pst::Node>& nodes
     int                        g_max_local_depth = 5;
 
 
-
-
-
 } // anonymous namespace
+
+
 
 
 namespace viz_poset {
@@ -497,11 +318,16 @@ void register_poset(const df::InputData& D, const std::vector<pst::Node>& nodes)
         g_downflip_network = nullptr;
     }
 
+    if (g_poset2_cover_network) {
+        g_poset2_cover_network->remove();
+        g_poset2_cover_network = nullptr;
+    }
+
+
     // remember input + nodes for the local-poset UI
     g_input_for_poset = &D;
     g_nodes_for_ui    = nodes;
     g_center_node_idx = 0;
-
 
 
     if (nodes.empty()) {
@@ -514,10 +340,8 @@ void register_poset(const df::InputData& D, const std::vector<pst::Node>& nodes)
     // positions for each node center (for curve network)
     g_node_centers.assign(n, glm::vec3(0.0f));
 
-    // Compute level for each node
-    // (your compute_levels() should now count DOWN steps in history)
+    // compute level for each node
     auto level = compute_levels_longest_root_with_unreachable(nodes);
-
 
 
     // keep this for the whole poset version -> visualize nodes that are not reachable from root
@@ -526,38 +350,21 @@ void register_poset(const df::InputData& D, const std::vector<pst::Node>& nodes)
         max_level = std::max(max_level, lv);
     }
 
-    // Build list of nodes per level
+    // build list of nodes per level
     std::vector<std::vector<int>> byLevel(max_level + 1);
     for (int i = 0; i < n; ++i) {
         int lv = level[i];
         if (lv < 0) lv = 0;
         byLevel[lv].push_back(i);
     }
-    
 
 
-    /* keep this for the local poset version
-    int max_level = 0;
-    for (int lv : level) {
-        if (lv >= 0) {                     // ignore unreachable nodes
-            max_level = std::max(max_level, lv);
-        }
-    }
-    
 
-    // Build list of nodes per level, but skip unreachable nodes
-    std::vector<std::vector<int>> byLevel(max_level + 1);
-    for (int i = 0; i < n; ++i) {
-        int lv = level[i];
-        if (lv < 0) continue;             // do NOT display parents / unreachable
-        byLevel[lv].push_back(i);
-    }
-    */
-
-
-    // Grid layout parameters
+    // grid layout parameters
     const float LEVEL_SPACING   = 4.0f;  // vertical spacing between levels (in Z)
+    //const float LEVEL_SPACING   = 0.0f;  // vertical spacing between levels (in Z)
     const float NODE_SPACING    = 4.0f;  // horizontal spacing between nodes (in X)
+    //const float NODE_SPACING    = 0.0f;  // horizontal spacing between nodes (in X)
     const float TRI_SCALE_PLAN  = 0.7f;  // scale for 2D shape
     const float TRI_SCALE_LIFT  = 0.7f;  // horizontal scale for 3D
     const float LIFT_HEIGHT_SCL = 0.5f;  // vertical scale for lift
@@ -664,7 +471,6 @@ void register_poset(const df::InputData& D, const std::vector<pst::Node>& nodes)
               << " poset nodes (2D+3D meshes).\n";
 }
 
-
 void poset_ui() {
     if (g_poset_meshes_2d.empty() && g_poset_meshes_3d.empty()) {
         ImGui::Text("poset: no meshes registered");
@@ -688,6 +494,7 @@ void poset_ui() {
         }
     }
 
+    /*
     ImGui::Separator();
     ImGui::Text("local down flip poset from chosen root");
 
@@ -720,7 +527,7 @@ void poset_ui() {
             center_hist,
             static_cast<std::size_t>(g_max_local_depth),
             local_nodes,
-            /*max_nodes=*/600
+            600
         );
 
         pst::debug_print_local_poset_histories(
@@ -730,13 +537,51 @@ void poset_ui() {
 
         // show this local poset instead
         register_poset(*g_input_for_poset, local_nodes);
+        
     }
-
+    */
 }
 
+void register_poset2_cover_edges(const std::vector<std::vector<int>>& cover_out)
+{
+    const int n = (int)cover_out.size();
+    if (n == 0) return;
 
+    // node centers
+    if ((int)g_node_centers.size() != n) {
+        std::cerr << "[vis_poset] register_poset2_cover_edges: "
+                  << "node centers not initialized or size mismatch.\n";
+        return;
+    }
 
+    // remove 
+    if (g_poset2_cover_network) {
+        g_poset2_cover_network->remove();
+        g_poset2_cover_network = nullptr;
+    }
 
+    // build edges 
+    // cover_out: u -> v means u <=2 v (bottom->top)
+    // for visualization like poset1 (top->down), reverse: v -> u
+    std::vector<glm::uvec2> edges;
+    edges.reserve(n);
+
+    for (int u = 0; u < n; ++u) {
+        for (int v : cover_out[u]) {
+            if (v < 0 || v >= n) continue;
+            edges.emplace_back((unsigned)v, (unsigned)u); // reversed for display
+        }
+    }
+
+    if (edges.empty()) return;
+
+    g_poset2_cover_network = polyscope::registerCurveNetwork(
+        "poset2 covers", g_node_centers, edges);
+
+    g_poset2_cover_network->setEnabled(g_show_poset2_covers);
+    g_poset2_cover_network->setRadius(0.00037f, true);           
+    g_poset2_cover_network->setColor(glm::vec3(0.0f, 0.8f, 0.0f)); // green
+}
 
 
 } // namespace viz_poset

@@ -30,6 +30,8 @@ namespace pst {
 
     TriSignature make_signature(const df::Tri2& T);
 
+    void replay_history_poset(df::Tri2& tri, const std::vector<df::StepRecord>& history, const df::InputData& D);
+
     // builds the conforming flip poset from upper to lower triangulation
     void build_poset(const df::InputData& D, std::vector<Node>& nodes);
 
@@ -60,7 +62,7 @@ namespace pst {
     );
 
 
-
+    
     bool exists_path_via_children(
         const std::vector<pst::Node>& nodes,
         int source_idx,
@@ -82,15 +84,6 @@ namespace pst {
         std::vector<int>& out_node_path,             // global poset indices (mesh numbers)
         std::vector<df::StepRecord>& out_step_path   // steps along that path
     );
-
-
-
-
-
-
-
-
-
 
     void debug_print_local_poset_histories(
     const std::vector<Node>& nodes,

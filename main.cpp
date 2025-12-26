@@ -22,6 +22,8 @@
 #include "poset.h"
 #include "flip.h"
 #include "vis_poset.h"
+#include "compare.h"
+#include "poset2.h"
 
 
 
@@ -98,7 +100,13 @@ int main() {
     //df::InputData in = df::make_random_valid_input(11, 495934895);
 
 
+    // THE EXAMPLE to show that alogrithm is not correct
+    //df::InputData in = df::make_random_valid_input(8, 495934895);
 
+    
+    // example to check <=_2 relation
+    //df::InputData in = df::make_random_valid_input(5, 495934895);
+    //df::InputData in = df::make_random_valid_input(6, 495934895);
 
 
   
@@ -204,9 +212,6 @@ int main() {
 
     df::print_step_history(in);
     std::vector<pst::Node> poset_nodes;
-
-
-
     
     // build the whole down flip poset from upper triangulation
     pst::build_poset(in, poset_nodes);
@@ -214,20 +219,20 @@ int main() {
 
     // find minimal nodes in the poset (no incoming down-flips)
     auto mins = pst::nodes_with_no_incoming_down_flips(poset_nodes);
-    std::cout << "Minimal nodes: ";
+    std::cout << "minimal nodes: ";
     for (int u : mins) std::cout << u << " ";
     std::cout << "\n";
 
     // gives us indices of special triangulations in the poset
     auto idx = pst::find_special_triangulations_in_poset(in, poset_nodes);
-    std::cout << "poset index of upper (tri_upper):  " << idx.upper  << "\n";
-    std::cout << "poset index of current (tri_current): " << idx.current << "\n";
-    std::cout << "poset index of lower (tri_lower):   " << idx.lower   << "\n";
+    std::cout << "poset index of upper:  " << idx.upper  << "\n";
+    std::cout << "poset index of current: " << idx.current << "\n";
+    std::cout << "poset index of lower:   " << idx.lower   << "\n";
 
 
     // finds path from upper to lower triangulation in the poset (not necesessarily conforming)
     bool ok = pst::exists_path_via_children(poset_nodes, idx.upper, idx.lower);
-    std::cout << "Path upper -> lower exists? " << std::boolalpha << ok << "\n";
+    std::cout << "path upper -> lower exists? " << std::boolalpha << ok << "\n";
     
     std::vector<int> node_path;
     std::vector<df::StepRecord> step_path;
@@ -237,14 +242,16 @@ int main() {
         in, poset_nodes, idx.upper, idx.lower, node_path, step_path);
 
     std::cout << "conforming down path exists? " << std::boolalpha << ok_2 << "\n";
+    /*
     if (ok_2) {
         std::cout << "global mesh indices: ";
         for (int u : node_path) std::cout << u << " ";
         std::cout << "\n";
     }
+    */
 
     // print the steps along the conforming path
-    std::cout << "\nConforming down path:\n";
+    std::cout << "\nconforming down path:\n";
     for (std::size_t i = 0; i < step_path.size(); ++i) {
         std::cout << "  " << node_path[i]
                 << " -> " << node_path[i+1]
@@ -253,9 +260,53 @@ int main() {
         std::cout << "\n";
     }
 
-    
+    // debug: test the compare function on all <=_1 edges in the poset and compare nodes which have no direct <=_1 relation
 
+    if (poset_nodes.size() <= 40) {
+        std::cout << "\n=== comparator test on <=1 edges ===\n";
+        int fail = 0;
+        int total = 0;
 
+        for (int u = 0; u < (int)poset_nodes.size(); ++u) {
+            for (int v : poset_nodes[u].children) {
+                ++total;
+                if (!pst2::compare(v, u, in, poset_nodes)) {
+                    ++fail;
+                    std::cout << "FAIL: v<=1u but compare(v,u)=false: "
+                    << v << " <=1 " << u
+                    << "   (edge stored as " << u << " -> " << v << ")\n";
+                }
+            }
+        }
+
+        std::cout << "checked " << total << " <=1 edges, failures = " << fail << "\n";
+
+        std::cout << "\n=== full compare table (<= 80 nodes) ===\n";
+        for (int u = 0; u < (int)poset_nodes.size(); ++u) {
+            for (int v = u + 1; v < (int)poset_nodes.size(); ++v) {
+                bool uv = pst2::compare(u, v, in, poset_nodes);
+                bool vu = pst2::compare(v, u, in, poset_nodes);
+
+                if (uv && vu) {
+                    std::cout << u << " == " << v << "\n";
+                } else if (uv) {
+                    std::cout << u << " <2 " << v << "\n";
+                } else if (vu) {
+                    std::cout << v << " <2 " << u << "\n";
+                } else {
+                    std::cout << u << " || " << v << "\n";
+                }
+            }
+        }
+    } else {
+        std::cout << "poset too large for full table: " << poset_nodes.size() << "\n";
+    }
+
+    pst2::Poset2 poset_2 = pst2::build_poset2(in, poset_nodes, true);
+
+    pst2::print_cover_relations(poset_2);
+
+    viz_poset::register_poset2_cover_edges(poset_2.cover_out);
 
 
     
@@ -273,9 +324,6 @@ int main() {
     empty_history.size()  // center_history_len
     );
     */
-
-
-
 
     std::vector<df::DebugTetrahedron> debug_tets = df::collect_debug_tetrahedra(in);
 

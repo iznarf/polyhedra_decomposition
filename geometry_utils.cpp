@@ -60,66 +60,10 @@ CGAL::Orientation oriented_height_sign(
 
 
 
-void debug_segment_intersection_2d(
-    const CGAL::Segment_2<K>& cd,
-    const CGAL::Segment_2<K>& uv,
-    const std::string& tag )
-{
-    if (!CGAL::do_intersect(cd, uv)) {
-        std::cout << "[debug] no 2D intersection\n";
-        return;
-    }
 
-    auto inter = CGAL::intersection(cd, uv);
-    if (!inter) {
-        std::cout << "[debug] do_intersect but no intersection object?\n";
-        return;
-    }
 
-    // IMPORTANT: in your setup, *inter is a std::variant<Point_2, Segment_2>
-    using P2 = CGAL::Point_2<K>;
-    using S2 = CGAL::Segment_2<K>;
 
-    // ---- Point intersection ----
-    if (const P2* p = std::get_if<P2>(&*inter)) {
-        bool is_c = (*p == cd.source());
-        bool is_d = (*p == cd.target());
-        bool is_u = (*p == uv.source());
-        bool is_v = (*p == uv.target());
 
-        std::cout << "[debug] 2D intersection POINT";
-        if (!tag.empty()) std::cout << " (" << tag << ")";
-        std::cout << "\n";
-        std::cout << "        p = " << *p << "\n";
-        std::cout << "        equals c: " << is_c
-                  << ", d: " << is_d
-                  << ", u: " << is_u
-                  << ", v: " << is_v << "\n";
-
-        if ((is_c || is_d) && (is_u || is_v))
-            std::cout << "        -> shared endpoint\n";
-        else if (is_c || is_d)
-            std::cout << "        -> endpoint of (c,d) only\n";
-        else if (is_u || is_v)
-            std::cout << "        -> endpoint of (u,v) only\n";
-        else
-            std::cout << "        -> interior-interior point (TRUE CROSS)\n";
-
-        return;
-    }
-
-    // ---- Segment intersection (collinear overlap) ----
-    if (const S2* s = std::get_if<S2>(&*inter)) {
-        std::cout << "[debug] 2D intersection SEGMENT";
-        if (!tag.empty()) std::cout << " (" << tag << ")";
-        std::cout << "\n";
-        std::cout << "        overlap = " << *s << "\n";
-        std::cout << "        degenerate = " << s->is_degenerate() << "\n";
-        return;
-    }
-
-    std::cout << "[debug] 2D intersection of unexpected type\n";
-}
 
 
 

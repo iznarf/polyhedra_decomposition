@@ -95,9 +95,9 @@ bool is_insertion_conforming(df::vertex_id id, const df::InputData& D, const df:
 
         // early exit if all three edges (a,d), (b,d), (c,d) found
         if (ad_in_lower && bd_in_lower && cd_in_lower) {
-            std::cout << "[conform] all three edges (" << ia << "," << id << "), ("
-                    << ib << "," << id << "), (" << ic << "," << id
-                    << ") are already in lower triangulation -> insertion is conforming\n";
+            //std::cout << "[conform] all three edges (" << ia << "," << id << "), ("
+            //        << ib << "," << id << "), (" << ic << "," << id
+            //        << ") are already in lower triangulation -> insertion is conforming\n";
             return true;
         }
 
@@ -136,8 +136,8 @@ bool is_insertion_conforming(df::vertex_id id, const df::InputData& D, const df:
 
                     // if they intersect in 3D, flip is not conforming
                     if (CGAL::do_intersect(seg_ad_3d, seg_uv_3d)) {
-                        std::cout << "[conform] BLOCK: (a,d)=(" << ia << "," << id << ") "
-                                << "intersects lower (u,v)=(" << u << "," << v << ") in 3D\n";
+                        //std::cout << "[conform] BLOCK: (a,d)=(" << ia << "," << id << ") "
+                        //        << "intersects lower (u,v)=(" << u << "," << v << ") in 3D\n";
                         return false;
                     }
 
@@ -147,14 +147,14 @@ bool is_insertion_conforming(df::vertex_id id, const df::InputData& D, const df:
                     auto orientation_ad = oriented_height_sign(a2, d2, u2, v2, a3, d3, u3, v3);
 
                     if (orientation_ad == CGAL::NEGATIVE){
-                        std::cout << "[conform] PASS: (a,d)=(" << ia << "," << id << ") "
-                                << "above lower (u,v)=(" << u << "," << v << ")\n";
-                        std::cout << "cmp_ad = " << cmp_ad << "\n";  
+                        //std::cout << "[conform] PASS: (a,d)=(" << ia << "," << id << ") "
+                        //        << "above lower (u,v)=(" << u << "," << v << ")\n";
+                        //std::cout << "cmp_ad = " << cmp_ad << "\n";  
                     }
                     if (orientation_ad == CGAL::POSITIVE){
-                        std::cout << "[conform] BLOCK: (a,d)=(" << ia << "," << id << ") "
-                                << "below lower (u,v)=(" << u << "," << v << ")\n";
-                        std::cout << "cmp_ad = " << cmp_ad << "\n";
+                        //std::cout << "[conform] BLOCK: (a,d)=(" << ia << "," << id << ") "
+                        //        << "below lower (u,v)=(" << u << "," << v << ")\n";
+                        //std::cout << "cmp_ad = " << cmp_ad << "\n";
                         return false;
                     }
                     
@@ -183,8 +183,8 @@ bool is_insertion_conforming(df::vertex_id id, const df::InputData& D, const df:
 
 
                     if (CGAL::do_intersect(seg_bd_3d, seg_uv_3d)) {
-                        std::cout << "[conform] BLOCK: (b,d)=(" << ib << "," << id << ") "
-                                << "intersects lower (u,v)=(" << u << "," << v << ") in 3D\n";
+                        //std::cout << "[conform] BLOCK: (b,d)=(" << ib << "," << id << ") "
+                        //        << "intersects lower (u,v)=(" << u << "," << v << ") in 3D\n";
                         return false;
                     }
 
@@ -192,15 +192,15 @@ bool is_insertion_conforming(df::vertex_id id, const df::InputData& D, const df:
                     auto orientation_bd = oriented_height_sign(b2, d2, u2, v2, b3, d3, u3, v3);
                     
                     if (orientation_bd == CGAL::NEGATIVE){
-                        std::cout << "[conform] PASS: (b,d)=(" << ib << "," << id << ") "
-                                << "above lower (u,v)=(" << u << "," << v << ")\n";
-                        std::cout << "cmp_bd = " << cmp_bd << "\n";
+                        //std::cout << "[conform] PASS: (b,d)=(" << ib << "," << id << ") "
+                        //        << "above lower (u,v)=(" << u << "," << v << ")\n";
+                        //std::cout << "cmp_bd = " << cmp_bd << "\n";
                     }
                 
                     if (orientation_bd == CGAL::POSITIVE){
-                        std::cout << "[conform] BLOCK: (b,d)=(" << ib << "," << id << ") "
-                                << "below lower (u,v)=(" << u << "," << v << ")\n";
-                        std::cout << "cmp_bd = " << cmp_bd << "\n";
+                        //std::cout << "[conform] BLOCK: (b,d)=(" << ib << "," << id << ") "
+                        //        << "below lower (u,v)=(" << u << "," << v << ")\n";
+                        //std::cout << "cmp_bd = " << cmp_bd << "\n";
                         return false;
                     }
                     
@@ -228,8 +228,8 @@ bool is_insertion_conforming(df::vertex_id id, const df::InputData& D, const df:
 
 
                     if (CGAL::do_intersect(seg_cd_3d, seg_uv_3d)) {
-                        std::cout << "[conform] BLOCK: (c,d)=(" << ic << "," << id << ") "
-                                << "intersects lower (u,v)=(" << u << "," << v << ") in 3D\n";
+                        //std::cout << "[conform] BLOCK: (c,d)=(" << ic << "," << id << ") "
+                        //        << "intersects lower (u,v)=(" << u << "," << v << ") in 3D\n";
                         return false;
                     }
 
@@ -238,14 +238,14 @@ bool is_insertion_conforming(df::vertex_id id, const df::InputData& D, const df:
                 
                     
                     if (orientation_cd == CGAL::NEGATIVE){
-                        std::cout << "[conform] PASS: (c,d)=(" << ic << "," << id << ") "
-                                << "above lower (u,v)=(" << u << "," << v << ")\n";
-                        std::cout << "cmp_cd = " << cmp_cd << "\n";
+                        //std::cout << "[conform] PASS: (c,d)=(" << ic << "," << id << ") "
+                        //        << "above lower (u,v)=(" << u << "," << v << ")\n";
+                        //std::cout << "cmp_cd = " << cmp_cd << "\n";
                     }
                     if (orientation_cd == CGAL::POSITIVE){
-                        std::cout << "[conform] BLOCK: (c,d)=(" << ic << "," << id << ") "
-                                << "below lower (u,v)=(" << u << "," << v << ")\n";
-                        std::cout << "cmp_cd = " << cmp_cd << "\n";
+                        //std::cout << "[conform] BLOCK: (c,d)=(" << ic << "," << id << ") "
+                        //        << "below lower (u,v)=(" << u << "," << v << ")\n";
+                        //std::cout << "cmp_cd = " << cmp_cd << "\n";
                         return false;
                     }
 
@@ -254,8 +254,8 @@ bool is_insertion_conforming(df::vertex_id id, const df::InputData& D, const df:
         }
     } // end for all edges in lower triangulation
 
-    std::cout << "[conform] insertion of vertex with global id " << id
-              << " is conforming\n";
+    //std::cout << "[conform] insertion of vertex with global id " << id
+    //          << " is conforming\n";
     return true;
 }
 }}
