@@ -22,11 +22,8 @@ using df::vertex_id;
 
 namespace {
 
-    // faces as local index triples, like in visualization.cpp 
-    static std::vector<std::array<int,3>>
-    faces_from_triangles(const df::Tri2& t,
-                        const std::unordered_map<vertex_id,int>& to_local)
-    {
+    // faces as local index triples for planar triangulation
+    static std::vector<std::array<int,3>> faces_from_triangles(const df::Tri2& t, const std::unordered_map<vertex_id,int>& to_local) {
         std::vector<std::array<int,3>> F;
         F.reserve(t.number_of_faces());
         for (auto f = t.finite_faces_begin(); f != t.finite_faces_end(); ++f) {
@@ -38,10 +35,8 @@ namespace {
         return F;
     }
 
-    // attach "global id" scalar quantity to a Polyscope mesh
-    static void add_global_id_quantity(polyscope::SurfaceMesh* mesh,
-                                    const std::vector<vertex_id>& ids)
-    {
+    // attach global id scalar quantity to polyscope mesh
+    static void add_global_id_quantity(polyscope::SurfaceMesh* mesh, const std::vector<vertex_id>& ids) {
         std::vector<double> values;
         values.reserve(ids.size());
         for (auto id : ids) {
@@ -51,127 +46,116 @@ namespace {
     }
 
 
-// function for computing levels for global poset visualization
-// levels:
-//  (A) reachable from root (0): longest DOWN-path length from root
-//  (B) unreachable: place using children levels if possible,
-//      otherwise start new "block" below everything.
-static std::vector<int>
-compute_levels_longest_root_with_unreachable(const std::vector<pst::Node>& nodes)
-{
-    const int n = (int)nodes.size();
-    std::vector<int> level(n, -1);
-    if (n == 0) return level;
+    // function for computing levels for global poset visualization
+    // levels:
+    //  (A) reachable from root (0): longest DOWN-path length from root
+    //  (B) unreachable: place using children levels if possible,
+    //      otherwise start new "block" below everything
+    static std::vector<int> compute_levels_longest_root_with_unreachable(const std::vector<pst::Node>& nodes) {
+        const int n = (int)nodes.size();
+        std::vector<int> level(n, -1);
+        if (n == 0) return level;
 
-    auto is_down = [](df::StepKind k) {
-        return k == df::StepKind::EdgeFlip_down
-            || k == df::StepKind::VertexInsertion_down
-            || k == df::StepKind::VertexDeletion_down;
-    };
+        auto is_down = [](df::StepKind k) {
+            return k == df::StepKind::EdgeFlip_down
+                || k == df::StepKind::VertexInsertion_down
+                || k == df::StepKind::VertexDeletion_down;
+        };
 
-    // Build DOWN adjacency + indegrees for topo sort
-    std::vector<std::vector<int>> adj(n);
-    std::vector<int> indeg(n, 0);
+        // build down flip adjacency + indegrees for topo sort
+        std::vector<std::vector<int>> adj(n);
+        std::vector<int> indeg(n, 0);
 
-    for (int u = 0; u < n; ++u) {
-        const auto& kids  = nodes[u].children;
-        const auto& steps = nodes[u].child_steps;
-        const std::size_t m = std::min(kids.size(), steps.size());
+        for (int u = 0; u < n; ++u) {
+            const auto& kids  = nodes[u].children;
+            const auto& steps = nodes[u].child_steps;
+            const std::size_t m = std::min(kids.size(), steps.size());
 
-        for (std::size_t e = 0; e < m; ++e) {
-            if (!is_down(steps[e].kind)) continue;
-            int v = kids[e];
-            if (v < 0 || v >= n) continue;
-            adj[u].push_back(v);
-            indeg[v] += 1;
-        }
-    }
-
-    // Kahn topo order on DOWN subgraph
-    std::queue<int> q;
-    std::vector<int> indeg_work = indeg;
-    for (int i = 0; i < n; ++i) if (indeg_work[i] == 0) q.push(i);
-
-    std::vector<int> topo;
-    topo.reserve(n);
-    while (!q.empty()) {
-        int u = q.front(); q.pop();
-        topo.push_back(u);
-        for (int v : adj[u]) {
-            if (--indeg_work[v] == 0) q.push(v);
-        }
-    }
-
-    if ((int)topo.size() < n) {
-        std::cerr << "[vis_poset] WARNING: down-edge subgraph is not a DAG "
-                  << "(cycle detected); level layout may be invalid.\n";
-        // fallback: keep everything at 0
-        std::fill(level.begin(), level.end(), 0);
-        return level;
-    }
-
-    // (A) Longest-path-from-root DP over topo
-    const int NEG_INF = std::numeric_limits<int>::min();
-    std::vector<int> dist(n, NEG_INF);
-    dist[0] = 0;
-
-    for (int u : topo) {
-        if (dist[u] == NEG_INF) continue;
-        for (int v : adj[u]) {
-            dist[v] = std::max(dist[v], dist[u] + 1);
-        }
-    }
-
-    int max_level = 0;
-    for (int i = 0; i < n; ++i) {
-        if (dist[i] != NEG_INF) {
-            level[i] = dist[i];
-            max_level = std::max(max_level, level[i]);
-        }
-    }
-
-    // (B) Place unreachable nodes in reverse topo (children processed before parents)
-    // Rule: if any child has a level, put u at (min_child_level - 1).
-    // If u has no children with levels (sink in its component), start a new block below.
-    for (int ti = (int)topo.size() - 1; ti >= 0; --ti) {
-        int u = topo[ti];
-        if (level[u] != -1) continue; // already placed (reachable)
-
-        int min_child = std::numeric_limits<int>::max();
-        for (int v : adj[u]) {
-            if (level[v] != -1) {
-                min_child = std::min(min_child, level[v]);
+            for (std::size_t e = 0; e < m; ++e) {
+                if (!is_down(steps[e].kind)) continue;
+                int v = kids[e];
+                if (v < 0 || v >= n) continue;
+                adj[u].push_back(v);
+                indeg[v] += 1;
             }
         }
 
-        if (min_child != std::numeric_limits<int>::max()) {
-            level[u] = min_child - 1;
-        } else {
-            // new unreachable sink block
-            level[u] = ++max_level;
+        // kahn topo order on down flip subgraph
+        std::queue<int> q;
+        std::vector<int> indeg_work = indeg;
+        for (int i = 0; i < n; ++i) if (indeg_work[i] == 0) q.push(i);
+
+        std::vector<int> topo;
+        topo.reserve(n);
+        while (!q.empty()) {
+            int u = q.front(); q.pop();
+            topo.push_back(u);
+            for (int v : adj[u]) {
+                if (--indeg_work[v] == 0) q.push(v);
+            }
         }
 
-        max_level = std::max(max_level, level[u]);
+        if ((int)topo.size() < n) {
+            std::cerr << "[vis_poset] WARNING: down-edge subgraph is not a DAG "
+                    << "(cycle detected); level layout may be invalid.\n";
+            // fallback: keep everything at 0
+            std::fill(level.begin(), level.end(), 0);
+            return level;
+        }
+
+        // (A) longest path from root over topo
+        const int NEG_INF = std::numeric_limits<int>::min();
+        std::vector<int> dist(n, NEG_INF);
+        dist[0] = 0;
+
+        for (int u : topo) {
+            if (dist[u] == NEG_INF) continue;
+            for (int v : adj[u]) {
+                dist[v] = std::max(dist[v], dist[u] + 1);
+            }
+        }
+
+        int max_level = 0;
+        for (int i = 0; i < n; ++i) {
+            if (dist[i] != NEG_INF) {
+                level[i] = dist[i];
+                max_level = std::max(max_level, level[i]);
+            }
+        }
+
+        // (B) place unreachable nodes in reverse topo (children processed before parents)
+        // rule: if any child has a level, put u at (min_child_level - 1)
+        // if u has no children with levels, start new block below
+        for (int ti = (int)topo.size() - 1; ti >= 0; --ti) {
+            int u = topo[ti];
+            if (level[u] != -1) continue; // already placed (reachable)
+
+            int min_child = std::numeric_limits<int>::max();
+            for (int v : adj[u]) {
+                if (level[v] != -1) {
+                    min_child = std::min(min_child, level[v]);
+                }
+            }
+
+            if (min_child != std::numeric_limits<int>::max()) {
+                level[u] = min_child - 1;
+            } else {
+                // new unreachable 
+                level[u] = ++max_level;
+            }
+
+            max_level = std::max(max_level, level[u]);
+        }
+
+        // safety: clamp anything still -1 (should not happen!!) to 0
+        for (int& lv : level) if (lv < 0) lv = 0;
+
+        return level;
     }
 
-    // Safety: clamp anything still -1 (shouldn't happen) to 0
-    for (int& lv : level) if (lv < 0) lv = 0;
-
-    return level;
-}
-
-
-
-
-
     // make planar vertex positions for a given triangulation centered at (cx,cz)
-    // in the X-Z plane, with a small uniform scale.
-    static std::vector<vec3>
-    make_planar_poset_vertices(const std::vector<vertex_id>& ids,
-                            const std::vector<df::P2>& points2d,
-                            float cx, float cz,
-                            float scale)
-    {
+    // in the X-Z plane, with a small uniform scale
+    static std::vector<vec3> make_planar_poset_vertices(const std::vector<vertex_id>& ids, const std::vector<df::P2>& points2d, float cx, float cz, float scale){
         double minx =  std::numeric_limits<double>::infinity();
         double maxx = -std::numeric_limits<double>::infinity();
         double miny =  std::numeric_limits<double>::infinity();
@@ -216,13 +200,7 @@ compute_levels_longest_root_with_unreachable(const std::vector<pst::Node>& nodes
     }
 
     // make lifted vertices above same grid center (cx,cz)
-    static std::vector<vec3>
-    make_lifted_poset_vertices(const std::vector<vertex_id>& ids,
-                            const std::vector<df::P2>& points2d,
-                            float cx, float cz,
-                            float scale_xy,
-                            float scale_z)
-    {
+    static std::vector<vec3> make_lifted_poset_vertices(const std::vector<vertex_id>& ids, const std::vector<df::P2>& points2d, float cx, float cz, float scale_xy, float scale_z) {
         double minx =  std::numeric_limits<double>::infinity();
         double maxx = -std::numeric_limits<double>::infinity();
         double miny =  std::numeric_limits<double>::infinity();
@@ -259,7 +237,7 @@ compute_levels_longest_root_with_unreachable(const std::vector<pst::Node>& nodes
             float Z = cz + static_cast<float>(dy * scale_xy);
             float Y = static_cast<float>(z * scale_z); // height
 
-            // Note: Polyscope convention (x,y,z)
+            // Polyscope convention (x,y,z)
             V.emplace_back(X, Y, Z);
         }
 
@@ -301,7 +279,8 @@ compute_levels_longest_root_with_unreachable(const std::vector<pst::Node>& nodes
 
 namespace viz_poset {
 
-void register_poset(const df::InputData& D, const std::vector<pst::Node>& nodes) {
+int register_poset(const df::InputData& D, const std::vector<pst::Node>& nodes) {
+    int down_edge_count = 0;
     // clear previous poset meshes if any
     for (auto* m : g_poset_meshes_2d) {
         if (m) m->remove();
@@ -332,7 +311,7 @@ void register_poset(const df::InputData& D, const std::vector<pst::Node>& nodes)
 
     if (nodes.empty()) {
         std::cout << "[vis_poset] no nodes to visualize.\n";
-        return;
+        return down_edge_count;
     }
 
     const int n = static_cast<int>(nodes.size());
@@ -369,7 +348,7 @@ void register_poset(const df::InputData& D, const std::vector<pst::Node>& nodes)
     const float TRI_SCALE_LIFT  = 0.7f;  // horizontal scale for 3D
     const float LIFT_HEIGHT_SCL = 0.5f;  // vertical scale for lift
 
-    // For each node, reconstruct triangulation and register meshes
+    // for each node, reconstruct triangulation and register meshes
     for (int lv = 0; lv <= max_level; ++lv) {
         auto& nodesAtLevel = byLevel[lv];
         int k = static_cast<int>(nodesAtLevel.size());
@@ -469,6 +448,11 @@ void register_poset(const df::InputData& D, const std::vector<pst::Node>& nodes)
 
     std::cout << "[vis_poset] registered " << g_poset_meshes_2d.size()
               << " poset nodes (2D+3D meshes).\n";
+    // print size of down_edges
+    std::cout << "[vis_poset] registered " << down_edges.size()
+              << " down-flip edges.\n";
+    down_edge_count = static_cast<int>(down_edges.size());
+    return down_edge_count;
 }
 
 void poset_ui() {
@@ -542,6 +526,7 @@ void poset_ui() {
     */
 }
 
+// register / update a second edge network that visualizes <=2 cover edges
 void register_poset2_cover_edges(const std::vector<std::vector<int>>& cover_out)
 {
     const int n = (int)cover_out.size();

@@ -415,7 +415,6 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\vis_poset.cpp" />
     <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\poset2.cpp" />
     <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\compare.cpp" />
-    <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\vis_poset2.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\ZERO_CHECK.vcxproj">

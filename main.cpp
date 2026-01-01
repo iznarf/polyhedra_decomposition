@@ -31,13 +31,13 @@ int main() {
     polyscope::init();
 
     // number of vertices in triangulation
-    int n_points = 8;
+    int n_points = 7;
     // random seed to start point generation
-    unsigned seed0 = 495934895;
+    unsigned seed0 = 1516235435;
     df::InputData in = df::make_random_valid_input(n_points, seed0);
 
    
-    /**
+    /*
     df::apply_edge_flip(5, 0, in, in.tri_lower);
     df::apply_edge_flip(4, 2, in, in.tri_lower);
     df::apply_edge_flip(3, 1, in, in.tri_lower);
@@ -215,7 +215,7 @@ int main() {
     
     // build the whole down flip poset from upper triangulation
     pst::build_poset(in, poset_nodes);
-    viz_poset::register_poset(in, poset_nodes);
+    int down_edge_count = viz_poset::register_poset(in, poset_nodes);
 
     // find minimal nodes in the poset (no incoming down-flips)
     auto mins = pst::nodes_with_no_incoming_down_flips(poset_nodes);
@@ -262,7 +262,7 @@ int main() {
 
     // debug: test the compare function on all <=_1 edges in the poset and compare nodes which have no direct <=_1 relation
 
-    if (poset_nodes.size() <= 40) {
+    if (poset_nodes.size() <= 0) {
         std::cout << "\n=== comparator test on <=1 edges ===\n";
         int fail = 0;
         int total = 0;
@@ -281,7 +281,7 @@ int main() {
 
         std::cout << "checked " << total << " <=1 edges, failures = " << fail << "\n";
 
-        std::cout << "\n=== full compare table (<= 80 nodes) ===\n";
+        std::cout << "\n=== full compare table (<= 0 nodes) ===\n";
         for (int u = 0; u < (int)poset_nodes.size(); ++u) {
             for (int v = u + 1; v < (int)poset_nodes.size(); ++v) {
                 bool uv = pst2::compare(u, v, in, poset_nodes);
@@ -304,9 +304,14 @@ int main() {
 
     pst2::Poset2 poset_2 = pst2::build_poset2(in, poset_nodes, true);
 
-    pst2::print_cover_relations(poset_2);
+    int poset2_cover_edge_count = pst2::print_cover_relations(poset_2);
 
     viz_poset::register_poset2_cover_edges(poset_2.cover_out);
+
+    //print number of cover edges for <=_1 poset
+    std::cout << "[main] poset <=1 cover edges: " << down_edge_count << "\n";
+    //print number of cover edges for <=_2 poset
+    std::cout << "[main] poset <=2 cover edges: " << poset2_cover_edge_count << "\n";
 
 
     

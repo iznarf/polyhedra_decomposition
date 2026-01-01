@@ -158,9 +158,9 @@ InputData make_random_input(int n_points, unsigned seed) {
 
     
 
-    /*
     
-    //example points 1
+    
+    /*
 
     D.points2d = {
         P2(-2,1), //lift to z = 2
@@ -178,7 +178,7 @@ InputData make_random_input(int n_points, unsigned seed) {
     std::vector<std::size_t> global_indices(D.points2d.size());
     std::iota(global_indices.begin(), global_indices.end(), 0);
 
-    /* build regular triangulation
+    //build regular triangulation
     // build weighted points for regular triangulation
     D.points2d_weighted.clear();
     for (std::size_t i = 0; i < D.points2d.size(); ++i) {
@@ -190,7 +190,7 @@ InputData make_random_input(int n_points, unsigned seed) {
         vh->info() = i; // set global index as info
         D.points2d_weighted.push_back(wp); 
     }
-    */
+    
 
     // 3) build convex hull: We use the property map to then give CGAL just the global indices for the convex hull
     // since we have the property map, CGAL can then build the convex hull based on the indices
@@ -311,8 +311,8 @@ InputData make_random_input(int n_points, unsigned seed) {
 
     D.tri_lower.set_infinite_vertex(inf_v);
     CGAL_assertion(D.tri_lower.is_valid());
-    
     */
+    
     
     return D;
 }

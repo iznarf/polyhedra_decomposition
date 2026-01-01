@@ -163,11 +163,6 @@ void update_debug_tet_mesh() {
 
 
 }
-
-
-
-
-
 } // anonymous namespace
 
 
@@ -238,8 +233,6 @@ void register_triangulation_as_mesh(const df::Tri2& tri,
     auto vertices_2d = points_planar(ids, points2d);
     auto faces       = faces_from_triangles(tri, to_local);
 
-
-
     glm::vec3 lightBlue(0.6f, 0.8f, 1.0f);  
 
     // planar mesh
@@ -259,7 +252,7 @@ void register_triangulation_as_mesh(const df::Tri2& tri,
     //m3->setTransparency(0.5); 
 }
 
-// 
+// register one regular triangulation as (2D mesh + lifted mesh)
 void register_regular_triangulation_as_mesh(const df::Tri2Regular& tri,
                          const std::vector<df::P2_weighted>& points2d_weighted,
                          const std::string& name_planar,
@@ -447,6 +440,9 @@ void show_or_update_replay(const df::InputData& D) {
     m3->setTransparency(0.5f);
 }
 
+
+
+
 // --------------------------------
 // decompostion 
 // builds one mesh containing the first prefix_steps tets
@@ -516,7 +512,7 @@ void update_flip_decomposition_mesh(const df::InputData& D, int prefix_steps)
     if (!g_decomp_mesh) {
         g_decomp_mesh =
             polyscope::registerSurfaceMesh("flip decomposition", V, F);
-        add_global_id_quantity(g_decomp_mesh, vids);  // <<< attach ids
+        add_global_id_quantity(g_decomp_mesh, vids);  // attach ids
 
         glm::vec3 cyan(0.0f, 0.8f, 0.9f);
         g_decomp_mesh->setSurfaceColor(cyan);
@@ -526,7 +522,7 @@ void update_flip_decomposition_mesh(const df::InputData& D, int prefix_steps)
         g_decomp_mesh->remove();
         g_decomp_mesh =
             polyscope::registerSurfaceMesh("flip decomposition", V, F);
-        add_global_id_quantity(g_decomp_mesh, vids);  // <<< attach ids again
+        add_global_id_quantity(g_decomp_mesh, vids);  // attach ids again
 
         glm::vec3 cyan(0.0f, 0.8f, 0.9f);
         g_decomp_mesh->setSurfaceColor(cyan);
@@ -534,6 +530,8 @@ void update_flip_decomposition_mesh(const df::InputData& D, int prefix_steps)
     }
 
 }
+
+
 
 void init_flip_decomposition(df::InputData& D)
 {
@@ -572,14 +570,14 @@ void flip_decomposition_ui()
 
     ImGui::Separator();
 
-    // prev: shrink prefix (remove last tet)
+    // previous button: remove last tet
     if (ImGui::Button("prev") && g_decomp_prefix > 0) {
         --g_decomp_prefix;
         viz::update_flip_decomposition_mesh(*g_decomp_data, g_decomp_prefix);
     }
     ImGui::SameLine();
 
-    // next: grow prefix (add next tet)
+    // next button: add next tet
     if (ImGui::Button("next") && g_decomp_prefix < n) {
         ++g_decomp_prefix;
         viz::update_flip_decomposition_mesh(*g_decomp_data, g_decomp_prefix);

@@ -116,7 +116,7 @@ static bool check_edges(const df::Tri2& T1, const df::Tri2& T2){
 }
 
 
-static bool check_extra_vertices_T2_vs_T1_using_helper(
+static bool check_extra_vertices_T2_vs_T1(
     const Tri& T1,
     const Tri& T2)
 {
@@ -172,17 +172,18 @@ bool compare(int t1, int t2, const df::InputData& D, const std::vector<pst::Node
     Tri T1 = build_from_history(D, nodes[t1]);
     Tri T2 = build_from_history(D, nodes[t2]);
 
-
-    if (!check_extra_vertices_T2_vs_T1_using_helper(T1, T2)) {
+    // check extra vertices of T2 against T1: locate vertex of T2 in T1, check height
+    if (!check_extra_vertices_T2_vs_T1(T1, T2)) {
         return false;
     }
 
-
+    // check all edges of T1 against T2
     if (all_edges_in(T1, T2)) {
         // if (T2 <=2 T1) then reject (T1 <=2 T2)
         return !check_edges(T2, T1);
     }
 
+    // check all edges of T1 against T2: height/ intersection test
     return check_edges(T1, T2);
 }
 

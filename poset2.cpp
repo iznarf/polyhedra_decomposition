@@ -17,9 +17,8 @@ using Bitset = boost::dynamic_bitset<>;
 
 // helper function to sort adjacency lists
 // sorts neighbors and removes duplicates
-// same edge could be added more than once (not sure if that happens in current code)
-static void sort_unique_adjacency(std::vector<std::vector<int>>& out)
-{
+// same edge could be added more than once 
+static void sort_unique_adjacency(std::vector<std::vector<int>>& out) {
     for (auto& nbrs : out) {
         std::sort(nbrs.begin(), nbrs.end());
         nbrs.erase(std::unique(nbrs.begin(), nbrs.end()), nbrs.end());
@@ -27,8 +26,7 @@ static void sort_unique_adjacency(std::vector<std::vector<int>>& out)
 }
 
 // kahn topo sort, throws if a cycle is detected
-static std::vector<int> topo_sort_kahn(const std::vector<std::vector<int>>& out)
-{
+static std::vector<int> topo_sort_kahn(const std::vector<std::vector<int>>& out) {
     const int N = static_cast<int>(out.size());
     std::vector<int> indeg(N, 0);
 
@@ -128,24 +126,26 @@ static std::vector<std::vector<int>> build_out1_from_nodes(const std::vector<pst
     const int N = static_cast<int>(nodes.size());
     std::vector<std::vector<int>> out1(N);
     for (int u = 0; u < N; ++u) {
-        out1[u] = nodes[u].children; // <=_1 DOWN edges
+        out1[u] = nodes[u].children; // <=_1 down edges
     }
     sort_unique_adjacency(out1);
     return out1;
 }
 
 
-void print_cover_relations(const pst2::Poset2& P2)
-{
+int print_cover_relations(const pst2::Poset2& P2) {
+    int counter = 0;
     std::cout << "\n=== <=2 cover relations top -> down ===\n";
     for (int u = 0; u < (int)P2.cover_out.size(); ++u) {
         for (int v : P2.cover_out[u]) {
             // stored as u <=2 v, but print as v -> u (top -> down)
             std::cout << v << " -> " << u << "\n";
+            counter++;
         }
     }
+    std::cout << "=== end of <=2 cover relations ===\n\n";
+    return counter;
 }
-
 
 
 // fuunction to build the <=2 poset from triangulation comparison
@@ -183,12 +183,12 @@ Poset2 build_poset2(const df::InputData& D, const std::vector<pst::Node>& nodes,
     }
 
 
-    // (b) resolve <=_1-incomparable pairs via cmp
+    // (b) resolve <=_1-incomparable pairs with compare function
     // loop unordered pairs u<v
     for (int u = 0; u < N; ++u) {
         for (int v = u + 1; v < N; ++v) {
 
-            // skip if <=1 already orders them
+            // skip if <=1 already orders them, meaning R1[u][v] = 1 or R1[v][u] = 1
             if (R1[u].test(v) || R1[v].test(u)) {
                 // R1[u].test(v) means: u -> v by down edges  =>  v <=1 u  =>  v <=2 u already implied
                 continue;
@@ -210,7 +210,7 @@ Poset2 build_poset2(const df::InputData& D, const std::vector<pst::Node>& nodes,
             } else if (result1 == false && result2 == true) {
                 out2[v].push_back(u);
             } else if (result1 == true && result2 == true) {
-                // print warning, do not throw error: should not happen unless triangulations are equal 
+                // print warning: should not happen unless triangulations are equal 
                 std::cerr << "Warning: build_poset2: triangulations " << u << " and " << v << " compare equal in both directions\n";
             }
 
@@ -239,8 +239,5 @@ Poset2 build_poset2(const df::InputData& D, const std::vector<pst::Node>& nodes,
     
     return P2;
 }
-
-
-
 
 } // namespace pst2
