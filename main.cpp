@@ -43,12 +43,10 @@ int main() {
     df::apply_edge_flip(3, 1, in, in.tri_lower);
     */
 
-    
 
     // clear steop history to start fresh
     in.step_history.clear();
     
-
 
     // these are valid inputs where the algorithm works:
     //df::InputData in = df::make_random_input(7, 495934895);
@@ -89,8 +87,6 @@ int main() {
     //df::InputData in = df::make_random_valid_input(40, 40);
 
 
-
-
     //these are inputs where the algorithm fails and the upper triangulation is the farthees point triangulation
     // lower triangulation has then to be a local maximum in the poset
     //df::InputData in = df::make_random_valid_input(37, 4458);
@@ -109,13 +105,11 @@ int main() {
     //df::InputData in = df::make_random_valid_input(6, 495934895);
 
 
-  
+    //viz::register_triangulation_as_mesh(in.tri_lower, in.points2d, "lower 2D", "lower lifted");
+    //viz::register_triangulation_as_mesh(in.tri_upper, in.points2d, "upper 2D", "upper lifted");
+    //viz::register_regular_triangulation_as_mesh(in.tri_regular, in.points2d_weighted, "regular 2D", "regular lifted");
 
-    viz::register_triangulation_as_mesh(in.tri_lower, in.points2d, "lower 2D", "lower lifted");
-    viz::register_triangulation_as_mesh(in.tri_upper, in.points2d, "upper 2D", "upper lifted");
-    viz::register_regular_triangulation_as_mesh(in.tri_regular, in.points2d_weighted, "regular 2D", "regular lifted");
-
-    viz::show_or_update_current(in);
+    //viz::show_or_update_current(in);
 
 
     while (true) {
@@ -165,7 +159,6 @@ int main() {
         }
 
 
-
         // if no conforming insertion exists -> polyhedron is non-decomposable
         if (!found_conforming) {
             std::cout << "\n[main] ERROR: all candidate vertex insertions are non-conforming.\n"
@@ -178,8 +171,8 @@ int main() {
         std::cout << "Inserting vertex (global id) " << insertion_vertex << "\n";
         df::apply_vertex_insertion(insertion_vertex, in);
 
-        viz::show_or_update_current(in);
-        df::debug_print_edge_list(in);
+        //viz::show_or_update_current(in);
+        //df::debug_print_edge_list(in);
 
     }
     
@@ -242,6 +235,7 @@ int main() {
         in, poset_nodes, idx.upper, idx.lower, node_path, step_path);
 
     std::cout << "conforming down path exists? " << std::boolalpha << ok_2 << "\n";
+
     /*
     if (ok_2) {
         std::cout << "global mesh indices: ";
@@ -313,8 +307,23 @@ int main() {
     //print number of cover edges for <=_2 poset
     std::cout << "[main] poset <=2 cover edges: " << poset2_cover_edge_count << "\n";
 
+    //----------------------------------------------------------------
+    // test interval_xy function
 
-    
+    /*
+    std::vector<int> interval = interval_xy(poset_2, 49, 0);
+    if (interval.empty()) {
+        std::cout << "[main] interval is empty\n";
+    }
+    else {
+        for (int v : interval) std::cout << v << " ";
+        std::cout << "\n";
+    }
+    */
+    //----------------------------------------------------------------
+   
+
+    // ----------------------------------------------------------------
     /* this is for building the local poset around a chosen root node
 
     // empty history = upper triangulation as root
@@ -329,18 +338,25 @@ int main() {
     empty_history.size()  // center_history_len
     );
     */
+    // ----------------------------------------------------------------
 
-    std::vector<df::DebugTetrahedron> debug_tets = df::collect_debug_tetrahedra(in);
+    
+    //-----------------------------------------------------------------
+    // visualization of flip alogrithm
+
+    //std::vector<df::DebugTetrahedron> debug_tets = df::collect_debug_tetrahedra(in);
 
     // visualize debug tetrahedra
-    viz::load_debug_tetrahedra(in, debug_tets);
+    //viz::load_debug_tetrahedra(in, debug_tets);
 
     // visualize flip decomposition
-    viz::init_flip_decomposition(in);
+    //viz::init_flip_decomposition(in);
 
 
     // initialize replay data
-    df::init_replay(in);
+    //df::init_replay(in);
+
+    //-----------------------------------------------------------------
    
     polyscope::state::userCallback = combined_ui_callback;
 

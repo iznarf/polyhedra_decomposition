@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <functional>
 
+
 namespace pst2 {
 
 using Bitset = boost::dynamic_bitset<>;
@@ -239,5 +240,181 @@ Poset2 build_poset2(const df::InputData& D, const std::vector<pst::Node>& nodes,
     
     return P2;
 }
+
+// this section is now for computing intervals in the poset
+
+static std::vector<std::vector<int>> build_cover_in(const Poset2& P) {
+    const int N = (int)P.cover_out.size();
+    std::vector<std::vector<int>> cover_in(N);
+    for (int u = 0; u < N; ++u) {
+        for (int v : P.cover_out[u]) {
+            if (v < 0 || v >= N) continue;
+            cover_in[v].push_back(u);
+        }
+    }
+    for (auto& nbrs : cover_in) {
+        std::sort(nbrs.begin(), nbrs.end());
+        nbrs.erase(std::unique(nbrs.begin(), nbrs.end()), nbrs.end());
+    }
+    return cover_in;
+}
+
+// compute upper set of x by going UP along <=2 cover edges
+static std::vector<char> upper_set_x1(const Poset2& P, int x){
+    const int N = (int)P.cover_out.size();
+    std::vector<char> vis(N, 0);
+    std::queue<int> q;
+
+    vis[x] = 1;
+    q.push(x);
+
+    while (!q.empty()) {
+        int u = q.front(); q.pop();
+        for (int v : P.cover_out[u]) { // u <_2 v (go UP)
+            if (!vis[v]) { vis[v] = 1; q.push(v); }
+        }
+    }
+    return vis;
+}
+
+// compute lower set of y by going DOWN along <=2 cover edges
+static std::vector<char> lower_set_0y(const std::vector<std::vector<int>>& cover_in, int y){
+    const int N = (int)cover_in.size();
+    std::vector<char> vis(N, 0);
+    std::queue<int> q;
+
+    vis[y] = 1;
+    q.push(y);
+
+    while (!q.empty()) {
+        int u = q.front(); q.pop();
+        for (int v : cover_in[u]) { // v <_2 u (go DOWN)
+            if (!vis[v]) { vis[v] = 1; q.push(v); }
+        }
+    }
+    return vis;
+}
+
+std::vector<int> interval_xy(const Poset2& P, int x, int y)
+{
+    int N = (int)P.cover_out.size();
+    if (x < 0 || x >= N || y < 0 || y >= N) {
+        std::cout << "invalid node indices\n";
+        return {};
+    }
+
+    // compute reachability
+    auto up_x = upper_set_x1(P, x);
+    auto up_y = upper_set_x1(P, y);
+
+    bool x_le_y = up_x[y];
+    bool y_le_x = up_y[x];
+
+   
+    std::cout << "relation: ";
+    if (x == y) std::cout << "x == y\n";        
+    else if (x_le_y) std::cout << "x <=2 y\n";
+    else if (y_le_x) std::cout << "y <=2 x\n";
+    else std::cout << "incomparable\n";
+    
+
+    // interval [x,y] only exists if x <=2 y (or x==y)
+    if (!(x == y || x_le_y)) {
+        std::cout << "interval [" << x << "," << y << "] is empty\n";
+        return {};
+    }
+
+    // [x,1] ∩ [0,y]
+    auto cover_in = build_cover_in(P);
+    auto low_y = lower_set_0y(cover_in, y);
+
+    std::vector<int> res;
+    for (int i = 0; i < N; ++i)
+        if (up_x[i] && low_y[i])
+            res.push_back(i);
+
+    std::cout << "interval [" << x << "," << y << "] has "              
+    << res.size() << " nodes\n";
+
+    return res;
+}
+
+
+
+
+std::vector<int> meet_candidates_xy(const Poset2& P, int x, int y) {
+    int N = (int)P.cover_out.size();
+    if (x < 0 || x >= N || y < 0 || y >= N) {
+        std::cout << "meet_candidates_xy: invalid indices\n";
+        return {};
+    }
+
+    // L = [0,x] ∩ [0,y]
+    auto cover_in = build_cover_in(P);
+    auto low_x = lower_set_0y(cover_in, x);
+    auto low_y = lower_set_0y(cover_in, y);
+
+    std::vector<char> inL(N, 0);
+    for (int i = 0; i < N; ++i) {
+        if (low_x[i] && low_y[i]) inL[i] = 1;
+    }
+
+    // maximal elements of L: no outgoing cover edge to another element in L
+    std::vector<int> maxima;
+    for (int z = 0; z < N; ++z) {
+        if (!inL[z]) continue;
+
+        bool has_bigger_in_L = false;
+        for (int w : P.cover_out[z]) {      // z <2 w
+            if (w >= 0 && w < N && inL[w]) { // bigger and still in L
+                has_bigger_in_L = true;
+                break;
+            }
+        }
+
+        if (!has_bigger_in_L) maxima.push_back(z);
+    }
+
+    return maxima;
+}
+
+std::vector<int> join_candidates_xy(const Poset2& P, int x, int y) {
+    int N = (int)P.cover_out.size();
+    if (x < 0 || x >= N || y < 0 || y >= N) {
+        std::cout << "join_candidates_xy: invalid indices\n";
+        return {};
+    }
+
+    // U = [x,1] ∩ [y,1]
+    auto up_x = upper_set_x1(P, x);
+    auto up_y = upper_set_x1(P, y);
+
+    std::vector<char> inU(N, 0);
+    for (int i = 0; i < N; ++i) {
+        if (up_x[i] && up_y[i]) inU[i] = 1;
+    }
+
+    // minima of U: no incoming cover edge from another element in U
+    auto cover_in = build_cover_in(P);
+
+    std::vector<int> minima;
+    for (int z = 0; z < N; ++z) {
+        if (!inU[z]) continue;
+
+        bool has_smaller_in_U = false;
+        for (int w : cover_in[z]) {          // w <2 z
+            if (w >= 0 && w < N && inU[w]) { // smaller and still in U
+                has_smaller_in_U = true;
+                break;
+            }
+        }
+
+        if (!has_smaller_in_U) minima.push_back(z);
+    }
+
+    return minima;
+}
+
+
 
 } // namespace pst2
