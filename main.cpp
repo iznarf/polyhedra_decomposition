@@ -104,6 +104,9 @@ int main() {
     //df::InputData in = df::make_random_valid_input(5, 495934895);
     //df::InputData in = df::make_random_valid_input(6, 495934895);
 
+    // example to show that unique meet/join do not exist
+    //df::InputData in = df::make_random_valid_input(7, 1516235435);
+
 
     //viz::register_triangulation_as_mesh(in.tri_lower, in.points2d, "lower 2D", "lower lifted");
     //viz::register_triangulation_as_mesh(in.tri_upper, in.points2d, "upper 2D", "upper lifted");
@@ -307,6 +310,7 @@ int main() {
     //print number of cover edges for <=_2 poset
     std::cout << "[main] poset <=2 cover edges: " << poset2_cover_edge_count << "\n";
 
+
     //----------------------------------------------------------------
     // test interval_xy function
 
@@ -323,22 +327,6 @@ int main() {
     //----------------------------------------------------------------
    
 
-    // ----------------------------------------------------------------
-    /* this is for building the local poset around a chosen root node
-
-    // empty history = upper triangulation as root
-    std::vector<df::StepRecord> empty_history;
-
-    pst::build_poset_local_down_from_history(in, empty_history, 1, poset_nodes, 1000);
-
-    viz_poset::register_poset(in, poset_nodes);
-
-    pst::debug_print_local_poset_histories(
-    poset_nodes,
-    empty_history.size()  // center_history_len
-    );
-    */
-    // ----------------------------------------------------------------
 
     
     //-----------------------------------------------------------------

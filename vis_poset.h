@@ -2,6 +2,7 @@
 
 #include "input.h"
 #include "poset.h"
+#include "poset2.h"
 #include <vector>
 
 namespace viz_poset {
@@ -18,5 +19,9 @@ namespace viz_poset {
     // we reverse for drawing (top->down)
     void register_poset2_cover_edges(const std::vector<std::vector<int>>& cover_out);
 
+  
+    const std::vector<pst::Node>& get_poset1_nodes();
+    const pst2::Poset2& get_poset2();
+    
 
 } // namespace viz_poset

@@ -17,9 +17,17 @@
 #include <unordered_map>
 #include <algorithm>
 #include <iostream>
+#include <polyscope/view.h>
+
 
 using glm::vec3;
 using df::vertex_id;
+
+namespace viz_poset {
+    void rebuild_downflip_network_filtered();
+    void register_poset2_cover_edges(const std::vector<std::vector<int>>& cover_out);
+
+}
 
 namespace {
 
@@ -264,7 +272,6 @@ namespace {
     bool g_show_down_flips = true;
 
     // poset2 cover relations visualization
-
     polyscope::CurveNetwork* g_poset2_cover_network = nullptr;
     bool g_show_poset2_covers = true;
 
@@ -297,12 +304,15 @@ namespace {
 
     // mesh comparison global variables
     // comparison view
-
     static char g_cmp_a_buf[32] = "0";
     static char g_cmp_b_buf[32] = "0";
     
-    static bool g_cmp_show_2d = false; // start OFF (your requirement)
-    static bool g_cmp_show_3d = true;  // start ON
+    static bool g_cmp_show_A_2d = false;
+    static bool g_cmp_show_A_3d = true;
+    static bool g_cmp_show_B_2d = false;
+    static bool g_cmp_show_B_3d = true;
+
+    static bool g_compare_mode = false;
 
 
     static polyscope::SurfaceMesh* g_cmpA_2d = nullptr;
@@ -318,13 +328,39 @@ namespace {
     }
 
     static void set_compare_enabled() {
-        if (g_cmpA_2d) g_cmpA_2d->setEnabled(g_cmp_show_2d);
-        if (g_cmpB_2d) g_cmpB_2d->setEnabled(g_cmp_show_2d);
-        if (g_cmpA_3d) g_cmpA_3d->setEnabled(g_cmp_show_3d);
-        if (g_cmpB_3d) g_cmpB_3d->setEnabled(g_cmp_show_3d);
+        if (g_cmpA_2d) g_cmpA_2d->setEnabled(g_cmp_show_A_2d);
+        if (g_cmpA_3d) g_cmpA_3d->setEnabled(g_cmp_show_A_3d);
+        if (g_cmpB_2d) g_cmpB_2d->setEnabled(g_cmp_show_B_2d);
+        if (g_cmpB_3d) g_cmpB_3d->setEnabled(g_cmp_show_B_3d);
     }
 
+    static void set_poset_enabled(bool enabled) {
+        // node meshes
+        for (auto* m : g_poset_meshes_2d) if (m) m->setEnabled(enabled && g_show_poset_2d);
+        for (auto* m : g_poset_meshes_3d) if (m) m->setEnabled(enabled && g_show_poset_3d);
 
+        // edge networks
+        if (g_downflip_network) g_downflip_network->setEnabled(enabled && g_show_down_flips);
+        if (g_poset2_cover_network) g_poset2_cover_network->setEnabled(enabled && g_show_poset2_covers);
+    }
+
+    // forward declarations (needed because helpers call these before their definitions)
+    void rebuild_downflip_network_filtered();
+    static bool node_visible(int idx);
+
+
+    // restore visibility respecting interval/focus masks (same logic you already use elsewhere)
+    static void apply_poset_visibility_from_masks() {
+        int n = (int)g_nodes_for_ui.size();
+        for (int i = 0; i < n; ++i) {
+            bool on = node_visible(i);
+            if (g_poset_meshes_2d[i]) g_poset_meshes_2d[i]->setEnabled(on && g_show_poset_2d);
+            if (g_poset_meshes_3d[i]) g_poset_meshes_3d[i]->setEnabled(on && g_show_poset_3d);
+        }
+
+        viz_poset::rebuild_downflip_network_filtered();
+        viz_poset::register_poset2_cover_edges(g_poset2.cover_out);
+    }
 
 
     // helpers for meet/join UI coloring 
@@ -382,6 +418,7 @@ namespace {
         return path;
     }
 
+    // node visibility based on focus / interval masks 
     static bool node_visible(int idx) {
         if (g_focus_active) {
             return idx >= 0 && idx < (int)g_focus_mask.size() && g_focus_mask[idx];
@@ -392,14 +429,8 @@ namespace {
         return true;
     }
 
-   
-
-
-
 
 } // anonymous namespace
-
-
 
 
 namespace viz_poset {
@@ -635,6 +666,7 @@ static void rebuild_downflip_network_filtered() {
     }
 }
 
+
 // ImGui UI for global poset visualization toggles
 void poset_ui() {
     ImGui::SetNextItemOpen(false, ImGuiCond_Once);
@@ -667,8 +699,8 @@ void poset_ui() {
     ImGui::SetNextItemOpen(false, ImGuiCond_Once);
     if (ImGui::CollapsingHeader("poset2 interval visualization [x,y]", ImGuiTreeNodeFlags_DefaultOpen)) {
 
-        ImGui::InputText("x", g_interval_x_buf, IM_ARRAYSIZE(g_interval_x_buf));
-        ImGui::InputText("y", g_interval_y_buf, IM_ARRAYSIZE(g_interval_y_buf));
+        ImGui::InputText("x (lower)", g_interval_x_buf, IM_ARRAYSIZE(g_interval_x_buf));
+        ImGui::InputText("y (upper)", g_interval_y_buf, IM_ARRAYSIZE(g_interval_y_buf));
 
         // parse input node numbers
         g_interval_x = std::atoi(g_interval_x_buf);
@@ -878,17 +910,23 @@ void poset_ui() {
             }
     }
     ImGui::SetNextItemOpen(false, ImGuiCond_Once);
-    if (ImGui::CollapsingHeader("compare 2 nodes (overlay at origin)", ImGuiTreeNodeFlags_DefaultOpen)) {
+    if (ImGui::CollapsingHeader("compare nodes (overlay)", ImGuiTreeNodeFlags_DefaultOpen)) {
 
         ImGui::InputText("A", g_cmp_a_buf, IM_ARRAYSIZE(g_cmp_a_buf));
         ImGui::InputText("B", g_cmp_b_buf, IM_ARRAYSIZE(g_cmp_b_buf));
 
-        ImGui::Checkbox("show compare 2D", &g_cmp_show_2d);
-        ImGui::SameLine();
-        ImGui::Checkbox("show compare 3D", &g_cmp_show_3d);
+        bool changed = false;
 
-        // apply checkbox toggles immediately
-        set_compare_enabled();
+        changed |= ImGui::Checkbox("A 2D", &g_cmp_show_A_2d);
+        ImGui::SameLine();
+        changed |= ImGui::Checkbox("A 3D", &g_cmp_show_A_3d);
+
+        changed |= ImGui::Checkbox("B 2D", &g_cmp_show_B_2d);
+        ImGui::SameLine();
+        changed |= ImGui::Checkbox("B 3D", &g_cmp_show_B_3d);
+
+        if (changed) set_compare_enabled();
+
 
         if (ImGui::Button("build compare overlay")) {
 
@@ -901,11 +939,7 @@ void poset_ui() {
             const int a = std::atoi(g_cmp_a_buf);
             const int b = std::atoi(g_cmp_b_buf);
 
-            auto build_one = [&](int node_idx,
-                                 polyscope::SurfaceMesh*& out2d,
-                                 polyscope::SurfaceMesh*& out3d,
-                                 const std::string& tag)
-            {
+            auto build_one = [&](int node_idx,polyscope::SurfaceMesh*& out2d, polyscope::SurfaceMesh*& out3d, const std::string& tag){
                 if (node_idx < 0 || node_idx >= (int)g_nodes_for_ui.size()) {
                     std::cerr << "[vis_poset] compare overlay: invalid node " << node_idx << "\n";
                     return;
@@ -919,13 +953,14 @@ void poset_ui() {
                 auto to_local = viz::make_local_index(ids);
                 auto faces    = faces_from_triangles(tri, to_local);
 
-                // IMPORTANT: overlay at origin (cx=0, cz=0)
+                float S = 20.0f; // try 10, 20, 50
+
                 // (these helpers already re-center locally by bbox center)
                 auto V2 = make_planar_poset_vertices(ids, g_input_for_poset->points2d,
-                                                     0.0f, 0.0f, 1.0f);
+                                                     0.0f, 20.0f, S);
 
                 auto V3 = make_lifted_poset_vertices(ids, g_input_for_poset->points2d,
-                                                     0.0f, 0.0f, 1.0f, 0.5f);
+                                                     0.0f, 20.0f, S, 0.5f * S);
 
                 std::string name2d = "compare " + tag + " node " + std::to_string(node_idx) + " 2D";
                 std::string name3d = "compare " + tag + " node " + std::to_string(node_idx) + " lifted";
@@ -940,8 +975,7 @@ void poset_ui() {
                 out2d->setEdgeWidth(1.0f);
                 out2d->setEdgeColor(glm::vec3(0,0,0));
 
-                // 3D: NOT transparent (your requirement)
-                // (so: do NOT call setTransparency)
+                // 3D: NOT transparent for compare
                 out3d->setEdgeWidth(1.0f);
                 out3d->setEdgeColor(glm::vec3(0,0,0));
             };
@@ -951,67 +985,27 @@ void poset_ui() {
 
             // enforce initial visibility based on toggles
             set_compare_enabled();
+
+            // hide the huge poset so camera/zoom acts on compare meshes only
+            g_compare_mode = true;
+            set_poset_enabled(false);
+
+
         }
     }
 
     ImGui::SameLine();
     if (ImGui::Button("clear compare overlay")) {
         clear_compare_meshes();
+
+        // restore poset view
+        g_compare_mode = false;
+        apply_poset_visibility_from_masks(); // respects focus/interval if active
     }
+}
 }
 
 
-
-    
-
-
-    /*
-    ImGui::Separator();
-    ImGui::Text("local down flip poset from chosen root");
-
-    if (!g_input_for_poset || g_nodes_for_ui.empty()) {
-        ImGui::Text("no poset data available.");
-        return;
-    }
-
-    int max_index = static_cast<int>(g_nodes_for_ui.size()) - 1;
-    if (max_index < 0) return;
-
-    if (g_center_node_idx > max_index) g_center_node_idx = max_index;
-    if (g_center_node_idx < 0)        g_center_node_idx = 0;
-
-    ImGui::SliderInt("center node index",
-                     &g_center_node_idx,
-                     0, max_index);
-
-    ImGui::SliderInt("max local depth",
-                     &g_max_local_depth,
-                     1, 10);
-
-    if (ImGui::Button("rebuild local poset")) {
-        const auto& center_hist =
-            g_nodes_for_ui[g_center_node_idx].history;
-
-        std::vector<pst::Node> local_nodes;
-        pst::build_poset_local_down_from_history(
-            *g_input_for_poset,
-            center_hist,
-            static_cast<std::size_t>(g_max_local_depth),
-            local_nodes,
-            600
-        );
-
-        pst::debug_print_local_poset_histories(
-        local_nodes,
-        center_hist.size()  // center_history_len
-        );
-
-        // show this local poset instead
-        register_poset(*g_input_for_poset, local_nodes);
-        
-    }
-    */
-}
 
 // register / update a second edge network that visualizes <=2 cover edges
 void register_poset2_cover_edges(const std::vector<std::vector<int>>& cover_out)
@@ -1060,6 +1054,15 @@ void register_poset2_cover_edges(const std::vector<std::vector<int>>& cover_out)
     g_poset2_cover_network->setRadius(0.00037f, true);
     g_poset2_cover_network->setColor(glm::vec3(0.0f, 0.8f, 0.0f));
 }
+
+const std::vector<pst::Node>& get_poset1_nodes() {
+    return g_nodes_for_ui;
+}
+
+const pst2::Poset2& get_poset2() {
+    return g_poset2;
+}
+
 
 
 

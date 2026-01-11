@@ -217,7 +217,7 @@ Poset2 build_poset2(const df::InputData& D, const std::vector<pst::Node>& nodes,
 
         }
     }
-
+    // deleting double edges and sorting (sorting not necessary but cleaner)
     sort_unique_adjacency(out2);
 
     // 3) topo sort <=2 graph (must be DAG)
@@ -228,6 +228,9 @@ Poset2 build_poset2(const df::InputData& D, const std::vector<pst::Node>& nodes,
     std::vector<Bitset> R2 = compute_reachability(out2, topo2);
 
     // 5) transitive reduction => covering edges 
+    // cover_out[u] = list of v with u -> v by covering edges
+    // cover_out edges go upward: u <=2 v stored as u -> v
+    // stored at u as outgoing edge to v
     std::vector<std::vector<int>> cover_out = transitive_reduction(out2, R2);
 
     Poset2 P2;
@@ -241,8 +244,11 @@ Poset2 build_poset2(const df::InputData& D, const std::vector<pst::Node>& nodes,
     return P2;
 }
 
-// this section is now for computing intervals in the poset
-
+// this section is for computing intervals in the poset
+// build cover_in adjacency from cover_out
+// cover_in[v] = list of u with u -> v by covering edges
+// cover_in edges go downward: u <=2 v stored as u -> v, 
+// stored at v as incoming edge from u
 static std::vector<std::vector<int>> build_cover_in(const Poset2& P) {
     const int N = (int)P.cover_out.size();
     std::vector<std::vector<int>> cover_in(N);
@@ -259,25 +265,32 @@ static std::vector<std::vector<int>> build_cover_in(const Poset2& P) {
     return cover_in;
 }
 
-// compute upper set of x by going UP along <=2 cover edges
+// compute upper set of x by going up along <=2 cover edges
+// uses cover_out (up edges), start at x and do BFS upwards 
 static std::vector<char> upper_set_x1(const Poset2& P, int x){
     const int N = (int)P.cover_out.size();
+    // visited array
     std::vector<char> vis(N, 0);
+    // BFS queue
     std::queue<int> q;
 
+    // start at x
     vis[x] = 1;
+    // x visited 
     q.push(x);
 
     while (!q.empty()) {
         int u = q.front(); q.pop();
-        for (int v : P.cover_out[u]) { // u <_2 v (go UP)
+        for (int v : P.cover_out[u]) { // u <=2 v (go up)
             if (!vis[v]) { vis[v] = 1; q.push(v); }
         }
     }
+    // return list of visited nodes 
     return vis;
 }
 
-// compute lower set of y by going DOWN along <=2 cover edges
+// compute lower set of y by going down along <=2 cover edges
+// uses cover_in (down edges), start at y and do BFS downwards
 static std::vector<char> lower_set_0y(const std::vector<std::vector<int>>& cover_in, int y){
     const int N = (int)cover_in.size();
     std::vector<char> vis(N, 0);
@@ -288,15 +301,17 @@ static std::vector<char> lower_set_0y(const std::vector<std::vector<int>>& cover
 
     while (!q.empty()) {
         int u = q.front(); q.pop();
-        for (int v : cover_in[u]) { // v <_2 u (go DOWN)
+        for (int v : cover_in[u]) { // v <=2 u (go down)
             if (!vis[v]) { vis[v] = 1; q.push(v); }
         }
     }
     return vis;
 }
 
-std::vector<int> interval_xy(const Poset2& P, int x, int y)
-{
+
+// build interval [x,y] = { z | x <=2 z <=2 y }
+// this is a subgraph of the poset2 defined by cover_out
+std::vector<int> interval_xy(const Poset2& P, int x, int y) {
     int N = (int)P.cover_out.size();
     if (x < 0 || x >= N || y < 0 || y >= N) {
         std::cout << "invalid node indices\n";
@@ -307,10 +322,11 @@ std::vector<int> interval_xy(const Poset2& P, int x, int y)
     auto up_x = upper_set_x1(P, x);
     auto up_y = upper_set_x1(P, y);
 
+    
     bool x_le_y = up_x[y];
     bool y_le_x = up_y[x];
 
-   
+   // check if x <=2 y or y <=2 x
     std::cout << "relation: ";
     if (x == y) std::cout << "x == y\n";        
     else if (x_le_y) std::cout << "x <=2 y\n";
@@ -324,7 +340,7 @@ std::vector<int> interval_xy(const Poset2& P, int x, int y)
         return {};
     }
 
-    // [x,1] ∩ [0,y]
+    // [x,1] intersection [0,y]
     auto cover_in = build_cover_in(P);
     auto low_y = lower_set_0y(cover_in, y);
 
@@ -341,7 +357,7 @@ std::vector<int> interval_xy(const Poset2& P, int x, int y)
 
 
 
-
+// compute meet candidates of x and y: maximal elements of [0,x] intersection [0,y]
 std::vector<int> meet_candidates_xy(const Poset2& P, int x, int y) {
     int N = (int)P.cover_out.size();
     if (x < 0 || x >= N || y < 0 || y >= N) {
@@ -349,15 +365,33 @@ std::vector<int> meet_candidates_xy(const Poset2& P, int x, int y) {
         return {};
     }
 
-    // L = [0,x] ∩ [0,y]
+    // L = [0,x] intersection [0,y]
     auto cover_in = build_cover_in(P);
     auto low_x = lower_set_0y(cover_in, x);
+    std::cout << "[0," << x << "]: ";
+    for (int i = 0; i < N; ++i) {
+        if (low_x[i]) std::cout << i << " ";
+    }
+    std::cout << "\n";
+
     auto low_y = lower_set_0y(cover_in, y);
+    std::cout << "[0," << y << "]: ";
+    for (int i = 0; i < N; ++i) {
+        if (low_y[i]) std::cout << i << " ";
+    }
+    std::cout << "\n";
 
     std::vector<char> inL(N, 0);
     for (int i = 0; i < N; ++i) {
         if (low_x[i] && low_y[i]) inL[i] = 1;
     }
+
+    // print L
+    std::cout << "L = [0," << x << "] intersection [0," << y << "]: ";
+    for (int i = 0; i < N; ++i) {
+        if (inL[i]) std::cout << i << " ";
+    }
+    std::cout << "\n";
 
     // maximal elements of L: no outgoing cover edge to another element in L
     std::vector<int> maxima;
@@ -378,21 +412,41 @@ std::vector<int> meet_candidates_xy(const Poset2& P, int x, int y) {
     return maxima;
 }
 
+// compute join candidates of x and y: minimal elements of [x,1] intersection [y,1]
 std::vector<int> join_candidates_xy(const Poset2& P, int x, int y) {
+    // check indices of x and y
     int N = (int)P.cover_out.size();
     if (x < 0 || x >= N || y < 0 || y >= N) {
         std::cout << "join_candidates_xy: invalid indices\n";
         return {};
     }
 
-    // U = [x,1] ∩ [y,1]
+    // U = [x,1] intersection [y,1]
     auto up_x = upper_set_x1(P, x);
-    auto up_y = upper_set_x1(P, y);
+    std::cout << "[" << x << ",1]: ";
+    for (int i = 0; i < N; ++i) {
+        if (up_x[i]) std::cout << i << " ";
+    }
+    std::cout << "\n";
 
+    auto up_y = upper_set_x1(P, y);
+    std::cout << "[" << y << ",1]: ";
+    for (int i = 0; i < N; ++i) {
+        if (up_y[i]) std::cout << i << " ";
+    }
+    std::cout << "\n";
+
+    // intersection
     std::vector<char> inU(N, 0);
     for (int i = 0; i < N; ++i) {
         if (up_x[i] && up_y[i]) inU[i] = 1;
     }
+    // print U
+    std::cout << "U = [" << x << ",1] intersection [" << y << ",1]: ";
+    for (int i = 0; i < N; ++i) {
+        if (inU[i]) std::cout << i << " ";
+    }
+    std::cout << "\n";
 
     // minima of U: no incoming cover edge from another element in U
     auto cover_in = build_cover_in(P);

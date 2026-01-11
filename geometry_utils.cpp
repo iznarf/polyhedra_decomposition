@@ -9,9 +9,7 @@
 
 namespace df {
 
-bool quad_strictly_convex(const P2& a, const P2& b,
-                          const P2& c, const P2& d)
-{
+bool quad_strictly_convex(const P2& a, const P2& b, const P2& c, const P2& d){
     // 1) C and D on opposite sides of AB
     auto oc = CGAL::orientation(a, b, c);
     auto od = CGAL::orientation(a, b, d);

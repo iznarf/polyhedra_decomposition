@@ -55,6 +55,9 @@
     <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\compare.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\moebius.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="C:\Users\franz\Desktop\polyhedra_decomposition\CMakeLists.txt" />
