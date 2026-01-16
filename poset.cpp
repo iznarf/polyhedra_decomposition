@@ -219,7 +219,6 @@ namespace pst {
         // 1) 2D position of the vertex to be inserted
         const df::P2& p2 = D.points2d[v];
 
-        
         // 2) locate in current triangulation
         df::Tri2::Locate_type lt;
         int li = -1;
@@ -270,7 +269,6 @@ namespace pst {
             step.kind = df::StepKind::VertexInsertion_up;
         }
         
-
         step.a = ia;
         step.b = ib;
         step.c = ic;
@@ -353,7 +351,7 @@ namespace pst {
                                 const df::InputData& D,
                                 std::vector<Node>& nodes,
                                 std::unordered_map<TriSignature, int>& sig_to_node)
-{
+    {
     // 1) find vertex handle
     df::Tri2::Vertex_handle vh = nullptr;
     for (auto vit = tri.finite_vertices_begin();
@@ -491,14 +489,10 @@ namespace pst {
     return idx;
 }
 
-
-
-  
-
     // replay a single step (edge flip or vertex insertion) on triangulation tri
     // we need this to reconstruct triangulations at poset nodes from step histories
     void replay_step_poset(const df::StepRecord& step, df::Tri2& tri, const df::InputData& D) {
-        if (step.kind == df::StepKind::EdgeFlip_down || step.kind == df::StepKind::EdgeFlip_up) { // EdgeFlip
+        if (step.kind == df::StepKind::EdgeFlip_down || step.kind == df::StepKind::EdgeFlip_up) {
             df::vertex_id ia = step.a;
             df::vertex_id ib = step.b;
 
@@ -667,7 +661,6 @@ namespace pst {
 
 
     // builds the conforming flip poset from upper to lower triangulation
-    // can easily be adapted to build full poset including non-conforming flips/insertions
     void build_poset(const df::InputData& D, std::vector<Node>& nodes) {
         df::Tri2 tri_root  = D.tri_poset;
         //df::Tri2 tri_root  = D.tri_current;
@@ -756,6 +749,10 @@ namespace pst {
         */
     }
 
+    // up to this point: poset building functions
+    // ----------------------------------------------------------------------------------------------------------------------------------------------------
+
+    // now we have functions to analyze the poset
     // this function finds all nodes in the poset with no incoming down-flip edges which are local maxima
     std::vector<int> nodes_with_no_incoming_down_flips(const std::vector<Node>& nodes) {
         const int n = static_cast<int>(nodes.size());
@@ -815,11 +812,7 @@ namespace pst {
 
     // this function tells us if there exists a path from source_idx to target_idx
     // following only child edges (i.e., down-edges in the poset)
-    bool exists_path_via_children(
-        const std::vector<pst::Node>& nodes,
-        int source_idx,
-        int target_idx)
-    {
+    bool exists_path_via_children(const std::vector<pst::Node>& nodes,int source_idx,int target_idx){
         const int n = (int)nodes.size();
         if (source_idx < 0 || source_idx >= n) return false;
         if (target_idx < 0 || target_idx >= n) return false;
@@ -843,219 +836,7 @@ namespace pst {
                 q.push(v);
             }
         }
-
         return false;
-    }
-
-
-    // this function build a local poset from a given root node downwards 
-    void build_poset_local_down_from_history(
-        const df::InputData& D,
-        const std::vector<df::StepRecord>& center_history,
-        std::size_t max_depth,
-        std::vector<Node>& nodes,
-        std::size_t max_nodes
-    ) {
-        // 1) reconstruct triangulation for the chosen center node
-        df::Tri2 tri_center = D.tri_poset;     // start from upper
-        replay_history_poset(tri_center, center_history, D);
-        df::Tri2 tri_lower  = D.tri_lower;
-
-        // 2) init nodes: root = chosen node
-        nodes.clear();
-        nodes.reserve(600);
-
-        Node root;
-        root.history   = center_history;       // full history from upper
-        root.signature = make_signature(tri_center);
-        nodes.push_back(root);
-
-        std::unordered_map<TriSignature, int> sig_to_node;
-        sig_to_node.emplace(root.signature, 0);
-
-        // we expand nodes by increasing index
-        std::size_t current_idx = 0;
-
-        while (current_idx < nodes.size()) {
-
-            if (nodes.size() >= max_nodes) {
-                std::cout << "[poset local DOWN] reached max_nodes = "
-                        << max_nodes << "\n";
-                break;
-            }
-
-            Node& current_node = nodes[current_idx];
-
-            // depth measured *relative* to the chosen center node
-            std::size_t depth_from_center =
-                current_node.history.size() - center_history.size();
-
-            if (depth_from_center >= max_depth) {
-                ++current_idx;
-                continue; // do not expand this node further
-            }
-
-            // 3) reconstruct triangulation for this node
-            df::Tri2 tri = D.tri_poset;
-            replay_history_poset(tri, current_node.history, D);
-
-            // 4) collect possible moves
-            auto flip_edges        = find_flip_edges(tri);
-            auto missing_vertices  = df::find_missing_vertices(tri, tri_lower);
-            auto deletion_vertices = find_deletion_vertices(tri);
-
-            // ---- EDGE FLIPS ----
-            for (const auto& edge : flip_edges) {
-                if (nodes.size() >= max_nodes) break;
-
-                df::Tri2 tri_child = tri;
-                df::vertex_id ia = edge[0];
-                df::vertex_id ib = edge[1];
-
-                int child_idx = apply_edge_flip_poset(
-                    ia, ib,
-                    static_cast<int>(current_idx),
-                    tri_child,
-                    nodes, sig_to_node
-                );
-
-                // if child_idx < 0, move was invalid; otherwise:
-                //  - if it was DOWN, apply_edge_flip_poset already added
-                //    children/child_steps.
-                //  - if it was UP, it created (or reused) a node but *no*
-                //    down-edge; that node will still be expanded later.
-            }
-
-            // ---- VERTEX INSERTIONS ----
-            for (df::vertex_id v : missing_vertices) {
-                if (nodes.size() >= max_nodes) break;
-
-                df::Tri2 tri_child = tri;
-
-                int child_idx = apply_vertex_insertion_poset(
-                    v,
-                    static_cast<int>(current_idx),
-                    tri_child,
-                    D,
-                    nodes, sig_to_node
-                );
-
-                // same logic: DOWN insertions give edges, UP insertions
-                // just create/reuse a node with no down-edge.
-            }
-
-            // ---- VERTEX DELETIONS ----
-            for (df::vertex_id v : deletion_vertices) {
-                if (nodes.size() >= max_nodes) break;
-
-                df::Tri2 tri_child = tri;
-
-                int child_idx = apply_vertex_deletion_poset(
-                    v,
-                    static_cast<int>(current_idx),
-                    tri_child,
-                    D,
-                    nodes, sig_to_node
-                );
-
-                // same again: DOWN deletions add down-edges, UP deletions
-                // keep the node but no down-edge.
-            }
-
-            ++current_idx;
-        }
-
-        std::cout << "[poset local DOWN] finished building local poset, nodes = "
-                << nodes.size() << "\n";
-    }
-
-
-    static const char* step_kind_to_string(df::StepKind k)
-    {
-        switch (k) {
-        case df::StepKind::EdgeFlip_down:        return "EdgeFlip_down";
-        case df::StepKind::EdgeFlip_up:          return "EdgeFlip_up";
-        case df::StepKind::VertexInsertion_down: return "VertexInsertion_down";
-        case df::StepKind::VertexInsertion_up:   return "VertexInsertion_up";
-        case df::StepKind::VertexDeletion_down:  return "VertexDeletion_down";
-        case df::StepKind::VertexDeletion_up:    return "VertexDeletion_up";
-        default:                                 return "UnknownStepKind";
-        }
-    }
-
-
-    void debug_print_local_poset_histories(
-        const std::vector<Node>& nodes,
-        std::size_t center_history_len)
-    {
-        std::cout << "\n[local poset] node histories (relative to center)\n";
-
-        for (std::size_t i = 0; i < nodes.size(); ++i) {
-            const auto& node = nodes[i];
-            std::cout << "Node " << i
-                    << "  (total history length = " << node.history.size()
-                    << ")\n";
-
-            if (node.history.size() <= center_history_len) {
-                // This is the center node itself (or before)
-                std::cout << "  [no extra steps beyond center]\n\n";
-                continue;
-            }
-
-            // Only print the steps AFTER the chosen center history
-            for (std::size_t j = center_history_len; j < node.history.size(); ++j) {
-                const auto& s = node.history[j];
-                std::cout << "  step " << (j - center_history_len)
-                        << " : " << step_kind_to_string(s.kind)
-                        << " (a=" << s.a
-                        << ", b=" << s.b
-                        << ", c=" << s.c
-                        << ", d=" << s.d << ")\n";
-            }
-            std::cout << "\n";
-        }
-    }
-
-
-
-
-    // maps a history of steps to global poset node indices
-    std::vector<int> map_history_to_global_poset_indices(
-        const df::InputData& D,
-        const std::vector<pst::Node>& global_poset_nodes,
-        const std::vector<df::StepRecord>& history)
-    {
-        // 1) build signature -> global index map
-        std::unordered_map<TriSignature, int> sig_to_global;
-        sig_to_global.reserve(global_poset_nodes.size());
-
-        for (int i = 0; i < (int)global_poset_nodes.size(); ++i) {
-            sig_to_global.emplace(global_poset_nodes[i].signature, i);
-        }
-
-        // 2) walk along the history incrementally and map each prefix
-        std::vector<int> out;
-        out.reserve(history.size() + 1);
-
-        df::Tri2 tri = D.tri_poset; // same root as your global poset build :contentReference[oaicite:3]{index=3}
-
-        // prefix length 0
-        {
-            TriSignature sig0 = make_signature(tri);
-            auto it = sig_to_global.find(sig0);
-            out.push_back(it == sig_to_global.end() ? -1 : it->second);
-        }
-
-        // prefixes 1..k
-        for (const auto& step : history) {
-            replay_step_poset(step, tri, D);
-            TriSignature sig = make_signature(tri);
-
-            auto it = sig_to_global.find(sig);
-            out.push_back(it == sig_to_global.end() ? -1 : it->second);
-        }
-
-        return out;
     }
 
 
@@ -1152,43 +933,5 @@ namespace pst {
         }
     }
     return false;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-   
-
-
-
-
-
-
-
-
-
-
-
-
-  
+}  
 }

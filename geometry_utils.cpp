@@ -65,8 +65,8 @@ CGAL::Orientation oriented_height_sign(
 
 
 
-
 /*
+
 
 static inline double debug_height(double x, double y) {
     constexpr double eps = 1e-9;
@@ -101,6 +101,7 @@ P3 lift_regular(const P2_weighted& p) {
 }
 
 */
+
 
 
 

@@ -4,6 +4,8 @@
 #include "geometry_utils.h"   
 #include "poset.h"
 #include "poset2.h"
+#include "moebius.h"
+
 #include <polyscope/polyscope.h>
 #include <polyscope/surface_mesh.h>
 #include <polyscope/curve_network.h>  
@@ -1062,6 +1064,124 @@ const std::vector<pst::Node>& get_poset1_nodes() {
 const pst2::Poset2& get_poset2() {
     return g_poset2;
 }
+
+
+// color nodes by mobius function mu(0,T) in poset2
+void color_nodes_by_mobius_0T() {
+    const int n = (int)g_nodes_for_ui.size();
+    if (n == 0) {
+        std::cout << "[vis_poset] moebius coloring: no nodes.\n";
+        return;
+    }
+
+    // make sure everything is visible (full poset), so you see all colors
+    g_interval_active = false;
+    g_interval_mask.clear();
+    g_focus_active = false;
+    g_focus_mask.clear();
+
+    // enable node meshes based on current toggles
+    for (int i = 0; i < n; ++i) {
+        if (g_poset_meshes_2d[i]) g_poset_meshes_2d[i]->setEnabled(g_show_poset_2d);
+        if (g_poset_meshes_3d[i]) g_poset_meshes_3d[i]->setEnabled(g_show_poset_3d);
+    }
+
+    // rebuild edge networks for full poset
+    rebuild_downflip_network_filtered();
+    register_poset2_cover_edges(g_poset2.cover_out);
+
+    int cnt0 = 0, cntP = 0, cntN = 0, cntOther = 0;
+
+    for (int t = 0; t < n; ++t) {
+        std::int64_t mu = mob::mobius_xy_from_cover(g_poset2.cover_out, t, 0);
+
+
+        glm::vec3 c;
+        if (mu == 0) { c = glm::vec3(0.f, 0.f, 0.f); cnt0++; }          // black
+        else if (mu == 1) { c = glm::vec3(1.f, 0.f, 0.f); cntP++; }     // red
+        else if (mu == -1) { c = glm::vec3(0.f, 0.f, 1.f); cntN++; }    // blue
+        else {
+            // fallback: keep same sign coloring, but count it
+            c = (mu > 0) ? glm::vec3(1.f, 0.f, 0.f) : glm::vec3(0.f, 0.f, 1.f);
+            cntOther++;
+        }
+
+        // color both 2D and 3D mesh of the node
+        if (t >= 0 && t < (int)g_poset_meshes_2d.size()) {
+            if (g_poset_meshes_2d[t]) g_poset_meshes_2d[t]->setSurfaceColor(c);
+            if (g_poset_meshes_3d[t]) g_poset_meshes_3d[t]->setSurfaceColor(c);
+        }
+    }
+
+    std::cout << "[moebius] poset2 colored nodes by mu(0,T): "
+              << "mu=0 black=" << cnt0 << ", mu=+1 red=" << cntP
+              << ", mu=-1 blue=" << cntN;
+    if (cntOther) std::cout << " (|mu|!=1: " << cntOther << ")";
+    std::cout << "\n";
+}
+
+// color nodes by mobius function mu(0,T) in poset1
+void color_nodes_by_mobius_poset1_0T() {
+    const int n = (int)g_nodes_for_ui.size();
+    if (n == 0) {
+        std::cout << "[vis_poset] poset1 moebius coloring: no nodes.\n";
+        return;
+    }
+
+    // Build upward cover graph for poset1: u->v means u <=1 v (bottom->top)
+    auto cover1_up = mob::build_cover_up_from_poset1_nodes(g_nodes_for_ui);
+
+    const int top = 0; // root is index 0
+
+    // show full poset
+    g_interval_active = false; g_interval_mask.clear();
+    g_focus_active = false;    g_focus_mask.clear();
+
+    for (int i = 0; i < n; ++i) {
+        if (g_poset_meshes_2d[i]) g_poset_meshes_2d[i]->setEnabled(g_show_poset_2d);
+        if (g_poset_meshes_3d[i]) g_poset_meshes_3d[i]->setEnabled(g_show_poset_3d);
+    }
+
+    // rebuild edges for full poset
+    rebuild_downflip_network_filtered();
+
+    int cnt0=0, cntP=0, cntN=0, cntOther=0;
+
+    for (int t = 0; t < n; ++t) {
+        // [0,T] convention: T is below 0, so compute mu(T,0)
+        std::int64_t mu = mob::mobius_xy_from_cover(cover1_up, t, top);
+
+        glm::vec3 c;
+        if (mu == 0) { c = glm::vec3(0.f,0.f,0.f); cnt0++; }
+        else if (mu == 1) { c = glm::vec3(1.f,0.f,0.f); cntP++; }
+        else if (mu == -1) { c = glm::vec3(0.f,0.f,1.f); cntN++; }
+        else { c = (mu > 0) ? glm::vec3(1.f,0.f,0.f) : glm::vec3(0.f,0.f,1.f); cntOther++; }
+
+        if (g_poset_meshes_2d[t]) g_poset_meshes_2d[t]->setSurfaceColor(c);
+        if (g_poset_meshes_3d[t]) g_poset_meshes_3d[t]->setSurfaceColor(c);
+    }
+
+    std::cout << "[moebius] poset1 colored nodes by mu(0,T): "
+              << "mu=0 black=" << cnt0 << ", mu=+1 red=" << cntP << ", mu=-1 blue=" << cntN;
+    if (cntOther) std::cout << " (|mu|!=1: " << cntOther << ")";
+    std::cout << "\n";
+}
+
+
+
+// reset all node colors to default
+// wrapper for moebius coloring
+void reset_node_coloring() {
+    reset_all_node_colors();
+    std::cout << "[vis_poset] reset node coloring to default\n";
+}
+
+
+
+
+
+
+
 
 
 

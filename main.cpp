@@ -98,6 +98,7 @@ int main() {
 
     // THE EXAMPLE to show that alogrithm is not correct
     //df::InputData in = df::make_random_valid_input(8, 495934895);
+    //df::InputData in = df::make_random_valid_input(7, 1516235435);
 
     
     // example to check <=_2 relation
@@ -207,6 +208,8 @@ int main() {
 
 
     df::print_step_history(in);
+
+    
     std::vector<pst::Node> poset_nodes;
     
     // build the whole down flip poset from upper triangulation

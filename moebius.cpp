@@ -8,7 +8,15 @@
 
 #include <imgui.h>
 
+namespace viz_poset {
+    void color_nodes_by_mobius_0T();
+    void reset_node_coloring();
+    void color_nodes_by_mobius_poset1_0T();
+}
+
+
 namespace mob {
+
 
 using Bitset = boost::dynamic_bitset<>;
 
@@ -71,8 +79,8 @@ static std::vector<Bitset> compute_reachability(
     return R;
 }
 
-// Build interval [x,y] as the set of z with x <= z <= y (using reachability).
-// Assumes cover_out is upward.
+// Build interval [x,y] as the set of z with x <= z <= y (using reachability)
+// Assumes cover_out is upward
 static std::vector<int> interval_xy_from_cover(
     const std::vector<std::vector<int>>& cover_out,
     int x, int y)
@@ -272,7 +280,27 @@ void draw_mobius_compare_ui(const std::vector<pst::Node>& poset1_nodes,const pst
         } else {
             //ImGui::TextUnformatted("Enter x,y then compute. Compare mu-values between poset1 and poset2.");
         }
+
+
+        if (ImGui::Button("compute moeb(T,0) for all T in poset2")) {
+            viz_poset::color_nodes_by_mobius_0T();
+        }
+
+
+        if (ImGui::Button("compute moeb(T,0) for all T in poset1")) {
+            viz_poset::color_nodes_by_mobius_poset1_0T();
+        }
+
+
+        if (ImGui::Button("reset node coloring")) {
+            viz_poset::reset_node_coloring();
+        }
+
+        ImGui::Text("black = 0, red = +1, blue = -1");
+
+
     }
+
 }
 
 } // namespace mob
