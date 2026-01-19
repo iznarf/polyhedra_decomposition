@@ -9,6 +9,7 @@ C:\Users\franz\Desktop\polyhedra_decomposition\edge_flip_loop.cpp;C:\Users\franz
 C:\Users\franz\Desktop\polyhedra_decomposition\conforming_insertion.cpp;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\main.dir\Release\conforming_insertion.obj
 C:\Users\franz\Desktop\polyhedra_decomposition\debug.cpp;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\main.dir\Release\debug.obj
 C:\Users\franz\Desktop\polyhedra_decomposition\geometry_utils.cpp;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\main.dir\Release\geometry_utils.obj
+C:\Users\franz\Desktop\polyhedra_decomposition\decomp_algo.cpp;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\main.dir\Release\decomp_algo.obj
 C:\Users\franz\Desktop\polyhedra_decomposition\replay.cpp;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\main.dir\Release\replay.obj
 C:\Users\franz\Desktop\polyhedra_decomposition\ui_callbacks.cpp;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\main.dir\Release\ui_callbacks.obj
 C:\Users\franz\Desktop\polyhedra_decomposition\poset.cpp;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\main.dir\Release\poset.obj
@@ -17,3 +18,8 @@ C:\Users\franz\Desktop\polyhedra_decomposition\vis_poset.cpp;C:\Users\franz\Desk
 C:\Users\franz\Desktop\polyhedra_decomposition\poset2.cpp;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\main.dir\Release\poset2.obj
 C:\Users\franz\Desktop\polyhedra_decomposition\compare.cpp;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\main.dir\Release\compare.obj
 C:\Users\franz\Desktop\polyhedra_decomposition\moebius.cpp;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\main.dir\Release\moebius.obj
+C:\Users\franz\Desktop\polyhedra_decomposition\render_helpers.cpp;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\main.dir\Release\render_helpers.obj
+C:\Users\franz\Desktop\polyhedra_decomposition\node_coloring.cpp;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\main.dir\Release\node_coloring.obj
+C:\Users\franz\Desktop\polyhedra_decomposition\compare_nodes.cpp;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\main.dir\Release\compare_nodes.obj
+C:\Users\franz\Desktop\polyhedra_decomposition\interval_ui.cpp;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\main.dir\Release\interval_ui.obj
+C:\Users\franz\Desktop\polyhedra_decomposition\meet_join_ui.cpp;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\main.dir\Release\meet_join_ui.obj

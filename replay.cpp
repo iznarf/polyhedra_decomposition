@@ -128,7 +128,6 @@ void vertex_insertion_replay(vertex_id ia, vertex_id ib, vertex_id ic, vertex_id
 
 
 
-
 void apply_step(const StepRecord& step, InputData& D) {
     if (step.kind == StepKind::EdgeFlip_down) {
 

@@ -4,6 +4,10 @@
 #include "visualization.h"
 #include "moebius.h"
 #include "poset.h"
+#include "compare_nodes.h"
+#include "interval_ui.h"
+#include "meet_join_ui.h"
+
 #include <imgui.h>
 
 void combined_ui_callback() {
@@ -31,15 +35,24 @@ void combined_ui_callback() {
     ImGui::PopID();
 
     ImGui::Separator();
-
-    
-    ImGui::PushID("Moebius");
-    mob::draw_mobius_compare_ui(
-    viz_poset::get_poset1_nodes(),
-    viz_poset::get_poset2()
-    );
-
+    ImGui::PushID("IntervalUI");
+    viz_poset::interval_ui();
     ImGui::PopID();
+
+    ImGui::Separator();
+    ImGui::PushID("MeetJoinUI");
+    viz_poset::meet_join_ui();
+    ImGui::PopID();
+
+    ImGui::PushID("CompareNodes");
+    viz_poset::compare_nodes_ui();
+    ImGui::PopID();
+
+    ImGui::Separator();
+    ImGui::PushID("Moebius");
+    mob::draw_mobius_compare_ui(viz_poset::get_poset1(),viz_poset::get_poset2());
+    ImGui::PopID();
+
     
 }
 

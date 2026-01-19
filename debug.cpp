@@ -86,39 +86,6 @@ void debug_print_edge_list(const InputData& D) {
         return EA == EB;
     }
 
-    void debug_print_local_to_global_map(const df::InputData& D, TriKind which, const std::vector<int>& local_indices) {
-        const df::Tri2& tri = (which == TriKind::Current)
-                            ? D.tri_current
-                            : D.tri_lower;
-
-        // get global ids in polyscope order for this triangulation
-        auto ids = collect_vertex_ids_in_order(tri);
-
-        const char* label = (which == TriKind::Current) ? "current" : "lower";
-
-        std::cout << "\n[debug] " << label
-                << " polyscope local -> global mapping:\n";
-
-        // if no subset given: dump full map
-        if (local_indices.empty()) {
-            for (int li = 0; li < static_cast<int>(ids.size()); ++li) {
-                df::vertex_id gid = ids[li];
-                std::cout << "  local " << li << " -> global " << gid << "\n";
-            }
-            return;
-        }
-
-        // otherwise: only print the requested local indices
-        for (int li : local_indices) {
-            if (li < 0 || li >= static_cast<int>(ids.size())) {
-                std::cout << "  local " << li << " : out of range (0.."
-                        << (ids.size() - 1) << ")\n";
-                continue;
-            }
-            df::vertex_id gid = ids[li];
-            std::cout << "  local " << li << " -> global " << gid << "\n";
-        }
-    }
 
     void print_step_history(const df::InputData& D) {
         std::cout << "\n==== Step history (" 

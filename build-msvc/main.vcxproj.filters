@@ -34,6 +34,9 @@
     <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\geometry_utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\decomp_algo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\replay.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -56,6 +59,21 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\moebius.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\render_helpers.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\node_coloring.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\compare_nodes.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\interval_ui.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\meet_join_ui.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

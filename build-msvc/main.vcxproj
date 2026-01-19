@@ -408,6 +408,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\conforming_insertion.cpp" />
     <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\debug.cpp" />
     <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\geometry_utils.cpp" />
+    <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\decomp_algo.cpp" />
     <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\replay.cpp" />
     <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\ui_callbacks.cpp" />
     <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\poset.cpp" />
@@ -416,6 +417,11 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\poset2.cpp" />
     <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\compare.cpp" />
     <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\moebius.cpp" />
+    <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\render_helpers.cpp" />
+    <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\node_coloring.cpp" />
+    <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\compare_nodes.cpp" />
+    <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\interval_ui.cpp" />
+    <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\meet_join_ui.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\ZERO_CHECK.vcxproj">

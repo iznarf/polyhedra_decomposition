@@ -166,7 +166,7 @@ static bool check_extra_vertices_T2_vs_T1(
 
 
 
-// return true iff t1 <=_2 t2  (T1 surface never above T2)
+// return true iff T1 <=_2 T2  (T1 surface never above T2)
 bool compare(int t1, int t2, const df::InputData& D, const std::vector<pst::Node>& nodes)
 {
     Tri T1 = build_from_history(D, nodes[t1]);

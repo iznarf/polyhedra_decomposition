@@ -34,6 +34,7 @@ add_executable(main
     conforming_insertion.cpp
     debug.cpp
     geometry_utils.cpp
+    decomp_algo.cpp
     replay.cpp
     ui_callbacks.cpp
     poset.cpp
@@ -42,6 +43,11 @@ add_executable(main
     poset2.cpp
     compare.cpp
     moebius.cpp
+    render_helpers.cpp
+    node_coloring.cpp
+    compare_nodes.cpp
+    interval_ui.cpp
+    meet_join_ui.cpp
    )
 
 target_include_directories(main PRIVATE ${portable-file-dialogs_SOURCE_DIR})

@@ -19,6 +19,7 @@
 #include "geometry_utils.h"
 #include "conforming.h"
 #include "conforming_insertion.h"
+#include "poset_utils.h"
 
 #include "poset.h"
 #include <algorithm>
@@ -659,7 +660,6 @@ namespace pst {
             || k == df::StepKind::VertexDeletion_down;
     }
 
-
     // builds the conforming flip poset from upper to lower triangulation
     void build_poset(const df::InputData& D, std::vector<Node>& nodes) {
         df::Tri2 tri_root  = D.tri_poset;
@@ -682,11 +682,6 @@ namespace pst {
         std::size_t current_idx = 0; // start at root
 
         while (current_idx < nodes.size()) {
-                /*
-                if (current_idx > 50) {
-                    break; // for testing: limit number of nodes
-                }
-                */
 
                 Node& current_node = nodes[current_idx];
 
@@ -731,65 +726,77 @@ namespace pst {
 
         std::cout << "[poset] finished building flip poset\n";
 
-        /*
-        //print step history of every node
-        for (std::size_t i = 0; i < nodes.size(); ++i) {
-            std::cout << "Node " << i << " history: ";
-            for (const auto& step : nodes[i].history) {
-                if (step.kind == df::StepKind::EdgeFlip_down || step.kind == df::StepKind::EdgeFlip_up) {
-                    std::cout << "Flip(" << step.a << "," << step.b << ") ";
-                } else if (step.kind == df::StepKind::VertexInsertion_down || step.kind == df::StepKind::VertexInsertion_up) {
-                    std::cout << "Insert(" << step.d << ") ";
-                } else if (step.kind == df::StepKind::VertexDeletion_down || step.kind == df::StepKind::VertexDeletion_up) {
-                    std::cout << "Delete(" << step.d << ") ";
-                }
-            }
-            std::cout << std::endl;
-        }
-        */
     }
 
-    // up to this point: poset building functions
-    // ----------------------------------------------------------------------------------------------------------------------------------------------------
-
-    // now we have functions to analyze the poset
-    // this function finds all nodes in the poset with no incoming down-flip edges which are local maxima
-    std::vector<int> nodes_with_no_incoming_down_flips(const std::vector<Node>& nodes) {
+   
+    Poset1 build_poset1(const std::vector<Node>& nodes) {
+        Poset1 P1;
+        P1.nodes = nodes;
+        
         const int n = static_cast<int>(nodes.size());
+        
+        P1.cover_down.clear();
+        P1.cover_down.resize(n);
+        P1.cover_up.clear();
+        P1.cover_up.resize(n);
+
+        // build cover_down edges 
+        for (int u= 0; u < n; ++u) {
+            for (int v: P1.nodes[u].children) {
+                assert(0 <= v && v < n);
+                P1.cover_down[u].push_back(v);
+                P1.cover_up[v].push_back(u);    
+            }
+        }
+
+        // canonicalize the cover relations by sorting
+        pst::sort_unique_adjacency(P1.cover_down);
+        pst::sort_unique_adjacency(P1.cover_up);
+        
+        return P1;  
+    }
+   
+    // --------------------------------------------------------------------------------------------------------------
+
+
+
+    // this function finds all nodes in the poset with no incoming down-edges which are local maxima
+    std::vector<int> nodes_with_no_incoming_down_edges(const Poset1& P1) {
+        const int n = static_cast<int>(P1.nodes.size());
         std::vector<int> indeg(n, 0);
 
-        auto is_down = [](df::StepKind k) {
-            return k == df::StepKind::EdgeFlip_down
-                || k == df::StepKind::VertexInsertion_down
-                || k == df::StepKind::VertexDeletion_down;
-        };
-
-        // count incoming down-flip edges
+        // count incoming edges in cover_down
         for (int u = 0; u < n; ++u) {
-            const auto& kids  = nodes[u].children;
-            const auto& steps = nodes[u].child_steps;
-            for (std::size_t e = 0; e < kids.size(); ++e) {
-                if (!is_down(steps[e].kind)) continue;
-                int v = kids[e];
+            for (int v : P1.cover_down[u]) {
+                if (v < 0 || v >= n) continue;
                 indeg[v] += 1;
             }
         }
 
-        // collect nodes with zero incoming down flips
+        // collect nodes with zero incoming edges
         std::vector<int> roots;
+        roots.reserve(n);
         for (int i = 0; i < n; ++i) {
             if (indeg[i] == 0)
                 roots.push_back(i);
+        }
+
+        if (roots.size() > 1) {
+            std::cout << "[poset]: multiple nodes with no incoming down-edges found\n";
+            std::cout << "minimal nodes: ";
+            for (int u : roots) std::cout << u << " ";
+            std::cout << "\n";
         }
 
         return roots;
     }
 
 
+
     // this function finds the indices of special triangulations in the poset nodes
     // the indices are the indices of the polyscope meshes
     // we can use this to identify the upper, current, and lower triangulations in the poset
-    PosetTriIndices find_special_triangulations_in_poset(const df::InputData& D, const std::vector<pst::Node>& nodes) {
+    PosetTriIndices find_special_triangulations_in_poset(const df::InputData& D, const Poset1& P1) {
         PosetTriIndices out;
 
         // - target: the triangulation you start the poset from (in build_poset this is D.tri_poset)
@@ -799,21 +806,28 @@ namespace pst {
         const TriSignature sig_current = make_signature(D.tri_current);
         const TriSignature sig_lower   = make_signature(D.tri_lower);
 
-        for (int i = 0; i < (int)nodes.size(); ++i) {
-            if (out.upper  < 0 && nodes[i].signature == sig_upper)  out.upper  = i;
-            if (out.current < 0 && nodes[i].signature == sig_current) out.current = i;
-            if (out.lower   < 0 && nodes[i].signature == sig_lower)   out.lower   = i;
+        for (int i = 0; i < (int)P1.nodes.size(); ++i) {
+            if (out.upper  < 0 && P1.nodes[i].signature == sig_upper)  out.upper  = i;
+            if (out.current < 0 && P1.nodes[i].signature == sig_current) out.current = i;
+            if (out.lower   < 0 && P1.nodes[i].signature == sig_lower)   out.lower   = i;
 
             if (out.upper >= 0 && out.current >= 0 && out.lower >= 0)
                 break;
         }
+
+        std::cout << "poset index of upper:  " << out.upper  << "\n";
+        std::cout << "poset index of current: " << out.current << "\n";
+        std::cout << "poset index of lower:   " << out.lower   << "\n";
+
         return out;
     }
 
+
+
     // this function tells us if there exists a path from source_idx to target_idx
-    // following only child edges (i.e., down-edges in the poset)
-    bool exists_path_via_children(const std::vector<pst::Node>& nodes,int source_idx,int target_idx){
-        const int n = (int)nodes.size();
+    // following only down edges in poset1
+    bool exists_path_via_children(const Poset1& P1, int source_idx, int target_idx) {
+        const int n = (int)P1.nodes.size();
         if (source_idx < 0 || source_idx >= n) return false;
         if (target_idx < 0 || target_idx >= n) return false;
         if (source_idx == target_idx) return true;
@@ -828,16 +842,21 @@ namespace pst {
             int u = q.front();
             q.pop();
 
-            for (int v : nodes[u].children) {
+            for (int v : P1.cover_down[u]) {
                 if (v < 0 || v >= n) continue;
                 if (visited[v]) continue;
-                if (v == target_idx) return true;
+                if (v == target_idx) {
+                    std::cout << "[poset] found path from upper triangulation " << source_idx << " to lower triangulation " << target_idx << "\n";
+                    return true;
+                }
                 visited[v] = 1;
                 q.push(v);
             }
         }
+        std::cout << "[poset] no path found from upper triangulation " << source_idx << " to lower triangulation " << target_idx << "\n";
         return false;
     }
+
 
 
     // this function finds a conforming down path from source_idx to target_idx
@@ -848,8 +867,8 @@ namespace pst {
         int source_idx,
         int target_idx,
         std::vector<int>& out_node_path,
-        std::vector<df::StepRecord>& out_step_path)
-    {
+        std::vector<df::StepRecord>& out_step_path) {
+
         out_node_path.clear();
         out_step_path.clear();
 
@@ -861,77 +880,78 @@ namespace pst {
             return true;
         }
 
-    // BFS over global poset nodes
-    std::vector<char> visited(n, 0);
-    std::vector<int> parent(n, -1);
-    std::vector<int> parent_edge_idx(n, -1); // which child edge from parent was used
+        // BFS over global poset nodes
+        std::vector<char> visited(n, 0);
+        std::vector<int> parent(n, -1);
+        std::vector<int> parent_edge_idx(n, -1); // which child edge from parent was used
 
-    std::queue<int> q;
-    visited[source_idx] = 1;
-    q.push(source_idx);
+        std::queue<int> q;
+        visited[source_idx] = 1;
+        q.push(source_idx);
 
-    while (!q.empty()) {
-        int u = q.front(); q.pop();
+        while (!q.empty()) {
+            int u = q.front(); q.pop();
 
-        // reconstruct triangulation at u (needed for conforming checks)
-        df::Tri2 tri_u = D.tri_poset;
-        replay_history_poset(tri_u, nodes[u].history, D);
+            // reconstruct triangulation at u (needed for conforming checks)
+            df::Tri2 tri_u = D.tri_poset;
+            replay_history_poset(tri_u, nodes[u].history, D);
 
-        const auto& kids  = nodes[u].children;
-        const auto& steps = nodes[u].child_steps;
-        const std::size_t m = std::min(kids.size(), steps.size());
+            const auto& kids  = nodes[u].children;
+            const auto& steps = nodes[u].child_steps;
+            const std::size_t m = std::min(kids.size(), steps.size());
 
-        for (std::size_t e = 0; e < m; ++e) {
-            const df::StepRecord& s = steps[e];
-            if (!is_down_step(s.kind)) continue;
+            for (std::size_t e = 0; e < m; ++e) {
+                const df::StepRecord& s = steps[e];
+                if (!is_down_step(s.kind)) continue;
 
-            int v = kids[e];
-            if (v < 0 || v >= n) continue;
-            if (visited[v]) continue;
+                int v = kids[e];
+                if (v < 0 || v >= n) continue;
+                if (visited[v]) continue;
 
-            bool ok = false;
+                bool ok = false;
 
-            if (s.kind == df::StepKind::EdgeFlip_down) {
-                // edge is (a,b)
-                ok = df::reg::is_flip_conforming(s.a, s.b, D, tri_u);
-            }
-            else if (s.kind == df::StepKind::VertexInsertion_down) {
-                // inserted vertex is d
-                // down-ness is already guaranteed by kind, so only check conforming
-                ok = df::reg::is_insertion_conforming(s.d, D, tri_u);
-            }
-            else {
-                // VertexDeletion_down: not handled here (define conforming deletion first)
-                ok = false;
-            }
-
-            if (!ok) continue;
-
-            visited[v] = 1;
-            parent[v] = u;
-            parent_edge_idx[v] = (int)e;
-
-            if (v == target_idx) {
-                // reconstruct node path
-                std::vector<int> rev_nodes;
-                for (int x = v; x != -1; x = parent[x]) rev_nodes.push_back(x);
-                std::reverse(rev_nodes.begin(), rev_nodes.end());
-                out_node_path = rev_nodes;
-
-                // reconstruct step path from parent_edge_idx
-                out_step_path.clear();
-                for (std::size_t i = 1; i < out_node_path.size(); ++i) {
-                    int cur = out_node_path[i];
-                    int par = out_node_path[i - 1];
-                    int ei  = parent_edge_idx[cur];
-                    out_step_path.push_back(nodes[par].child_steps[ei]);
+                if (s.kind == df::StepKind::EdgeFlip_down) {
+                    // edge is (a,b)
+                    ok = df::reg::is_flip_conforming(s.a, s.b, D, tri_u);
                 }
-                return true;
-            }
+                else if (s.kind == df::StepKind::VertexInsertion_down) {
+                    // inserted vertex is d
+                    // down-ness is already guaranteed by kind, so only check conforming
+                    ok = df::reg::is_insertion_conforming(s.d, D, tri_u);
+                }
+                else {
+                    // VertexDeletion_down: not handled here (define conforming deletion first)
+                    ok = false;
+                }
 
-            q.push(v);
+                if (!ok) continue;
+
+                visited[v] = 1;
+                parent[v] = u;
+                parent_edge_idx[v] = (int)e;
+
+                if (v == target_idx) {
+                    // reconstruct node path
+                    std::vector<int> rev_nodes;
+                    for (int x = v; x != -1; x = parent[x]) rev_nodes.push_back(x);
+                    std::reverse(rev_nodes.begin(), rev_nodes.end());
+                    out_node_path = rev_nodes;
+
+                    // reconstruct step path from parent_edge_idx
+                    out_step_path.clear();
+                    for (std::size_t i = 1; i < out_node_path.size(); ++i) {
+                        int cur = out_node_path[i];
+                        int par = out_node_path[i - 1];
+                        int ei  = parent_edge_idx[cur];
+                        out_step_path.push_back(nodes[par].child_steps[ei]);
+                    }
+                    return true;
+                }
+
+                q.push(v);
+            }
         }
-    }
-    return false;
-}  
+        std::cout << "[poset] no conforming down path found from node " << source_idx << " to node " << target_idx << "\n";
+        return false;
+    }  
 }

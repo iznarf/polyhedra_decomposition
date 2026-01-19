@@ -2,6 +2,7 @@
 #include "input.h"
 #include "debug.h"
 #include "geometry_utils.h"
+#include "replay.h"
 
 #include <polyscope/polyscope.h>
 #include <polyscope/surface_mesh.h>
@@ -137,8 +138,6 @@ int g_decomp_prefix = 0;  // how many steps are currently visualized
 
 
 
-
-
 // update/create the single debug mesh for the current index
 void update_debug_tet_mesh() {
     if (g_debug_tets.empty())
@@ -210,7 +209,6 @@ std::vector<vertex_id> present_ids_regular(const df::Tri2Regular& t) {
         ids.push_back(v->info());
     return ids;
 }
-
 
 
 // map global index to local compact index [0,..,V-1] for polyscope
@@ -286,8 +284,6 @@ void register_regular_triangulation_as_mesh(const df::Tri2Regular& tri,
 
 
 
-
-
 // we use this function to register and to update the current triangulation
 void show_or_update_current(const df::InputData& D) {
     // build fresh buffers from the current triangulation
@@ -323,8 +319,19 @@ void show_or_update_current(const df::InputData& D) {
     m3->setTransparency(0.6f);
 }
 
+// setup visualization for the flip algorithm
+void setup_algo_visualization(const df::InputData& in) {
+    // register constant/reference triangulations
+    viz::register_triangulation_as_mesh(in.tri_lower, in.points2d,
+                                        "lower 2D", "lower lifted");
+    viz::register_triangulation_as_mesh(in.tri_upper, in.points2d,
+                                        "upper 2D", "upper lifted");
+    viz::register_regular_triangulation_as_mesh(in.tri_regular, in.points2d_weighted,
+                                                "regular 2D", "regular lifted");
 
-
+    // show initial "current" once (after registration)
+    viz::show_or_update_current(in);
+}
 
 
 
@@ -533,15 +540,14 @@ void update_flip_decomposition_mesh(const df::InputData& D, int prefix_steps)
 
 
 
-void init_flip_decomposition(df::InputData& D)
-{
+void init_flip_decomposition(df::InputData& D){
     g_decomp_data  = &D;
     g_decomp_prefix = 0;
     viz::update_flip_decomposition_mesh(D, g_decomp_prefix);
 }
 
-void flip_decomposition_ui()
-{
+
+void flip_decomposition_ui(){
     if (!g_decomp_data) {
         ImGui::Text("decomposition not initialized.");
         return;
@@ -584,6 +590,18 @@ void flip_decomposition_ui()
     }
 }
 
+void setup_algo_debug_tools(df::InputData& in) {
+
+    // debug tetrahedra (yellow)
+    std::vector<df::DebugTetrahedron> debug_tets = df::collect_debug_tetrahedra(in);
+    viz::load_debug_tetrahedra(in, debug_tets);
+
+    // flip decomposition mesh (cyan)
+    viz::init_flip_decomposition(in);
+
+    // replay initialization (for replay UI)
+    df::init_replay(in);
+}
 
 } // namespace viz
 

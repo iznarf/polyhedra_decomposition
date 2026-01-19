@@ -19,33 +19,38 @@ void register_regular_triangulation_as_mesh(const df::Tri2Regular& tri,
                                     const std::string& name_lifted);
 
 
-// Collect global vertex IDs in the same order as used for Polyscope registration
+// collect global vertex IDs in the same order as used for Polyscope registration
 std::vector<df::vertex_id> present_ids(const df::Tri2& t);
 
-// Map global vertex ID -> local compact index [0..V-1] in Polyscope arrays
+// map global vertex ID -> local compact index [0..V-1] in Polyscope arrays
 std::unordered_map<df::vertex_id,int> make_local_index(const std::vector<df::vertex_id>& ids);
 
+// register and to update the current triangulation
 void show_or_update_current(const df::InputData& D);
 
-// this is for replaying the recorded steps, needs fixing 
+//  replaying the recorded flip steps
 void show_or_update_replay(const df::InputData& D);
 
 // load a set of debug tetrahedra (indices + type) and
-void load_debug_tetrahedra(const df::InputData& D,
-                           const std::vector<df::DebugTetrahedron>& tets);
+void load_debug_tetrahedra(const df::InputData& D,const std::vector<df::DebugTetrahedron>& tets);
 
 // buttons / slider to step through the debug tets
 void debug_tet_ui();
 
-
+// update visualization of flip decomposition at given step prefix
 void update_flip_decomposition_mesh(const df::InputData& D, int prefix_steps);
 
+// initialize flip decomposition visualization
 void init_flip_decomposition(df::InputData& D);
 
+// UI for flip decomposition stepper
 void flip_decomposition_ui();
 
+// setup visualization for the flip algorithm
+void setup_algo_visualization(const df::InputData& in);
 
-
+// setup debug tools for the flip algorithm 
+void setup_algo_debug_tools(df::InputData& in);
 
 
 } // namespace viz

@@ -3,23 +3,38 @@
 #include <vector>
 #include <cstdint>
 
-#include "poset.h"   // pst::Node
-#include "poset2.h"  // pst2::Poset2
+#include "poset.h"
+#include "poset2.h"
+#include "poset_utils.h"
 
 namespace mob {
 
-// Generic Möbius on a poset represented by upward cover edges:
-// cover_out[u] contains v where u < v is a cover relation.
-std::int64_t mobius_xy_from_cover(const std::vector<std::vector<int>>& cover_out, int x, int y);
+using pst::Bitset;
 
-// Build "upward" cover adjacency for poset1 from pst::Node list.
-// Your nodes[u].children are DOWN edges (parent/top -> child/bottom),
-// so we reverse them to get bottom -> top (upward).
-std::vector<std::vector<int>> build_cover_up_from_poset1_nodes(const std::vector<pst::Node>& nodes);
+// Cached “view” for a poset given by cover_up edges.
+struct CoverUpView {
+    const std::vector<std::vector<int>>* cover_up = nullptr;
+    std::vector<int> topo;   // topo order of cover_up
+    std::vector<Bitset> R;   // R[u][v] = 1 iff v reachable from u via cover_up (i.e. u <= v)
 
+    bool valid() const {
+        return cover_up && (int)R.size() == (int)cover_up->size() && !topo.empty();
+    }
+};
 
-// ImGui UI: compute μ(x,y) for poset1 and poset2 and compare.
-void draw_mobius_compare_ui(const std::vector<pst::Node>& poset1_nodes, const pst2::Poset2& poset2);
+// Build cached topo + reachability (throws if cover_up is cyclic / invalid)
+CoverUpView build_view(const std::vector<std::vector<int>>& cover_up);
+
+// Order test using cached reachability
+bool leq(const CoverUpView& V, int a, int b);
+
+// Unique min/max helpers (optional; you can also keep them in poset2.h)
+int unique_min_cover(const std::vector<std::vector<int>>& cover_down);
+int unique_max_cover(const std::vector<std::vector<int>>& cover_up);
+
+// ImGui UI: compare μ(x,y) between P1 and P2.
+// (Implementation should internally cache CoverUpView for both posets.)
+void draw_mobius_compare_ui(const pst::Poset1& P1, const pst2::Poset2& P2);
 
 } // namespace mob
 
