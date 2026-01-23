@@ -376,6 +376,9 @@ void load_debug_tetrahedra(const df::InputData& D,
 }
 
 void debug_tet_ui() {
+    
+    if (!ImGui::CollapsingHeader("debug tetrahedra"))
+        return;
     if (g_debug_tets.empty()) {
         ImGui::Text("no debug tetrahedra");
         return;
@@ -546,10 +549,14 @@ void init_flip_decomposition(df::InputData& D){
     viz::update_flip_decomposition_mesh(D, g_decomp_prefix);
 }
 
-
+// this shows how the mesh grows step by step
 void flip_decomposition_ui(){
+    // collapsing header should be closed by default
+
+    if (!ImGui::CollapsingHeader("flip steps"))
+        return;
     if (!g_decomp_data) {
-        ImGui::Text("decomposition not initialized.");
+        ImGui::Text("decomposition not initialized");
         return;
     }
 

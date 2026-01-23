@@ -159,6 +159,9 @@ void init_replay(InputData& D) {
 
 
 void replay_ui() {
+
+    if (!ImGui::CollapsingHeader("decomposition replay"))
+        return;
     if (!g_replay_data) {
         ImGui::Text("replay not initialized.");
         return;

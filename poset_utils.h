@@ -71,6 +71,7 @@ namespace pst {
         for (int ti = (int)topo.size() - 1; ti >= 0; --ti) {
             int u = topo[ti];
             Bitset ru(N);
+            ru.set(u); // reflexive reachability (<=)
 
             for (int v : out[u]) {
                 if (v < 0 || v >= N) continue;
@@ -253,6 +254,40 @@ inline std::vector<int>compute_levels_longest_from_root_cover_down(
     }
 
     return level;
+}
+
+
+
+// transitive reduction for a DAG using reachability bitsets
+// for each edge u -> v, look at all neighbors w of u and check if w -> v 
+static std::vector<std::vector<int>> transitive_reduction(
+    const std::vector<std::vector<int>>& out,
+    const std::vector<Bitset>& R)
+{
+    const int N = static_cast<int>(out.size());
+    std::vector<std::vector<int>> cover_out(N);
+
+    for (int u = 0; u < N; ++u) {
+        // for each edge u->v, check if there exists w!=v in out[u] with w -> v
+        for (int v : out[u]) {
+            bool redundant = false;
+
+            for (int w : out[u]) {
+                if (w == v) continue;
+                if (R[w].test(v)) {
+                    redundant = true;
+                    break;
+                }
+            }
+
+            if (!redundant) {
+                cover_out[u].push_back(v);
+            }
+        }
+    }
+
+    pst::sort_unique_adjacency(cover_out);
+    return cover_out;
 }
 
 

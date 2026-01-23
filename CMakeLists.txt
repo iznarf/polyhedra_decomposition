@@ -48,6 +48,9 @@ add_executable(main
     compare_nodes.cpp
     interval_ui.cpp
     meet_join_ui.cpp
+    dedekind_cut.cpp
+    dedekind_cut_ui.cpp
+    dm_vis.cpp
    )
 
 target_include_directories(main PRIVATE ${portable-file-dialogs_SOURCE_DIR})

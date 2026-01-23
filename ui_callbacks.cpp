@@ -7,6 +7,7 @@
 #include "compare_nodes.h"
 #include "interval_ui.h"
 #include "meet_join_ui.h"
+#include "dedekind_cut_ui.h"
 
 #include <imgui.h>
 
@@ -52,6 +53,12 @@ void combined_ui_callback() {
     ImGui::PushID("Moebius");
     mob::draw_mobius_compare_ui(viz_poset::get_poset1(),viz_poset::get_poset2());
     ImGui::PopID();
+
+    ImGui::Separator();
+    ImGui::PushID("Completion");
+    viz_poset::dedekind_cut_ui();
+    ImGui::PopID();
+
 
     
 }

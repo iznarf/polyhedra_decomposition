@@ -8,6 +8,7 @@
 #include <array>
 #include <cstdint>
 #include <sstream>
+#include <GLFW/glfw3.h>
 
 #include "input.h"
 #include "decomp_algo.h"
@@ -25,11 +26,19 @@
 #include "vis_poset.h"
 #include "compare.h"
 #include "poset2.h"
+#include "dedekind_cut.h"
 
 
+static void glfw_error_silencer(int error, const char* description) {
+    // do nothing
+}
 
 int main() {
+    polyscope::options::verbosity = 0; // reduces Polyscope std::cout spam
+
+    
     polyscope::init();
+    glfwSetErrorCallback(glfw_error_silencer);
 
     // INPUT DATA GENERATION ------------------------------------------------------------
 
@@ -135,25 +144,22 @@ int main() {
     
     // POSET2 COMPUTATION
 
+    // builds the poset2 structure from the input data and poset1
     pst2::Poset2 P2 = pst2::build_poset2(in, P1);
 
     bool debug_poset2 = false;
     if (debug_poset2) {
+        // debug results of poset1 using comparator (geometric checks)
         pst2::debug_compare_poset1(in, P1);
     }
 
+    // register poset2 edge network for visualization
     viz_poset::register_poset2_cover_edges(P2);
 
-
-
-
+    //std::vector<pst2::DedekindCut> all_cuts = pst2::compute_all_cuts(P2);
    
 
-
-
-   
     polyscope::state::userCallback = combined_ui_callback;
-
 
     polyscope::show();
     return 0;

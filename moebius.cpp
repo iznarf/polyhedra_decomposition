@@ -127,7 +127,7 @@ void draw_mobius_compare_ui(
     static std::int64_t mu2 = 0;
 
     ImGui::SetNextItemOpen(false, ImGuiCond_Once);
-    if (!ImGui::CollapsingHeader("Möbius μ(x,y) using cover_up", ImGuiTreeNodeFlags_DefaultOpen)) {
+    if (!ImGui::CollapsingHeader("möbius μ(x,y) using cover_up", ImGuiTreeNodeFlags_DefaultOpen)) {
         return;
     }
 
@@ -150,12 +150,12 @@ void draw_mobius_compare_ui(
     ImGui::Separator();
 
     // choose poset(s)
-    ImGui::TextUnformatted("Compute in:");
+    ImGui::TextUnformatted("compute in:");
     if (ImGui::RadioButton("P1", which == WhichPoset::P1)) which = WhichPoset::P1;
     ImGui::SameLine();
     if (ImGui::RadioButton("P2", which == WhichPoset::P2)) which = WhichPoset::P2;
     ImGui::SameLine();
-    if (ImGui::RadioButton("Both", which == WhichPoset::Both)) which = WhichPoset::Both;
+    if (ImGui::RadioButton("both", which == WhichPoset::Both)) which = WhichPoset::Both;
 
     // diagnostics
     auto valid_idx = [&](int v, int N) { return 0 <= v && v < N; };
@@ -231,7 +231,7 @@ void draw_mobius_compare_ui(
     ImGui::Separator();
 
     // Coloring actions
-    ImGui::TextUnformatted("Color nodes by Möbius (global):");
+    ImGui::TextUnformatted("color nodes by möbius:");
     if (ImGui::Button("P2: color μ(min, v)")) viz_poset::color_nodes_by_mobius_anchor_min_to_all_poset2();
     ImGui::SameLine();
     if (ImGui::Button("P2: color μ(v, max)")) viz_poset::color_nodes_by_mobius_all_to_anchor_max_poset2();

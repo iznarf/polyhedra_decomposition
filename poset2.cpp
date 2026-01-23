@@ -12,43 +12,12 @@
 #include <algorithm>
 #include <functional>
 
+using Bitset = boost::dynamic_bitset<>;
+ 
 
 namespace pst2 {
 
-using pst::Bitset;
- 
 
-// transitive reduction for a DAG using reachability bitsets
-// for each edge u -> v, look at all neighbors w of u and check if w -> v 
-static std::vector<std::vector<int>> transitive_reduction(
-    const std::vector<std::vector<int>>& out,
-    const std::vector<Bitset>& R)
-{
-    const int N = static_cast<int>(out.size());
-    std::vector<std::vector<int>> cover_out(N);
-
-    for (int u = 0; u < N; ++u) {
-        // for each edge u->v, check if there exists w!=v in out[u] with w -> v
-        for (int v : out[u]) {
-            bool redundant = false;
-
-            for (int w : out[u]) {
-                if (w == v) continue;
-                if (R[w].test(v)) {
-                    redundant = true;
-                    break;
-                }
-            }
-
-            if (!redundant) {
-                cover_out[u].push_back(v);
-            }
-        }
-    }
-
-    pst::sort_unique_adjacency(cover_out);
-    return cover_out;
-}
 
 
 // function to build the <=2 poset from triangulation comparison
@@ -144,7 +113,7 @@ Poset2 build_poset2(const df::InputData& D, const pst::Poset1& P1) {
     // 5) transitive reduction => covering edges
     // cover_down[u] = list of v with u -> v by covering edges (DOWN direction)
     // i.e. u covers v in <=2 (v is immediately below u)
-    std::vector<std::vector<int>> cover_down = transitive_reduction(out2_down, R2);
+    std::vector<std::vector<int>> cover_down = pst::transitive_reduction(out2_down, R2);
 
     // build cover_up as reverse adjacency of cover_down
     // cover_up[x] = list of y such that y covers x (y immediately above x)
@@ -159,6 +128,7 @@ Poset2 build_poset2(const df::InputData& D, const pst::Poset1& P1) {
     Poset2 P2;
     P2.cover_down = std::move(cover_down);
     P2.cover_up   = std::move(cover_up);
+    P2.reachability_down = std::move(R2);
 
     return P2;
 }
@@ -220,6 +190,13 @@ void debug_compare_poset1(const df::InputData& D, const pst::Poset1& P1) {
     }
 }
 
+
+bool leq(const Poset2& P, int a, int b) {
+    if (a == b) return true;
+    return P.reachability_down[b].test(a); // b ->* a (DOWN)  <=>  a <= b
+}
+
+
 static int poset_size_checked(const Poset2& P) {
     int Nu = (int)P.cover_up.size();
     int Nd = (int)P.cover_down.size();
@@ -257,45 +234,29 @@ int unique_max_or_minus1(const Poset2& P) {
   return maxs.size() == 1 ? maxs[0] : -1;
 }
 
-static std::vector<char> upper_set(const Poset2& P, int x) {
+// returns 0/1 b bitset: 1 means in upper set of x; 0 means not in upper set
+std::vector<char> upper_set(const Poset2& P, int x) {
     const int N = poset_size_checked(P);
     std::vector<char> vis(N, 0);
     if (x < 0 || x >= N) return vis;
 
-    std::queue<int> q;
-    vis[x] = 1;
-    q.push(x);
-
-    while (!q.empty()) {
-        int u = q.front(); q.pop();
-        if (u < 0 || u >= (int)P.cover_up.size()) continue;
-        for (int v : P.cover_up[u]) { // go UP
-            if (v < 0 || v >= N) continue;
-            if (!vis[v]) { vis[v] = 1; q.push(v); }
-        }
+    for (int v = 0; v < N; ++v) {
+        if (P.reachability_down[v].test(x)) vis[v] = 1;  // x <= v
     }
     return vis;
 }
 
-static std::vector<char> lower_set(const Poset2& P, int y) {
+// returns 0/1 b bitset: 1 means in lower set of y; 0 means not in lower set
+std::vector<char> lower_set(const Poset2& P, int y) {
     const int N = poset_size_checked(P);
     std::vector<char> vis(N, 0);
     if (y < 0 || y >= N) return vis;
 
-    std::queue<int> q;
-    vis[y] = 1;
-    q.push(y);
-
-    while (!q.empty()) {
-        int u = q.front(); q.pop();
-        if (u < 0 || u >= (int)P.cover_down.size()) continue;
-        for (int v : P.cover_down[u]) { // go DOWN
-            if (v < 0 || v >= N) continue;
-            if (!vis[v]) { vis[v] = 1; q.push(v); }
-        }
-    }
+    const auto& R = P.reachability_down[y];          // bitset
+    for (int i = 0; i < N; ++i) vis[i] = R.test(i) ? 1 : 0;
     return vis;
 }
+
 
 
 std::vector<int> interval_xy(const Poset2& P, int x, int y) {
@@ -326,6 +287,8 @@ std::vector<int> interval_x_max(const Poset2& P, int x) {
   for (int i=0;i<N;++i) if (upx[i]) res.push_back(i);
   return res;
 }
+
+
 
 
 

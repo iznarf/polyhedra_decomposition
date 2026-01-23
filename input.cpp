@@ -159,7 +159,6 @@ InputData make_random_input(int n_points, unsigned seed) {
     
 
     
-    
     /*
     
     D.points2d = {
@@ -296,8 +295,8 @@ InputData make_random_input(int n_points, unsigned seed) {
     D.tri_lower.clear();
     D.tri_lower.insert(lower_pairs.begin(), lower_pairs.end());
 
-    /*
     
+    /*
     // make lower triangulation be the (unweighted) copy of the regular triangulation
     df::Convert_vertex_RT_to_Tri2 cv;
     df::Convert_face_RT_to_Tri2   cf;
@@ -312,8 +311,8 @@ InputData make_random_input(int n_points, unsigned seed) {
     D.tri_lower.set_infinite_vertex(inf_v);
     CGAL_assertion(D.tri_lower.is_valid());
     
-    
     */
+    
     return D;
 }
 

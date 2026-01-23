@@ -267,51 +267,51 @@ void rebuild_downflip_network_filtered() {
 }
 
 void register_poset1_node_meshes(const df::InputData& D, const pst::Poset1& P1) {
-  const int n = (int)P1.nodes.size();
-  if (n == 0) return;
+    const int n = (int)P1.nodes.size();
+    if (n == 0) return;
 
-  g_poset_meshes_2d.assign(n, nullptr);
-  g_poset_meshes_3d.assign(n, nullptr);
+    g_poset_meshes_2d.assign(n, nullptr);
+    g_poset_meshes_3d.assign(n, nullptr);
 
-  // We register meshes around origin; layout is applied via transforms
-  const float TRI_SCALE_PLAN  = 0.7f;
-  const float TRI_SCALE_LIFT  = 0.7f;
-  const float LIFT_HEIGHT_SCL = 0.5f;
+    // We register meshes around origin; layout is applied via transforms
+    const float TRI_SCALE_PLAN  = 0.7f;
+    const float TRI_SCALE_LIFT  = 0.7f;
+    const float LIFT_HEIGHT_SCL = 0.5f;
 
-  for (int node_idx = 0; node_idx < n; ++node_idx) {
-    const auto& node = P1.nodes[node_idx];
+    for (int node_idx = 0; node_idx < n; ++node_idx) {
+      const auto& node = P1.nodes[node_idx];
 
-    df::Tri2 tri = D.tri_poset;
-    pst::replay_history_poset(tri, node.history, D);
+      df::Tri2 tri = D.tri_poset;
+      pst::replay_history_poset(tri, node.history, D);
 
-    auto ids      = viz::present_ids(tri);
-    auto to_local = viz::make_local_index(ids);
-    auto faces    = viz_helpers::faces_from_triangles(tri, to_local);
+      auto ids      = viz::present_ids(tri);
+      auto to_local = viz::make_local_index(ids);
+      auto faces    = viz_helpers::faces_from_triangles(tri, to_local);
 
-    auto V2 = viz_helpers::make_planar_poset_vertices(ids, D.points2d, 0.f, 0.f, TRI_SCALE_PLAN);
-    auto V3 = viz_helpers::make_lifted_poset_vertices(ids, D.points2d, 0.f, 0.f, TRI_SCALE_LIFT, LIFT_HEIGHT_SCL);
+      auto V2 = viz_helpers::make_planar_poset_vertices(ids, D.points2d, 0.f, 0.f, TRI_SCALE_PLAN);
+      auto V3 = viz_helpers::make_lifted_poset_vertices(ids, D.points2d, 0.f, 0.f, TRI_SCALE_LIFT, LIFT_HEIGHT_SCL);
 
-    std::string name2d = "poset node " + std::to_string(node_idx) + " 2D";
-    std::string name3d = "poset node " + std::to_string(node_idx) + " lifted";
+      std::string name2d = "poset node " + std::to_string(node_idx) + " 2D";
+      std::string name3d = "poset node " + std::to_string(node_idx) + " lifted";
 
-    auto* m2 = polyscope::registerSurfaceMesh(name2d, V2, faces);
-    viz_helpers::add_global_id_quantity(m2, ids);
-    m2->setEnabled(g_show_poset_2d);
-    m2->setSurfaceColor(glm::vec3(0.6f, 0.8f, 1.0f));
-    m2->setEdgeWidth(1.0f);
-    m2->setEdgeColor(glm::vec3(0, 0, 0));
+      auto* m2 = polyscope::registerSurfaceMesh(name2d, V2, faces);
+      viz_helpers::add_global_id_quantity(m2, ids);
+      m2->setEnabled(g_show_poset_2d);
+      m2->setSurfaceColor(glm::vec3(0.6f, 0.8f, 1.0f));
+      m2->setEdgeWidth(1.0f);
+      m2->setEdgeColor(glm::vec3(0, 0, 0));
 
-    auto* m3 = polyscope::registerSurfaceMesh(name3d, V3, faces);
-    viz_helpers::add_global_id_quantity(m3, ids);
-    m3->setEnabled(g_show_poset_3d);
-    m3->setSurfaceColor(glm::vec3(0.2f, 0.4f, 0.8f));
-    m3->setTransparency(0.6f);
-    m3->setEdgeWidth(1.0f);
-    m3->setEdgeColor(glm::vec3(0, 0, 0));
+      auto* m3 = polyscope::registerSurfaceMesh(name3d, V3, faces);
+      viz_helpers::add_global_id_quantity(m3, ids);
+      m3->setEnabled(g_show_poset_3d);
+      m3->setSurfaceColor(glm::vec3(0.2f, 0.4f, 0.8f));
+      m3->setTransparency(0.6f);
+      m3->setEdgeWidth(1.0f);
+      m3->setEdgeColor(glm::vec3(0, 0, 0));
 
-    g_poset_meshes_2d[node_idx] = m2;
-    g_poset_meshes_3d[node_idx] = m3;
-  }
+      g_poset_meshes_2d[node_idx] = m2;
+      g_poset_meshes_3d[node_idx] = m3;
+    }
 }
 
 void register_poset1_edges(const pst::Poset1& /*P1*/) {
@@ -320,73 +320,73 @@ void register_poset1_edges(const pst::Poset1& /*P1*/) {
 
 // Keep your old API, but now this stores P2 and rebuilds green edges.
 void register_poset2_cover_edges(const pst2::Poset2& P2) {
-  g_poset2 = P2;
+    g_poset2 = P2;
 
-  // optional: ensure cover_up exists (if used elsewhere)
-  const int n = (int)g_poset2.cover_down.size();
-  if ((int)g_poset2.cover_up.size() != n) {
-    g_poset2.cover_up.assign(n, {});
-    for (int u = 0; u < n; ++u) {
-      for (int v : g_poset2.cover_down[u]) {
-        if (v < 0 || v >= n) continue;
-        g_poset2.cover_up[v].push_back(u);
+    // optional: ensure cover_up exists (if used elsewhere)
+    const int n = (int)g_poset2.cover_down.size();
+    if ((int)g_poset2.cover_up.size() != n) {
+      g_poset2.cover_up.assign(n, {});
+      for (int u = 0; u < n; ++u) {
+        for (int v : g_poset2.cover_down[u]) {
+          if (v < 0 || v >= n) continue;
+          g_poset2.cover_up[v].push_back(u);
+        }
       }
+      pst::sort_unique_adjacency(g_poset2.cover_up);
     }
-    pst::sort_unique_adjacency(g_poset2.cover_up);
-  }
 
-  // recompute layout_p2 if we already have poset1 nodes
-  if (!g_poset1.nodes.empty() && (int)g_poset1.nodes.size() == n) {
-    const float LEVEL_SPACING = 4.f;
-    const float NODE_SPACING  = 4.f;
-    g_layout_p2 = build_layout_from_cover_down(g_poset2.cover_down, n, 0, LEVEL_SPACING, NODE_SPACING);
+    // recompute layout_p2 if we already have poset1 nodes
+    if (!g_poset1.nodes.empty() && (int)g_poset1.nodes.size() == n) {
+      const float LEVEL_SPACING = 4.f;
+      const float NODE_SPACING  = 4.f;
+      g_layout_p2 = build_layout_from_cover_down(g_poset2.cover_down, n, 0, LEVEL_SPACING, NODE_SPACING);
 
-    // re-apply current layout (might be P2) and rebuild edges
-    apply_layout_to_meshes(active_layout());
-    rebuild_both_edge_networks();
-  } else {
-    rebuild_poset2_edges_filtered();
-  }
+      // re-apply current layout (might be P2) and rebuild edges
+      apply_layout_to_meshes(active_layout());
+      rebuild_both_edge_networks();
+    } else {
+      rebuild_poset2_edges_filtered();
+    }
 }
 
 void register_poset(const df::InputData& D, const pst::Poset1& P1) {
-  remove_poset_meshes();
-  remove_edge_networks();
+    remove_poset_meshes();
+    remove_edge_networks();
 
-  g_poset1 = P1;
-  g_input_for_poset = &D;
+    g_poset1 = P1;
+    g_input_for_poset = &D;
 
-  if (g_poset1.nodes.empty()) {
-    std::cout << "[vis_poset] no nodes to visualize.\n";
-    return;
-  }
+    if (g_poset1.nodes.empty()) {
+      std::cout << "[vis_poset] no nodes to visualize.\n";
+      return;
+    }
 
-  // meshes
-  register_poset1_node_meshes(D, g_poset1);
+    // meshes
+    register_poset1_node_meshes(D, g_poset1);
 
-  // layouts
-  const int n = (int)g_poset1.nodes.size();
-  const float LEVEL_SPACING = 4.f;
-  const float NODE_SPACING  = 4.f;
+    // layouts
+    const int n = (int)g_poset1.nodes.size();
+    const float LEVEL_SPACING = 4.f;
+    const float NODE_SPACING  = 4.f;
 
-  g_layout_p1 = build_layout_from_cover_down(g_poset1.cover_down, n, 0, LEVEL_SPACING, NODE_SPACING);
+    g_layout_p1 = build_layout_from_cover_down(g_poset1.cover_down, n, 0, LEVEL_SPACING, NODE_SPACING);
 
-  // if poset2 already present and compatible, build its layout too
-  if ((int)g_poset2.cover_down.size() == n) {
-    g_layout_p2 = build_layout_from_cover_down(g_poset2.cover_down, n, 0, LEVEL_SPACING, NODE_SPACING);
-  } else {
-    g_layout_p2 = PosetLayout{};
-    g_layout_p2.centers = g_layout_p1.centers; // fallback so switching doesn’t crash
-  }
+    // if poset2 already present and compatible, build its layout too
+    if ((int)g_poset2.cover_down.size() == n) {
+      g_layout_p2 = build_layout_from_cover_down(g_poset2.cover_down, n, 0, LEVEL_SPACING, NODE_SPACING);
+    } else {
+      g_layout_p2 = PosetLayout{};
+      g_layout_p2.centers = g_layout_p1.centers; // fallback so switching doesn’t crash
+    }
 
-  // apply active layout to meshes + centers
-  apply_layout_to_meshes(active_layout());
+    // apply active layout to meshes + centers
+    apply_layout_to_meshes(active_layout());
 
-  // edges (both)
-  rebuild_both_edge_networks();
+    // edges (both)
+    rebuild_both_edge_networks();
 
-  std::cout << "[vis_poset] registered " << g_poset_meshes_2d.size()
-            << " poset nodes (2D+3D meshes).\n";
+    std::cout << "[vis_poset] registered " << g_poset_meshes_2d.size()
+              << " poset nodes (2D+3D meshes).\n";
 }
 
 

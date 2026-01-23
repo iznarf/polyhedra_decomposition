@@ -236,7 +236,6 @@ void reset_node_coloring() {
         if (g_poset_meshes_2d[i]) g_poset_meshes_2d[i]->setSurfaceColor(glm::vec3(0.6f, 0.8f, 1.0f));
         if (g_poset_meshes_3d[i]) g_poset_meshes_3d[i]->setSurfaceColor(glm::vec3(0.2f, 0.4f, 0.8f));
     }
-    std::cout << "[vis_poset] reset node coloring to default\n";
 }
 
 

@@ -23,3 +23,6 @@ C:\Users\franz\Desktop\polyhedra_decomposition\node_coloring.cpp;C:\Users\franz\
 C:\Users\franz\Desktop\polyhedra_decomposition\compare_nodes.cpp;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\main.dir\Release\compare_nodes.obj
 C:\Users\franz\Desktop\polyhedra_decomposition\interval_ui.cpp;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\main.dir\Release\interval_ui.obj
 C:\Users\franz\Desktop\polyhedra_decomposition\meet_join_ui.cpp;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\main.dir\Release\meet_join_ui.obj
+C:\Users\franz\Desktop\polyhedra_decomposition\dedekind_cut.cpp;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\main.dir\Release\dedekind_cut.obj
+C:\Users\franz\Desktop\polyhedra_decomposition\dedekind_cut_ui.cpp;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\main.dir\Release\dedekind_cut_ui.obj
+C:\Users\franz\Desktop\polyhedra_decomposition\dm_vis.cpp;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\main.dir\Release\dm_vis.obj

@@ -76,6 +76,15 @@
     <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\meet_join_ui.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\dedekind_cut.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\dedekind_cut_ui.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\dm_vis.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="C:\Users\franz\Desktop\polyhedra_decomposition\CMakeLists.txt" />
