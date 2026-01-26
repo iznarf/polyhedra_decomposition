@@ -156,7 +156,7 @@ int main() {
     // register poset2 edge network for visualization
     viz_poset::register_poset2_cover_edges(P2);
 
-    //std::vector<pst2::DedekindCut> all_cuts = pst2::compute_all_cuts(P2);
+    
    
 
     polyscope::state::userCallback = combined_ui_callback;
