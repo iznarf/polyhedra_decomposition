@@ -7,6 +7,7 @@
 #include "node_coloring.h"
 #include "vis_poset.h"
 #include "compare_nodes.h"
+#include "compare_cuts.h"
 
 #include <imgui.h>
 #include <glm/glm.hpp>
@@ -59,6 +60,7 @@ void dedekind_cut_ui() {
             cachedF  = pst2::filter_of_generators(P2, gens);
             cachedIp = pst2::Iprime_from_filter(P2, cachedF);
 
+
             have_cut = true;
         };
 
@@ -109,8 +111,9 @@ void dedekind_cut_ui() {
             color_node(lastA, yellow2, yellow3);
             color_node(lastB, yellow2, yellow3);
 
-            ImGui::Text("Sizes: |I|=%d  |F|=%d  |I'|=%d",
-                        (int)cachedI.size(), (int)cachedF.size(), (int)cachedIp.size());
+            ImGui::Text("Sizes: |I|=%d  |F|=%d  |I'|=%d", (int)cachedI.size(), (int)cachedF.size(), (int)cachedIp.size());
+    
+            
         }
     }
     ImGui::Separator();
@@ -119,7 +122,7 @@ void dedekind_cut_ui() {
     // DM lattice (compute + show/hide)
     // ------------------------------------------------------------
 
-    if (ImGui::CollapsingHeader("dedekind completion", 0)) {
+    if (ImGui::CollapsingHeader("dedekind completion in poset2", 0)) {
         static bool dm_graph_built = false;
         static int  dm_node        = 0;
         static bool color_base_from_dm = true;
@@ -216,8 +219,10 @@ void dedekind_cut_ui() {
             }
         }
     }
-}
+    ImGui::Separator();
+    viz_poset::compare_cuts_ui(g_DM);
 
+}
 
 
    

@@ -25,6 +25,8 @@ int  selected_dm_node();
 // read selected cut (for UI printing)
 const pst2::DedekindCut* selected_cut();
 
+void dm_ui();
+
 } // namespace viz_dm
 
 

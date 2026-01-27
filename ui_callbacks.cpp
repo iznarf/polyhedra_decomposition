@@ -8,6 +8,7 @@
 #include "interval_ui.h"
 #include "meet_join_ui.h"
 #include "dedekind_cut_ui.h"
+#include "dm_vis.h"
 
 #include <imgui.h>
 
@@ -73,6 +74,12 @@ void combined_ui_callback() {
 
         ImGui::PushID("Completion");
         viz_poset::dedekind_cut_ui();
+        ImGui::PopID();
+
+        ImGui::Separator();
+
+        ImGui::PushID("dmVis");
+        viz_dm::dm_ui();
         ImGui::PopID();
     }
 }

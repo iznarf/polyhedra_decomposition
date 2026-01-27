@@ -1,7 +1,6 @@
 #include "dm_vis.h"
-
-// dm_vis should only do layout + rendering.
-// The DM lattice construction (cover graph + levels) lives in DedekindPoset now.
+#include "dedekind_poset.h"
+#include "dedekind_cut.h"
 
 #include <polyscope/polyscope.h>
 #include <polyscope/curve_network.h>
@@ -13,6 +12,10 @@
 #include <array>
 #include <iostream>
 #include <vector>
+
+#include <imgui.h>
+#include <sstream>
+
 
 namespace viz_dm {
 
@@ -38,8 +41,7 @@ static void remove_dm_structures() {
 
 // ------------------------------------------------------------
 
-void build_and_register_dm_graph(const pst2::DedekindPoset& D)
-{
+void build_and_register_dm_graph(const pst2::DedekindPoset& D){
     g_cuts_ptr = &D.cuts;
     g_selected = 0;
 
@@ -56,29 +58,34 @@ void build_and_register_dm_graph(const pst2::DedekindPoset& D)
     const auto& level     = D.level;
     const int   maxLevel  = D.maxLevel;
 
-    // 5) layout: center each layer + reduce crossings by barycenter sweeps
+    // ------------------------------------------------------------
+    // Simple layout :
+    // - group nodes by level
+    // - sort deterministically within each layer
+    // - center each layer horizontally
+    // - IMPORTANT: flip z so that "top element" is at the bottom:
+    //     z = (maxLevel - level[i]) * ZSP
+    // ------------------------------------------------------------
 
-    // group nodes by level: longest chain from minimal elements
+    // group nodes by level
     std::vector<std::vector<int>> layers(maxLevel + 1);
-    for (int i = 0; i < M; ++i) layers[level[i]].push_back(i);
-
-    // build reverse adjacency for "parents" (incoming cover edges)
-    std::vector<std::vector<int>> cover_in(M);
-    for (int u = 0; u < M; ++u) {
-        for (int v : cover_out[u]) {
-            if (0 <= v && v < M) cover_in[v].push_back(u);
-        }
+    for (int i = 0; i < M; ++i) {
+        int lv = level[i];
+        if (0 <= lv && lv <= maxLevel) layers[lv].push_back(i);
     }
 
-    // layout params
-    const float XSP = 1.4f;
-    const float ZSP = 1.4f;
+    // layout params (MATCH vis_poset.cpp)
+    const float XSP = 4.f;  // NODE_SPACING
+    const float ZSP = 4.f;  // LEVEL_SPACING
     const glm::vec3 OFFSET(0.f, 0.f, 0.f); // set e.g. (40,0,0) to move aside
+    // shift DM vertically by whole levels so roots align
+    const int zOffsetLevels = -1; 
 
-    // current x-position for each node (updated after each sweep)
+
+    // per-node x coordinate
     std::vector<float> xpos(M, 0.f);
 
-    // helper: assign centered x coords for a layer, and update xpos[]
+    // place a layer centered at x=0
     auto place_layer_centered = [&](int L) {
         auto& vec = layers[L];
         int k = (int)vec.size();
@@ -89,56 +96,30 @@ void build_and_register_dm_graph(const pst2::DedekindPoset& D)
         }
     };
 
-    // init: deterministic order then centered placement
+    // deterministic order per layer + center
     for (int L = 0; L <= maxLevel; ++L) {
         auto& vec = layers[L];
         std::sort(vec.begin(), vec.end());
         place_layer_centered(L);
     }
 
-    // barycenter ordering: reorder each layer by average x of neighbors
-    auto barycenter = [&](int node, bool use_parents) -> float {
-        const auto& nbrs = use_parents ? cover_in[node] : cover_out[node];
-        if (nbrs.empty()) return xpos[node];
-        double s = 0.0;
-        for (int nb : nbrs) s += xpos[nb];
-        return (float)(s / (double)nbrs.size());
-    };
-
-    const int SWEEPS = 6;
-    for (int it = 0; it < SWEEPS; ++it) {
-
-        // downward sweep: order layer L by parents in layer L-1
-        for (int L = 1; L <= maxLevel; ++L) {
-            auto& vec = layers[L];
-            std::stable_sort(vec.begin(), vec.end(),
-                [&](int a, int b) { return barycenter(a, true) < barycenter(b, true); });
-            place_layer_centered(L);
-        }
-
-        // upward sweep: order layer L by children in layer L+1
-        for (int L = maxLevel - 1; L >= 0; --L) {
-            auto& vec = layers[L];
-            std::stable_sort(vec.begin(), vec.end(),
-                [&](int a, int b) { return barycenter(a, false) < barycenter(b, false); });
-            place_layer_centered(L);
-        }
-    }
-
-    // final points in XZ plane (y = 0), z = level
+    // final points in XZ plane (y=0)
+    // NOTE: FLIPPED z 
     std::vector<glm::vec3> pts(M, glm::vec3(0.f));
     for (int i = 0; i < M; ++i) {
-        pts[i] = OFFSET + glm::vec3(xpos[i], 0.f, (float)level[i] * ZSP);
+        float z = (float)(maxLevel - level[i] + zOffsetLevels) * ZSP;
+
+        pts[i] = OFFSET + glm::vec3(xpos[i], 0.f, z);
     }
 
-    // 6) edges list for Polyscope (cover edges)
+    // edges list for Polyscope (cover edges)
     std::vector<std::array<int,2>> edges;
     edges.reserve((size_t)M * 4);
     for (int u = 0; u < M; ++u) {
         for (int v : cover_out[u]) edges.push_back({u, v});
     }
 
-    // 7) register / replace: nodes as PointCloud, edges as CurveNetwork
+    // register / replace: nodes as PointCloud, edges as CurveNetwork
     remove_dm_structures();
 
     // nodes
@@ -153,10 +134,10 @@ void build_and_register_dm_graph(const pst2::DedekindPoset& D)
         g_pc_nodes->addScalarQuantity("cut index", node_id);
     }
 
-    // edges (thin)
+    // edges (MATCH vis_poset.cpp thickness)
     g_cn_edges = polyscope::registerCurveNetwork(kDmEdgesName, pts, edges);
     g_cn_edges->setEnabled(g_enabled);
-    g_cn_edges->setRadius(0.00020f, true);
+    g_cn_edges->setRadius(0.00037f, true);
 
     std::cout << "[dm_vis] DM graph built: nodes=" << M
               << " cover_edges=" << edges.size()
@@ -188,5 +169,82 @@ const pst2::DedekindCut* selected_cut() {
     return &(*g_cuts_ptr)[g_selected];
 }
 
+// ------------------------------------------------------------
+
+// --- helpers -------------------------------------------------
+
+static std::string ints_to_string(const std::vector<int>& v) {
+    std::ostringstream oss;
+    oss << "{";
+    for (size_t i = 0; i < v.size(); ++i) {
+        oss << v[i];
+        if (i + 1 < v.size()) oss << ", ";
+    }
+    oss << "}";
+    return oss.str();
+}
+static void sync_selected_from_polyscope_selection() {
+    if (!g_pc_nodes || !g_cuts_ptr) return;
+
+    if (!polyscope::haveSelection()) return;
+
+    polyscope::PickResult sel = polyscope::getSelection();
+    if (!sel.isHit) return;
+
+    // only react to clicks on our DM point cloud
+    if (sel.structure != g_pc_nodes) return;
+
+    int idx = (int)sel.localIndex; // for point clouds: point index
+    int M   = (int)g_cuts_ptr->size();
+    if (0 <= idx && idx < M) g_selected = idx;
+}
+
+
+// --- UI ------------------------------------------------------
+
+void dm_ui() {
+    ImGui::SetNextItemOpen(false, ImGuiCond_Once);
+    if (!ImGui::CollapsingHeader("dedekind poset nodes")) return;
+
+    if (!g_cuts_ptr) {
+        ImGui::TextUnformatted("DM: no cuts registered.");
+        return;
+    }
+    const int M = (int)g_cuts_ptr->size();
+    if (M <= 0) {
+        ImGui::TextUnformatted("DM: empty.");
+        return;
+    }
+
+    // Update selection from Polyscope clicking
+    sync_selected_from_polyscope_selection();
+
+
+    ImGui::Checkbox("enabled", &g_enabled);
+    set_dm_enabled(g_enabled);
+
+    // Manual selection too (nice for debugging)
+    ImGui::SliderInt("selected cut", &g_selected, 0, M - 1);
+
+    const auto& C = (*g_cuts_ptr)[g_selected];
+
+    ImGui::Separator();
+    ImGui::Text("cut index: %d / %d", g_selected, M - 1);
+
+    // Show minF / maxI' (your struct fields)
+    ImGui::Text("minF size: %d", (int)C.minimal_elements_F.size());
+    ImGui::TextWrapped("minF = %s", ints_to_string(C.minimal_elements_F).c_str());
+
+    ImGui::Text("maxI' size: %d", (int)C.maximal_elements_Iprime.size());
+    ImGui::TextWrapped("maxI' = %s", ints_to_string(C.maximal_elements_Iprime).c_str());
+
+    ImGui::Text("I' size: %d", (int)C.Iprime.size());
+    ImGui::TextWrapped("I' = %s", ints_to_string(C.Iprime).c_str());
+
+
+}
+
+
 } // namespace viz_dm
+
 

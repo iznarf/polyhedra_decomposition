@@ -52,6 +52,7 @@ add_executable(main
     dedekind_cut_ui.cpp
     dm_vis.cpp
     dedekind_poset.cpp
+    compare_cuts.cpp
    )
 
 target_include_directories(main PRIVATE ${portable-file-dialogs_SOURCE_DIR})

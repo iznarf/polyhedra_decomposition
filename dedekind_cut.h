@@ -32,7 +32,9 @@ std::vector<int> Iprime_from_filter(
 );
 
 
+std::vector<int> minimal_elements_upset(const Poset2& P, const std::vector<char>& inS);
 
+std::vector<int> maximal_elements_downset(const Poset2& P, const std::vector<char>& inS);
 
 std::vector<DedekindCut> compute_all_cuts(const Poset2& P);
 

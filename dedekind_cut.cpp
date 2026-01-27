@@ -2,8 +2,6 @@
 #include "poset2.h"
 #include "poset_utils.h"
 
-
-
 #include <vector>
 #include <queue>
 #include <functional>
@@ -39,8 +37,7 @@ static std::vector<int> mask_to_list(const std::vector<char>& m) {
 }
 
 // minimal elements of a subset (given as mask)
-// fix: BFS/ DFS für laufzeit 
-static std::vector<int> minimal_elements_upset(const Poset2& P, const std::vector<char>& inS) {
+std::vector<int> minimal_elements_upset(const Poset2& P, const std::vector<char>& inS) {
     std::vector<int> mins;
     const int N = (int)inS.size();
 
@@ -60,7 +57,7 @@ static std::vector<int> minimal_elements_upset(const Poset2& P, const std::vecto
 }
 
 // maximal elements of a subset
-static std::vector<int> maximal_elements_downset(const Poset2& P,const std::vector<char>& inS) {
+std::vector<int> maximal_elements_downset(const Poset2& P,const std::vector<char>& inS) {
     std::vector<int> maxs;
     const int N = (int)inS.size();
 

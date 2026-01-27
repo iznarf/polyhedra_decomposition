@@ -10,12 +10,13 @@ namespace pst2 {
 struct DedekindPoset {
     std::vector<DedekindCut> cuts;
 
-    // Hasse diagram on cuts (DM elements)
+    // cover edges 
     std::vector<std::vector<int>> cover_up;
     std::vector<std::vector<int>> cover_dn;
 
-    // optional but useful
+    // topological order of cuts
     std::vector<int> topo;
+    // reachability bitsets: R[a][b] = 1 iff a <= b
     std::vector<pst::Bitset> R;
 
     // cached: I' as bitsets over base poset
@@ -25,6 +26,8 @@ struct DedekindPoset {
     std::vector<int> level;
     int maxLevel = 0;
 };
+
+
 
 DedekindPoset build_dedekind_poset(const Poset2& P2, std::vector<DedekindCut> cuts);
 
