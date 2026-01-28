@@ -137,6 +137,7 @@ void dedekind_cut_ui() {
 
                 // build DM poset (do NOT redeclare g_DM here!)
                 g_DM = pst2::build_dedekind_poset(P2, allCuts);
+                pst2::check_complete_lattice(g_DM, true);
                 have_all = !g_DM.cuts.empty();
 
                 viz_dm::build_and_register_dm_graph(g_DM);

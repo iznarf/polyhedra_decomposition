@@ -34,7 +34,7 @@ static void glfw_error_silencer(int error, const char* description) {
 }
 
 int main() {
-    polyscope::options::verbosity = 0; // reduces Polyscope std::cout spam
+    polyscope::options::verbosity = 0; // reduces polyscope errors in terminal 
 
     
     polyscope::init();
@@ -155,9 +155,6 @@ int main() {
 
     // register poset2 edge network for visualization
     viz_poset::register_poset2_cover_edges(P2);
-
-    
-   
 
     polyscope::state::userCallback = combined_ui_callback;
 

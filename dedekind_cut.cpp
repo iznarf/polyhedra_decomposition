@@ -281,7 +281,7 @@ int width_longest_antichain(const Poset2& P) {
 
     // helper function: BFS to find augmenting paths
     // start from all free left nodes in U 
-    // tries to find shortest augmenting path to free right node in V
+    // try to find shortest augmenting path to free right node in V
     // returns true if we found an augmenting path
     auto bfs = [&]() {
         std::queue<int> q;
@@ -370,7 +370,7 @@ static std::vector<int> cut_key_from_cut(const DedekindCut& C) {
 
 
 // width (size of longest antichain) 
-int width_longest_antichain(const Poset2& P); // declared elsewhere
+int width_longest_antichain(const Poset2& P); 
 
 
 
@@ -407,9 +407,9 @@ std::vector<DedekindCut> compute_all_cuts(const Poset2& P) {
     std::function<void(int,int)> backtrack_k = [&](int start, int k) {
         if ((int)cur.size() == k) {
 
-            // --- FAST PATH: compute only a cheap key (minF) first ---
-            // If we've already seen this minF, we know the full cut would be a duplicate,
-            // so we skip the expensive build_cut().
+            // --- FAST PATH: compute only key (minF) first ---
+            // if already seen minF, we know full cut would be duplicate,
+            // so skip build full cut
             std::vector<int> key = compute_minF(P, cur);
             std::sort(key.begin(), key.end());
 

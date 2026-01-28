@@ -3,6 +3,9 @@
 #include <algorithm>
 #include <queue>
 
+// for 8 and 9 vertices we can precompute the full DM poset and check completeness
+
+
 namespace pst2 {
 
 // strict subset A ⊂ B: is every element of A in B, and A != B
