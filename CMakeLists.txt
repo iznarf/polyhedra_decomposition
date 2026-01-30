@@ -22,38 +22,40 @@ FetchContent_MakeAvailable(portable-file-dialogs)
 # vcpkg 
 find_package(CGAL CONFIG REQUIRED)
 
+add_subdirectory(flip_algorithm)
+
+add_subdirectory(poset_visualization)
+
 add_executable(main
     main.cpp
     input.cpp
-    visualization.cpp
-    check_edges.cpp
-    conforming.cpp
-    flip.cpp
-    insertion.cpp
-    edge_flip_loop.cpp
-    conforming_insertion.cpp
-    debug.cpp
     geometry_utils.cpp
-    decomp_algo.cpp
     replay.cpp
     ui_callbacks.cpp
     poset.cpp
-    height_test.cpp
-    vis_poset.cpp
     poset2.cpp
     compare.cpp
-    moebius.cpp
-    render_helpers.cpp
-    node_coloring.cpp
-    compare_nodes.cpp
     interval_ui.cpp
     meet_join_ui.cpp
-    dedekind_cut.cpp
-    dedekind_cut_ui.cpp
-    dm_vis.cpp
-    dedekind_poset.cpp
-    compare_cuts.cpp
-   )
+    moebius.cpp
+    moebius_ui.cpp
+    compare_nodes.cpp
+)
+
+target_include_directories(main PRIVATE
+    ${CMAKE_SOURCE_DIR}/flip_algorithm
+)
+
+target_include_directories(main PRIVATE
+    ${CMAKE_SOURCE_DIR}/poset_visualization
+)
 
 target_include_directories(main PRIVATE ${portable-file-dialogs_SOURCE_DIR})
-target_link_libraries(main PRIVATE polyscope CGAL::CGAL)
+
+
+target_link_libraries(main PRIVATE
+    flip_algorithm
+    poset_visualization
+    polyscope
+    CGAL::CGAL
+)

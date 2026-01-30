@@ -173,6 +173,10 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </ProjectReference>
+    <ProjectReference Include="C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\flip_algorithm\flip_algorithm.vcxproj">
+      <Project>{29DD3F31-8DA0-3DD2-A5C4-0A3E465D7DEC}</Project>
+      <Name>flip_algorithm</Name>
+    </ProjectReference>
     <ProjectReference Include="C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-build\deps\glad\src\glad.vcxproj">
       <Project>{9B8D6C96-0F42-3DA5-A981-9ED8CFCEE965}</Project>
       <Name>glad</Name>
@@ -196,6 +200,10 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ProjectReference Include="C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-build\src\polyscope.vcxproj">
       <Project>{CCEA5DD8-2439-3EEF-8563-7DEF6F782E4A}</Project>
       <Name>polyscope</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\poset_visualization\poset_visualization.vcxproj">
+      <Project>{E8627E1C-53FA-36AF-A5FD-C4E07FEDCC62}</Project>
+      <Name>poset_visualization</Name>
     </ProjectReference>
     <ProjectReference Include="C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\_deps\polyscope-build\deps\stb\stb.vcxproj">
       <Project>{55709114-271F-326C-A8B0-AFDA4C6E9F2F}</Project>

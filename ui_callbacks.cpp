@@ -1,14 +1,18 @@
 #include "input.h"
 #include "replay.h"
-#include "vis_poset.h"
+#include "poset_vis.h"
 #include "visualization.h"
-#include "moebius.h"
 #include "poset.h"
-#include "compare_nodes.h"
+#include "poset_vis_ui.h"
 #include "interval_ui.h"
 #include "meet_join_ui.h"
+#include "moebius_ui.h"
+#include "compare_nodes.h"
+
+/*
 #include "dedekind_cut_ui.h"
 #include "dm_vis.h"
+*/
 
 #include <imgui.h>
 
@@ -43,7 +47,7 @@ void combined_ui_callback() {
     // ------------------------------------------------------------
      if (ImGui::CollapsingHeader("POSET")) {
         ImGui::PushID("Poset");
-        viz_poset::poset_ui();
+        pst_vis_ui::poset_ui();
         ImGui::PopID();
 
         ImGui::Separator();
@@ -52,11 +56,22 @@ void combined_ui_callback() {
         viz_poset::interval_ui();
         ImGui::PopID();
 
+        
+
         ImGui::Separator();
 
         ImGui::PushID("MeetJoinUI");
         viz_poset::meet_join_ui();
         ImGui::PopID();
+
+ 
+
+        ImGui::Separator();
+
+        ImGui::PushID("Moebius");
+        viz_poset::moebius_ui();
+        ImGui::PopID();
+        
 
         ImGui::Separator();
 
@@ -64,12 +79,7 @@ void combined_ui_callback() {
         viz_poset::compare_nodes_ui();
         ImGui::PopID();
 
-        ImGui::Separator();
-
-        ImGui::PushID("Moebius");
-        mob::draw_mobius_compare_ui(viz_poset::get_poset1(), viz_poset::get_poset2());
-        ImGui::PopID();
-
+        /*
         ImGui::Separator();
 
         ImGui::PushID("Completion");
@@ -81,6 +91,7 @@ void combined_ui_callback() {
         ImGui::PushID("dmVis");
         viz_dm::dm_ui();
         ImGui::PopID();
+        */
     }
 }
 

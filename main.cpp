@@ -23,7 +23,6 @@
 #include "ui_callbacks.h"
 #include "poset.h"
 #include "flip.h"
-#include "vis_poset.h"
 #include "compare.h"
 #include "poset2.h"
 #include "dedekind_cut.h"
@@ -32,6 +31,16 @@
 static void glfw_error_silencer(int error, const char* description) {
     // do nothing
 }
+
+pst::Poset1  g_P1;
+pst2::Poset2 g_P2;
+bool g_has_P1 = false;
+bool g_has_P2 = false;
+
+
+df::InputData g_in;   // global input for UI + visualization
+
+
 
 int main() {
     polyscope::options::verbosity = 0; // reduces polyscope errors in terminal 
@@ -46,7 +55,8 @@ int main() {
     int n_points = 7;
     // random seed to start point generation
     unsigned seed0 = 1516235435;
-    df::InputData in = df::make_random_valid_input(n_points, seed0);
+    g_in = df::make_random_valid_input(n_points, seed0);
+    df::InputData& in = g_in; // local ref for easier access
 
     // DECOMPOSITION ALGORITHM -----------------------------------------------------------
 
@@ -99,10 +109,13 @@ int main() {
 
     // for later use we want the cover relations, cover_up edges and cover_down edges
     // so build Poset1 structure from node list
-    pst::Poset1 P1 = pst::build_poset1(poset_nodes);
+
+    g_P1 = pst::build_poset1(poset_nodes);
+    g_has_P1 = true;
+
 
     // register poset for visualization
-    viz_poset::register_poset(in, P1);
+    //viz_poset::register_poset(in, P1);
 
     // bool for debugging poset1
     bool debug_poset1 = false; 
@@ -111,13 +124,13 @@ int main() {
     
         // find minimal nodes in the poset (no incoming down-flips)
         // just prints info if there exist more than one minimal node
-        pst::nodes_with_no_incoming_down_edges(P1);
+        pst::nodes_with_no_incoming_down_edges(g_P1);
 
         // gives us indices of special triangulations in the poset
-        auto idx = pst::find_special_triangulations_in_poset(in, P1);
+        auto idx = pst::find_special_triangulations_in_poset(in, g_P1);
 
         // finds path from upper to lower triangulation in the poset 
-        pst::exists_path_via_children(P1, idx.upper, idx.lower);
+        pst::exists_path_via_children(g_P1, idx.upper, idx.lower);
 
         // checks if there exists a conforming down path from upper to lower triangulation in poset1
         std::vector<int> node_path;
@@ -145,16 +158,18 @@ int main() {
     // POSET2 COMPUTATION
 
     // builds the poset2 structure from the input data and poset1
-    pst2::Poset2 P2 = pst2::build_poset2(in, P1);
+
+    g_P2 = pst2::build_poset2(in, g_P1);
+    g_has_P2 = true;
 
     bool debug_poset2 = false;
     if (debug_poset2) {
         // debug results of poset1 using comparator (geometric checks)
-        pst2::debug_compare_poset1(in, P1);
+        pst2::debug_compare_poset1(in, g_P1);
     }
 
     // register poset2 edge network for visualization
-    viz_poset::register_poset2_cover_edges(P2);
+    //viz_poset::register_poset2_cover_edges(P2);
 
     polyscope::state::userCallback = combined_ui_callback;
 

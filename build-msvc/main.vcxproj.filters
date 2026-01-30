@@ -7,34 +7,7 @@
     <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\input.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\visualization.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\check_edges.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\conforming.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\flip.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\insertion.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\edge_flip_loop.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\conforming_insertion.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\debug.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\geometry_utils.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\decomp_algo.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\replay.cpp">
@@ -46,28 +19,10 @@
     <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\poset.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\height_test.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\vis_poset.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\poset2.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\compare.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\moebius.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\render_helpers.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\node_coloring.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\compare_nodes.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\interval_ui.cpp">
@@ -76,19 +31,13 @@
     <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\meet_join_ui.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\dedekind_cut.cpp">
+    <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\moebius.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\dedekind_cut_ui.cpp">
+    <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\moebius_ui.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\dm_vis.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\dedekind_poset.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\compare_cuts.cpp">
+    <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\compare_nodes.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

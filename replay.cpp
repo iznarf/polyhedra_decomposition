@@ -41,10 +41,6 @@ namespace {
 } // namespace 
 
 
-
-
-
-
 namespace df {
 
 // edge flip (a,b,c,d)

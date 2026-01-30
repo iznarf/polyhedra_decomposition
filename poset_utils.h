@@ -58,11 +58,8 @@ namespace pst {
         return topo;
     }
 
-    // reachability bitsets R[u][v] = 1 iff v reachable from u
-    inline std::vector<Bitset> compute_reachability(
-        const std::vector<std::vector<int>>& out,
-        const std::vector<int>& topo)
-    {
+    // reachability bitsets R[u][v] = 1 iff v reachable from u 
+    inline std::vector<Bitset> compute_reachability(const std::vector<std::vector<int>>& out,const std::vector<int>& topo){
         const int N = static_cast<int>(out.size());
         std::vector<Bitset> R;
         R.reserve(N);
@@ -81,6 +78,36 @@ namespace pst {
             R[u] = std::move(ru);
         }
         return R;
+    }
+
+    
+    // transitive reduction for a DAG using reachability bitsets
+    // for each edge u -> v, look at all neighbors w of u and check if w -> v 
+    inline std::vector<std::vector<int>> transitive_reduction(const std::vector<std::vector<int>>& out,const std::vector<Bitset>& R){
+        const int N = static_cast<int>(out.size());
+        std::vector<std::vector<int>> cover_out(N);
+
+        for (int u = 0; u < N; ++u) {
+            // for each edge u->v, check if there exists w!=v in out[u] with w -> v
+            for (int v : out[u]) {
+                bool redundant = false;
+
+                for (int w : out[u]) {
+                    if (w == v) continue;
+                    if (R[w].test(v)) {
+                        redundant = true;
+                        break;
+                    }
+                }
+
+                if (!redundant) {
+                    cover_out[u].push_back(v);
+                }
+            }
+        }
+
+        pst::sort_unique_adjacency(cover_out);
+        return cover_out;
     }
 
     // find a path from start to goal by going up along cover edges
@@ -137,161 +164,5 @@ namespace pst {
         std::reverse(path.begin(), path.end());
         return path;
     }
-
-
-
-inline std::vector<int>compute_levels_longest_from_root_cover_down(
-    const std::vector<std::vector<int>>& cover_down,
-    int root = 0){
-    const int n = (int)cover_down.size();
-    std::vector<int> level(n, -1);
-    if (n == 0) return level;
-    if (root < 0 || root >= n) return level;
-
-    std::vector<int> topo;
-    try {
-        topo = pst::topo_sort_kahn(cover_down);
-    } catch (const std::exception& e) {
-        // fallback: BFS levels from root (works even with cycles)
-        std::vector<int> dist(n, -1);
-        std::queue<int> q;
-        dist[root] = 0;
-        q.push(root);
-
-        while (!q.empty()) {
-            int u = q.front(); q.pop();
-            for (int v : cover_down[u]) {
-                if (v < 0 || v >= n) continue;
-                if (dist[v] != -1) continue;
-                dist[v] = dist[u] + 1;
-                q.push(v);
-            }
-        }
-
-        int max_lv = 0;
-        for (int i = 0; i < n; ++i) {
-            if (dist[i] != -1) {
-                level[i] = dist[i];
-                max_lv = std::max(max_lv, level[i]);
-            }
-        }
-
-        // place all unreachable after reachable block, stable order
-        int next = max_lv + 1;
-        for (int i = 0; i < n; ++i) {
-            if (level[i] == -1) level[i] = next++;
-        }
-
-        std::cerr << "[vis_poset] WARNING: cover_down has a directed cycle; "
-                     "using BFS fallback for levels. (" << e.what() << ")\n";
-        return level;
-    }
-
-    // Longest path from root in DAG (standard DP over topo)
-    const int NEG_INF = std::numeric_limits<int>::min();
-    std::vector<int> dist(n, NEG_INF);
-    dist[root] = 0;
-
-    for (int u : topo) {
-        if (dist[u] == NEG_INF) continue;
-        for (int v : cover_down[u]) {
-            if (v < 0 || v >= n) continue;
-            dist[v] = std::max(dist[v], dist[u] + 1);
-        }
-    }
-
-    int max_reachable = 0;
-    for (int i = 0; i < n; ++i) {
-        if (dist[i] != NEG_INF) {
-            level[i] = dist[i];
-            max_reachable = std::max(max_reachable, level[i]);
-        }
-    }
-
-    // Unreachable nodes: keep non-negative and deterministic.
-    // We’ll compute a “component depth” within the subgraph induced by unreachable nodes.
-    // Simple approach: topo DP but only on unreachable nodes, starting from their sources.
-    std::vector<int> indeg_un(n, 0);
-    for (int u = 0; u < n; ++u) {
-        if (level[u] != -1) continue; // only unreachable
-        for (int v : cover_down[u]) {
-            if (v < 0 || v >= n) continue;
-            if (level[v] != -1) continue;
-            indeg_un[v]++;
-        }
-    }
-
-    std::queue<int> q;
-    for (int i = 0; i < n; ++i) {
-        if (level[i] == -1 && indeg_un[i] == 0) q.push(i);
-    }
-
-    // if there are unreachable cycles (shouldn’t if whole graph is DAG, but safe):
-    // we’ll still assign them sequentially at the end.
-    std::vector<int> dist_un(n, -1);
-    while (!q.empty()) {
-        int u = q.front(); q.pop();
-        if (dist_un[u] == -1) dist_un[u] = 0;
-        for (int v : cover_down[u]) {
-            if (v < 0 || v >= n) continue;
-            if (level[v] != -1) continue; // only unreachable subgraph
-            dist_un[v] = std::max(dist_un[v], dist_un[u] + 1);
-            if (--indeg_un[v] == 0) q.push(v);
-        }
-    }
-
-    int base = max_reachable + 1;
-    int next = base;
-
-    for (int i = 0; i < n; ++i) {
-        if (level[i] != -1) continue;
-        if (dist_un[i] != -1) {
-            level[i] = base + dist_un[i];
-        } else {
-            // unreachable cycle / weirdness: place after everything
-            level[i] = next++;
-        }
-    }
-
-    return level;
-}
-
-
-
-// transitive reduction for a DAG using reachability bitsets
-// for each edge u -> v, look at all neighbors w of u and check if w -> v 
-static std::vector<std::vector<int>> transitive_reduction(
-    const std::vector<std::vector<int>>& out,
-    const std::vector<Bitset>& R)
-{
-    const int N = static_cast<int>(out.size());
-    std::vector<std::vector<int>> cover_out(N);
-
-    for (int u = 0; u < N; ++u) {
-        // for each edge u->v, check if there exists w!=v in out[u] with w -> v
-        for (int v : out[u]) {
-            bool redundant = false;
-
-            for (int w : out[u]) {
-                if (w == v) continue;
-                if (R[w].test(v)) {
-                    redundant = true;
-                    break;
-                }
-            }
-
-            if (!redundant) {
-                cover_out[u].push_back(v);
-            }
-        }
-    }
-
-    pst::sort_unique_adjacency(cover_out);
-    return cover_out;
-}
-
-
-
-
 
 } 

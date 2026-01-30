@@ -1,5 +1,6 @@
 #pragma once 
 #include "input.h"
+#include "poset_utils.h"
 #include <vector>
 #include <array>
 #include <cstddef> 
@@ -41,10 +42,17 @@ namespace pst {
         std::vector<Node> nodes; // all poset nodes
         std::vector<std::vector<int>> cover_down; // edges of down flip poset
         std::vector<std::vector<int>> cover_up;   // edges of up flip poset 
+        std::vector<int> topo_up;                  // topo: node indices in topological order from cover up
+        std::vector<int> topo_down;                // topo: node indices in topological order from cover down
+        std::vector<pst::Bitset> reachability_down; // reachability bitsets for down edges: for runtime leq queries
+        std::vector<pst::Bitset> reachability_up;   // reachability bitsets for up edges: for runtime leq queries
+        std::vector<int> levels;                   // level[u] = length of longest chain from minimal element to u in cover up
     };
 
     // builds Poset1 structure from node list
     Poset1 build_poset1(const std::vector<Node>& nodes);
+
+    // -----------------------------------------------------------------------------------------
 
 
     // finds nodes with no incoming down edges within Poset1
@@ -71,6 +79,7 @@ namespace pst {
         std::vector<int>& out_node_path,             // global poset indices (mesh numbers)
         std::vector<df::StepRecord>& out_step_path   // steps along that path
     );
+    
         
     void replay_step_poset(const df::StepRecord& step, df::Tri2& tri, const df::InputData& D);
 

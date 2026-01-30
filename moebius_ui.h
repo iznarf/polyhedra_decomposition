@@ -1,6 +1,4 @@
 #pragma once
-
-
 namespace viz_poset {
-    void compare_nodes_ui();
+  void moebius_ui();
 }

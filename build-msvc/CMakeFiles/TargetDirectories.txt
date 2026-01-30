@@ -28,3 +28,7 @@ C:/Users/franz/Desktop/polyhedra_decomposition/build-msvc/_deps/polyscope-build/
 C:/Users/franz/Desktop/polyhedra_decomposition/build-msvc/_deps/polyscope-build/src/CMakeFiles/INSTALL.dir
 C:/Users/franz/Desktop/polyhedra_decomposition/build-msvc/_deps/portable-file-dialogs-build/CMakeFiles/INSTALL.dir
 C:/Users/franz/Desktop/polyhedra_decomposition/build-msvc/_deps/portable-file-dialogs-build/CMakeFiles/ALL_BUILD.dir
+C:/Users/franz/Desktop/polyhedra_decomposition/build-msvc/flip_algorithm/CMakeFiles/flip_algorithm.dir
+C:/Users/franz/Desktop/polyhedra_decomposition/build-msvc/flip_algorithm/CMakeFiles/INSTALL.dir
+C:/Users/franz/Desktop/polyhedra_decomposition/build-msvc/poset_visualization/CMakeFiles/poset_visualization.dir
+C:/Users/franz/Desktop/polyhedra_decomposition/build-msvc/poset_visualization/CMakeFiles/INSTALL.dir

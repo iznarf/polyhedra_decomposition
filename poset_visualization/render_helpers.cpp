@@ -27,6 +27,7 @@ namespace viz_helpers {
         return F;
     }
 
+    // gives vertices the global id in polyscope as scalar quantity
     void add_global_id_quantity(polyscope::SurfaceMesh* mesh,
                                 const std::vector<df::vertex_id>& ids) {
         std::vector<double> values;
@@ -130,5 +131,31 @@ namespace viz_helpers {
 
         return V;
     }
+
+
+    // we need this for bounding box computation 
+    // bbox is for triangle mesh visualization 
+    glm::vec3 bbox_center(const std::vector<glm::vec3>& V) {
+        if (V.empty()) return glm::vec3(0.f);
+        glm::vec3 lo = V[0], hi = V[0];
+        for (const auto& p : V) {
+            lo = glm::min(lo, p);
+            hi = glm::max(hi, p);
+        }
+        return 0.5f * (lo + hi);
+    }
+
+    void recenter(std::vector<glm::vec3>& V, const glm::vec3& c) {
+        for (auto& p : V) p -= c;
+    }
+
+    // gives each mesh the node index as a scalar quantity 
+    void add_node_id_quantity(polyscope::SurfaceMesh* mesh, int nodeIndex) {
+        const size_t nV = mesh->nVertices();
+        std::vector<double> values(nV, (double)nodeIndex);
+        mesh->addVertexScalarQuantity("poset node", values);
+    }
+
+
 
 } // namespace viz_helpers

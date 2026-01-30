@@ -20,6 +20,8 @@
 #include "conforming.h"
 #include "conforming_insertion.h"
 #include "poset_utils.h"
+#include "poset_vis_helpers.h"
+
 
 #include "poset.h"
 #include <algorithm>
@@ -752,7 +754,23 @@ namespace pst {
         // canonicalize the cover relations by sorting
         pst::sort_unique_adjacency(P1.cover_down);
         pst::sort_unique_adjacency(P1.cover_up);
-        
+
+
+        // 3) topo sort <=2 graph (must be DAG)
+        std::vector<int> topo_down = pst::topo_sort_kahn(P1.cover_down);
+        std::vector<int> topo_up = pst::topo_sort_kahn(P1.cover_up);
+
+        // 4) reachability for <=_1 graph
+        // R2[u][v] = 1 iff v reachable from u by <=1 DOWN edges
+        std::vector<Bitset> R_down = pst::compute_reachability(P1.cover_down, topo_down);
+        std::vector<Bitset> R_up = pst::compute_reachability(P1.cover_up, topo_up);
+
+        P1.reachability_down = std::move(R_down);
+        P1.reachability_up = std::move(R_up);
+        P1.topo_up = std::move(topo_up);
+        P1.topo_down = std::move(topo_down);
+        P1.levels = pst_vis::compute_levels_longest_from_roots_cover_up(P1.cover_up);
+
         return P1;  
     }
    

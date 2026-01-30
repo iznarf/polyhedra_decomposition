@@ -4,6 +4,7 @@
 #include "input.h"
 #include "poset.h"
 #include "poset_utils.h"
+#include "poset_vis_helpers.h"
 
 #include <iostream>
 #include <boost/dynamic_bitset.hpp>
@@ -103,17 +104,17 @@ Poset2 build_poset2(const df::InputData& D, const pst::Poset1& P1) {
     pst::sort_unique_adjacency(out2_down);
 
     // 3) topo sort <=2 graph (must be DAG)
-    // NOTE: this is still a DAG in DOWN direction (edges go from bigger to smaller)
+    // this is still a DAG in DOWN direction 
     std::vector<int> topo2 = pst::topo_sort_kahn(out2_down);
 
     // 4) reachability for <=_2 graph
     // R2[u][v] = 1 iff v reachable from u by <=2 DOWN edges
-    std::vector<Bitset> R2 = pst::compute_reachability(out2_down, topo2);
+    std::vector<Bitset> reachability_down = pst::compute_reachability(out2_down, topo2);
 
     // 5) transitive reduction => covering edges
     // cover_down[u] = list of v with u -> v by covering edges (DOWN direction)
     // i.e. u covers v in <=2 (v is immediately below u)
-    std::vector<std::vector<int>> cover_down = pst::transitive_reduction(out2_down, R2);
+    std::vector<std::vector<int>> cover_down = pst::transitive_reduction(out2_down, reachability_down);
 
     // build cover_up as reverse adjacency of cover_down
     // cover_up[x] = list of y such that y covers x (y immediately above x)
@@ -128,7 +129,15 @@ Poset2 build_poset2(const df::InputData& D, const pst::Poset1& P1) {
     Poset2 P2;
     P2.cover_down = std::move(cover_down);
     P2.cover_up   = std::move(cover_up);
-    P2.reachability_down = std::move(R2);
+    P2.topo_up = pst::topo_sort_kahn(P2.cover_up);
+    P2.topo_down = pst::topo_sort_kahn(P2.cover_down);
+
+    P2.levels  = pst_vis::compute_levels_longest_from_roots_cover_up(P2.cover_up);
+
+    P2.reachability_up = pst::compute_reachability(P2.cover_up, P2.topo_up);
+
+    P2.reachability_down = std::move(reachability_down);
+    P2.topo_down = std::move(topo2);
 
     return P2;
 }

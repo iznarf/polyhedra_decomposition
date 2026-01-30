@@ -34,6 +34,13 @@ make_lifted_poset_vertices(const std::vector<df::vertex_id>& ids,
                            float cx, float cz,
                            float scale_xy, float scale_z);
 
+glm::vec3 bbox_center(const std::vector<glm::vec3>& V);
+
+void recenter(std::vector<glm::vec3>& V, const glm::vec3& c);
+
+// attach node index scalar quantity to polyscope mesh
+void add_node_id_quantity(polyscope::SurfaceMesh* mesh, int nodeIndex);
+
 } // namespace viz_helpers
 
 
