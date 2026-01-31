@@ -8,11 +8,9 @@
 #include "meet_join_ui.h"
 #include "moebius_ui.h"
 #include "compare_nodes.h"
-
-/*
 #include "dedekind_cut_ui.h"
-#include "dm_vis.h"
-*/
+#include "dedekind_completion.h"
+
 
 #include <imgui.h>
 
@@ -56,7 +54,6 @@ void combined_ui_callback() {
         viz_poset::interval_ui();
         ImGui::PopID();
 
-        
 
         ImGui::Separator();
 
@@ -64,7 +61,6 @@ void combined_ui_callback() {
         viz_poset::meet_join_ui();
         ImGui::PopID();
 
- 
 
         ImGui::Separator();
 
@@ -79,19 +75,20 @@ void combined_ui_callback() {
         viz_poset::compare_nodes_ui();
         ImGui::PopID();
 
-        /*
+        
         ImGui::Separator();
 
-        ImGui::PushID("Completion");
+        ImGui::PushID("DedekindCut");
         viz_poset::dedekind_cut_ui();
         ImGui::PopID();
 
+
         ImGui::Separator();
 
-        ImGui::PushID("dmVis");
-        viz_dm::dm_ui();
+        ImGui::PushID("DedekindCompletion");
+        dedekind_completion_ui();
         ImGui::PopID();
-        */
+        
     }
 }
 

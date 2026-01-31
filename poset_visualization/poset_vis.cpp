@@ -5,6 +5,9 @@
 #include "poset_vis_helpers.h"
 #include "poset_tri_mesh.h"
 
+#include "dedekind_poset.h"
+
+
 #include <polyscope/polyscope.h>
 #include <polyscope/point_cloud.h>
 #include <polyscope/curve_network.h>
@@ -24,6 +27,11 @@ pst_vis::TriVisResult g_triVis_P2;  //global for poset2 visualizations
 
 std::vector<glm::vec3> g_gridPos_P1; // global for poset1 grid positions
 std::vector<glm::vec3> g_gridPos_P2; // global for poset2 grid positions
+
+float g_gridXSpacing_P1 = 0.2f;
+float g_gridZSpacing_P1 = 0.2f;
+float g_gridXSpacing_P2 = 0.2f;
+float g_gridZSpacing_P2 = 0.2f;
 
 
 
@@ -58,6 +66,11 @@ void register_cover_up_as_edges(const std::string& name, const std::vector<glm::
     cn->setEnabled(true);
 }
 
+
+
+// -------------------------------------------------------------
+
+
 static std::vector<glm::vec3> compute_grid_pos(const std::vector<int>& levels,glm::vec3 center,float xSpacing,float zSpacing){
     auto byLevel = pst_vis::group_nodes_by_level(levels);
     return pst_vis::grid_for_poset_nodes(byLevel, (int)levels.size(), center, xSpacing, zSpacing);
@@ -78,7 +91,10 @@ void register_poset_as_grid(const std::string& name,
         return;
     }
 
+
     auto pos = compute_grid_pos(levels, center, xSpacing, zSpacing);
+
+
 
     if (polyscope::hasPointCloud(name))
         polyscope::removeStructure(name);
@@ -110,6 +126,11 @@ void register_poset1_as_triangulations(const df::InputData& D, const pst::Poset1
     // 2) grid layout based on levels
     auto pos = compute_grid_pos(P1.levels, center, xSpacing, zSpacing);
 
+    // 3) store grid positions globally
+    pst_vis::g_gridXSpacing_P1 = xSpacing;
+    pst_vis::g_gridZSpacing_P1 = zSpacing;
+
+
     // 4) apply transforms from the grid 
     float meshScale = 0.08f;
     apply_triangulation_centers(g_triVis_P1, pos, meshScale);
@@ -120,7 +141,7 @@ void register_poset1_as_triangulations(const df::InputData& D, const pst::Poset1
 
 
 void register_poset2_as_triangulations(const df::InputData& D, const pst::Poset1& P1, const pst2::Poset2& P2, const glm::vec3& center, float xSpacing, float zSpacing){
-    remove_triangulation_vis(g_triVis_P2);
+        remove_triangulation_vis(g_triVis_P2);
 
     // build meshes (independent polyscope objects via different names)
     register_poset_as_triangulation_P1("P2 node ", D, P1, g_triVis_P2);
@@ -130,6 +151,10 @@ void register_poset2_as_triangulations(const df::InputData& D, const pst::Poset1
 
     // grid layout based on levels of P2
     auto pos = compute_grid_pos(P2.levels, center, xSpacing, zSpacing);
+
+    // store grid positions globally
+    pst_vis::g_gridXSpacing_P2 = xSpacing;
+    pst_vis::g_gridZSpacing_P2 = zSpacing;
 
     // mesh scale scales the size of the triangulation meshes 
     float meshScale = 0.08f;

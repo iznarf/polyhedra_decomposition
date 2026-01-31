@@ -40,6 +40,11 @@ add_executable(main
     moebius.cpp
     moebius_ui.cpp
     compare_nodes.cpp
+    dedekind_cut.cpp
+    dedekind_cut_ui.cpp
+    dedekind_poset.cpp
+    dedekind_completion.cpp
+
 )
 
 target_include_directories(main PRIVATE

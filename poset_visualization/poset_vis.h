@@ -4,6 +4,8 @@
 #include "poset.h"
 #include "poset2.h"
 #include "poset_tri_mesh.h"
+#include "dedekind_poset.h"
+
 #include <glm/glm.hpp>
 #include <string>
 #include <vector>
@@ -18,6 +20,13 @@ extern TriVisResult g_triVis_P2;   // for P2
 extern std::vector<glm::vec3> g_gridPos_P1;
 extern std::vector<glm::vec3> g_gridPos_P2;
 
+
+
+extern float g_gridXSpacing_P1;
+extern float g_gridZSpacing_P1;
+extern float g_gridXSpacing_P2;
+extern float g_gridZSpacing_P2;
+
 // function to show/hide all trivis meshes in a TriVisResult
 // example: show all P1 2D meshes 
 void set_trivis_enabled(const pst_vis::TriVisResult& R, bool show2d, bool show3d);
@@ -27,6 +36,9 @@ void register_poset1(const df::InputData& D, const pst::Poset1& P1,const glm::ve
 
 // register P2 poset: triangulation, grid, edges
 void register_poset2(const df::InputData& D, const pst::Poset1& P1, const pst2::Poset2& P2,const glm::vec3& center, float xSpacing, float zSpacing, glm::vec3 color);
+
+
+
 
 } // namespace pst_vis
 

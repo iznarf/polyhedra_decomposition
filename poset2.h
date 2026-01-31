@@ -24,18 +24,4 @@ bool leq(const Poset2& P, int a, int b);
 
 void debug_compare_poset1(const df::InputData& D, const pst::Poset1& P1);
 
-std::vector<char> upper_set(const Poset2& P, int x);
-std::vector<char> lower_set(const Poset2& P, int x);
-
-std::vector<int> interval_xy(const Poset2& P, int x, int y);
-std::vector<int> interval_min_x(const Poset2& P, int x);
-std::vector<int> interval_x_max(const Poset2& P, int x);
-std::vector<int> meet_candidates_xy(const Poset2& P, int x, int y);
-std::vector<int> join_candidates_xy(const Poset2& P, int x, int y);
-
-std::vector<int> minima(const Poset2& P);
-std::vector<int> maxima(const Poset2& P);
-int unique_min_or_minus1(const Poset2& P);
-int unique_max_or_minus1(const Poset2& P);
-
 } 

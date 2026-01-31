@@ -122,7 +122,7 @@ static void build_one_mesh_pair_from_P1_history(int node_idx,
 void compare_nodes_ui() {
 
   ImGui::SetNextItemOpen(false, ImGuiCond_Once);
-  if (!ImGui::CollapsingHeader("compare meshes", ImGuiTreeNodeFlags_DefaultOpen))
+  if (!ImGui::CollapsingHeader("Compare", ImGuiTreeNodeFlags_DefaultOpen))
     return;
 
   // Choose poset (same style as your other UIs)

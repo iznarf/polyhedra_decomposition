@@ -1,458 +1,237 @@
 #include "dedekind_cut.h"
-#include "poset2.h"
-#include "poset_utils.h"
 
-#include <vector>
-#include <queue>
-#include <functional>
-#include <unordered_set>
 #include <algorithm>
+#include <functional>
+#include <iostream>
 #include <queue>
+#include <string>
+#include <unordered_set>
 
+namespace dm_completion {
 
-// --- hashing for vector<int> keys ---
+// -------------------------
+// hashing for vector<int>
+// -------------------------
 struct VecHash {
-    size_t operator()(const std::vector<int>& v) const noexcept {
-        size_t h = 1469598103934665603ull;
-        for (int x : v) {
-            h ^= (size_t)x + 0x9e3779b97f4a7c15ull + (h << 6) + (h >> 2);
-        }
-        return h;
+  size_t operator()(const std::vector<int>& v) const noexcept {
+    size_t h = 1469598103934665603ull;
+    for (int x : v) {
+      h ^= (size_t)x + 0x9e3779b97f4a7c15ull + (h << 6) + (h >> 2);
     }
+    return h;
+  }
 };
 
-namespace pst2 {
-
-using CutKey = std::vector<int>;
-
-
-// helper: convert 0/1 vector of length N  = number of nodes to list of indices
-// returns list of node indices i where m[i] = 1
-// bitmask -> subset of nodes 
-static std::vector<int> mask_to_list(const std::vector<char>& m) {
-    std::vector<int> out;
-    for (int i = 0; i < (int)m.size(); ++i)
-        if (m[i]) out.push_back(i);
-    return out;
+// -------------------------
+// printing
+// -------------------------
+void print_cut(int idx, const DedekindCut& C) {
+  std::cout << "  [" << idx << "] gens={";
+  for (int i = 0; i < (int)C.generators.size(); ++i) {
+    std::cout << C.generators[i] << (i + 1 < (int)C.generators.size() ? "," : "");
+  }
+  std::cout << "}  minF={";
+  for (int i = 0; i < (int)C.minimal_elements_F.size(); ++i) {
+    std::cout << C.minimal_elements_F[i] << (i + 1 < (int)C.minimal_elements_F.size() ? "," : "");
+  }
+  std::cout << "}  maxI'={";
+  for (int i = 0; i < (int)C.maximal_elements_Iprime.size(); ++i) {
+    std::cout << C.maximal_elements_Iprime[i] << (i + 1 < (int)C.maximal_elements_Iprime.size() ? "," : "");
+  }
+  std::cout << "}  |F|=" << C.F.size() << " |I'|=" << C.Iprime.size() << "\n";
 }
 
-// minimal elements of a subset (given as mask)
-std::vector<int> minimal_elements_upset(const Poset2& P, const std::vector<char>& inS) {
-    std::vector<int> mins;
-    const int N = (int)inS.size();
+// -------------------------
+// core helpers 
+// -------------------------
 
-    // minimal elements: no smaller neighbor still in S
-    for (int z = 0; z < N; ++z) {
-        if (!inS[z]) continue;
-        bool has_smaller = false;
-        for (int w : P.cover_down[z]) {
-            if (w >= 0 && w < N && inS[w]) {
-                has_smaller = true;
-                break;
-            }
-        }
-        if (!has_smaller) mins.push_back(z);
-    }
-    return mins;
-}
-
-// maximal elements of a subset
-std::vector<int> maximal_elements_downset(const Poset2& P,const std::vector<char>& inS) {
-    std::vector<int> maxs;
-    const int N = (int)inS.size();
-
-    // maximal elements: no bigger neighbor still in S
-    for (int z = 0; z < N; ++z) {
-        if (!inS[z]) continue;
-        bool has_bigger = false;
-        for (int w : P.cover_up[z]) {
-            if (w >= 0 && w < N && inS[w]) { has_bigger = true; break; }
-        }
-        if (!has_bigger) maxs.push_back(z);
-    }
-    return maxs;
-}
-
-// find maximal generators which is longest antichain of given generators
-static std::vector<int> maximal_generators(const Poset2& P,std::vector<int> gens) {
-    // remove duplicates
-    std::sort(gens.begin(), gens.end());
-    gens.erase(std::unique(gens.begin(), gens.end()), gens.end());
-
-    // use reachability to find maximal elements
-    std::vector<int> out;
-    for (int i = 0; i < (int)gens.size(); ++i) {
-        bool dominated = false;
-        for (int j = 0; j < (int)gens.size(); ++j) {
-            if (i == j) continue;
-            if (pst2::leq(P, gens[i], gens[j])) { // gens[i] ≤ gens[j]
-                dominated = true;
-                break;
-            }
-        }
-        if (!dominated) out.push_back(gens[i]);
-    }
-    return out;
+// Minimal generators: for an antichain, this is already itself
+// right now this functon is not necessary
+static std::vector<int> normalize_generators_antichain(std::vector<int> gens) {
+  std::sort(gens.begin(), gens.end());
+  gens.erase(std::unique(gens.begin(), gens.end()), gens.end());
+  return gens;
 }
 
 
+// Build the full cut from a generator antichain
+DedekindCut build_cut(const PosetView& P, const std::vector<int>& gens_in) {
+  DedekindCut C;
+  C.generators = normalize_generators_antichain(gens_in);
 
+  // Filter F = common upper bounds of generators
+  pst::Bitset Fmask = meet_join::common_upper_bounds(P, C.generators);
+  C.F = pst_interval::nodes_from_bitset(Fmask);
 
+  // min(F)
+  pst::Bitset minFmask = meet_join::minimal_elements(P, Fmask);
+  C.minimal_elements_F = pst_interval::nodes_from_bitset(minFmask);
 
-// ------------------------------------------------------------
-// Dedekind cut computations
+  // I' = common lower bounds of min(F)
+  pst::Bitset Ipmask = meet_join::common_lower_bounds(P, C.minimal_elements_F);
+  C.Iprime = pst_interval::nodes_from_bitset(Ipmask);
 
+  // max(I')
+  pst::Bitset maxIpmask = meet_join::maximal_elements(P, Ipmask);
+  C.maximal_elements_Iprime = pst_interval::nodes_from_bitset(maxIpmask);
 
-// computes ideal generated by a set of generators
-// ideal is defined as everything below at least one generator
-std::vector<int> ideal_generated_by(const Poset2& P,const std::vector<int>& generators) {
-    const int N = (int)P.cover_up.size();
-    // bitset mask of everything in ideal 
-    std::vector<char> inI(N, 0);
-
-    // keep only maximal generators 
-    auto gens = maximal_generators(P, generators);
-
-
-    for (int g : gens) std::cout << g << " ";
-    std::cout << "\n";
-
-    // compute bitset mask of ideal 
-    // ideal = union of lower sets of generators
-    for (int g : gens) {
-        auto low = pst2::lower_set(P, g);   // bitset mask of everything below at least one generator 
-        for (int i = 0; i < N; ++i)
-            if (low[i]) inI[i] = 1;         // union of lower sets
-    }
-    return mask_to_list(inI);
+  return C;
 }
 
+// Fast key: min(F) sorted
+static std::vector<int> cut_key_minF(const PosetView& P, const std::vector<int>& gens_in) {
+  std::vector<int> gens = normalize_generators_antichain(gens_in);
 
-// computes filter generated by a set of maximal elements of ideal 
-// filter are common upper bounds of maximal elements of the ideal
-// fix: avoid recomputing maximal generators again here, we already have them from ideal computation
-std::vector<int> filter_of_generators(const Poset2& P,const std::vector<int>& generators) {
-    const int N = (int)P.cover_up.size();
+  pst::Bitset Fmask = meet_join::common_upper_bounds(P, gens);
+  pst::Bitset minFmask = meet_join::minimal_elements(P, Fmask);
 
-    if (generators.empty()) {
-        std::vector<int> all(N);
-        for (int i = 0; i < N; ++i) all[i] = i;
-        return all;
-    }
-
-    // keep only maximal generators (drops redundant ones)
-    auto gens = maximal_generators(P, generators);
-
-    // compute bitset mask of filter
-    // filter = intersection of upper sets of generators
-    std::vector<char> inF(N, 1);
-    for (int g : gens) {
-        auto up = upper_set(P, g);
-        for (int i = 0; i < N; ++i)
-            inF[i] = inF[i] && up[i]; // intersection of upper sets gives us common upper bounds
-    }
-    return mask_to_list(inF);
+  auto key = pst_interval::nodes_from_bitset(minFmask);
+  std::sort(key.begin(), key.end());
+  return key;
 }
 
-// computes common lower bounds of minimal elements of the filter 
-std::vector<int> Iprime_from_filter(const Poset2& P,const std::vector<int>& F) {
-    const int N = (int)P.cover_up.size();
+// -------------------------
+// width via Dilworth (Hopcroft–Karp)
+// -------------------------
 
-    if (F.empty()) {
-        std::vector<int> all(N);
-        for (int i = 0; i < N; ++i) all[i] = i;
-        return all;
-    }
+int width_longest_antichain(const PosetView& P) {
+  const int N = P.n;
 
-    std::vector<char> inF(N, 0);
-    for (int f : F) inF[f] = 1;
+  // Build bipartite graph: edge u->v iff u < v
+  std::vector<std::vector<int>> adjL(N);
 
-    auto minF = minimal_elements_upset(P, inF);
-
-    std::vector<char> inIprime(N, 1);
-    for (int m : minF) {
-        auto low = lower_set(P, m);
-        for (int i = 0; i < N; ++i)
-            inIprime[i] = inIprime[i] && low[i];
-    }
-
-    return mask_to_list(inIprime);
-}
-
-// compute minimal elements of the filter U(cur) to avoid computing whole cut before we checked for duplicates
-static std::vector<int>compute_minF(const pst2::Poset2& P, const std::vector<int>& cur){
-    const int N = (int)P.cover_up.size();
-    std::vector<char> is_upper(N, 1);
-
-    // U(cur): common upper bounds
-    for (int x : cur) {
-        for (int v = 0; v < N; ++v) {
-            if (!pst2::leq(P, x, v)) {   // x ≤ v must hold
-                is_upper[v] = 0;
-            }
-        }
-    }
-
-    // extract minimal elements of U(cur)
-    std::vector<int> minF;
+  // If we have reachability_down[v] = { u | u <= v }, we can build edges efficiently
+  if (P.reachability_down) {
     for (int v = 0; v < N; ++v) {
-        if (!is_upper[v]) continue;
+      pst::Bitset bs = (*P.reachability_down)[v]; // u <= v
+      if (v >= 0 && v < (int)bs.size()) bs.reset(v); // strict: u < v
 
-        bool minimal = true;
-        for (int u = 0; u < N; ++u) {
-            if (u == v || !is_upper[u]) continue;
-            if (pst2::leq(P, u, v)) {   // u < v
-                minimal = false;
-                break;
-            }
-        }
-        if (minimal) minF.push_back(v);
+      for (int u = bs.find_first();
+           u != pst::Bitset::npos;
+           u = bs.find_next(u))
+      {
+        adjL[(int)u].push_back(v);
+      }
     }
-    return minF; 
-}
-
-
-static std::string minF_key(const std::vector<int>& minF){
-    std::string k;
-    for (int x : minF) {
-        k += std::to_string(x);
-        k += ",";
+  } else {
+    // fallback O(n^2): add u->v if u < v
+    for (int u = 0; u < N; ++u) {
+      for (int v = 0; v < N; ++v) {
+        if (u == v) continue;
+        if (leq(P, u, v) && !leq(P, v, u)) adjL[u].push_back(v);
+      }
     }
-    return k;
-}
+  }
 
+  std::vector<int> pairU(N, -1), pairV(N, -1), dist(N);
 
-
-
-
-// print cut struct 
-void print_cut(int idx, const pst2::DedekindCut& C) {
-    std::cout << "  [" << idx << "] "
-              << "gens={";
-    for (int i = 0; i < (int)C.generators.size(); ++i) {
-        std::cout << C.generators[i] << (i + 1 < (int)C.generators.size() ? "," : "");
+  auto bfs = [&]() {
+    std::queue<int> q;
+    for (int u = 0; u < N; ++u) {
+      if (pairU[u] == -1) { dist[u] = 0; q.push(u); }
+      else dist[u] = -1;
     }
-    std::cout << "}  minF={";
-    for (int i = 0; i < (int)C.minimal_elements_F.size(); ++i) {
-        std::cout << C.minimal_elements_F[i] << (i + 1 < (int)C.minimal_elements_F.size() ? "," : "");
+    bool found_free = false;
+    while (!q.empty()) {
+      int u = q.front(); q.pop();
+      for (int v : adjL[u]) {
+        int u2 = pairV[v];
+        if (u2 == -1) {
+          found_free = true;
+        } else if (dist[u2] == -1) {
+          dist[u2] = dist[u] + 1;
+          q.push(u2);
+        }
+      }
     }
-    std::cout << "}  maxI'={";
-    for (int i = 0; i < (int)C.maximal_elements_Iprime.size(); ++i) {
-        std::cout << C.maximal_elements_Iprime[i] << (i + 1 < (int)C.maximal_elements_Iprime.size() ? "," : "");
-    }
-    std::cout << "}  |F|=" << C.F.size() << " |I'|=" << C.Iprime.size()
-              << "\n";
-}
+    return found_free;
+  };
 
-// -------------------------------------------------------------
-// compute width of poset
-
-
-// width(P) = size of longest antichain -> dilworth's theorem -> the maximum size of an antichain = the minimum number of chains in a chain cover
-// a chain cover is the minimum number of chains that cover all elements of the poset
-// we can compute the minimum chain cover via maximum matching in a bipartite graph using Hopcroft-Karp algorithm
-int width_longest_antichain(const Poset2& P) {
-
-    // number of nodes
-    const int N = (int)P.cover_up.size();
-
-    // build bipartite graph: Left u -> Right v iff u < v in poset
-    std::vector<std::vector<int>> adjL(N);
-
-    // add edge u -> v iff u < v
-    for (int v = 0; v < N; ++v) {
-        boost::dynamic_bitset<> bs = P.reachability_down[v]; // u <= v
-        bs.reset(v);                                         // strict: u < v
-
-        for (auto u = bs.find_first();
-            u != boost::dynamic_bitset<>::npos;
-            u = bs.find_next(u))
-        {
-            adjL[(int)u].push_back(v);
-        }
-    }
-
-
-    // hopcroft–karp maximum matching
-    // pairU[u] = matched v for u in L, -1 if none
-    // pairV[v] = matched u for v in R, -1 if none
-    // dist[u] = distance in BFS
-    std::vector<int> pairU(N, -1), pairV(N, -1), dist(N);
-
-    // helper function: BFS to find augmenting paths
-    // start from all free left nodes in U 
-    // try to find shortest augmenting path to free right node in V
-    // returns true if we found an augmenting path
-    auto bfs = [&]() {
-        std::queue<int> q;
-        for (int u = 0; u < N; ++u) {
-            if (pairU[u] == -1) { dist[u] = 0; q.push(u); }
-            else dist[u] = -1;
-        }
-        bool found_free = false;
-        while (!q.empty()) {
-            int u = q.front(); q.pop();
-            for (int v : adjL[u]) {
-                int u2 = pairV[v];
-                if (u2 == -1) {
-                    found_free = true;
-                } else if (dist[u2] == -1) {
-                    dist[u2] = dist[u] + 1;
-                    q.push(u2);
-                }
-            }
-        }
-        return found_free;
-    };
-
-    // helper function: DFS to find and augment paths in a given layer? 
-    // returns true if we found an augmenting path starting from u
-    std::function<bool(int)> dfs = [&](int u) {
-        for (int v : adjL[u]) {
-            int u2 = pairV[v];
-            if (u2 == -1 || (dist[u2] == dist[u] + 1 && dfs(u2))) {
-                pairU[u] = v;
-                pairV[v] = u;
-                return true;
-            }
-        }
-        dist[u] = -1;
-        return false;
-    };
-
-    // main loop of Hopcroft-Karp algorithm
-    // compute maximum matching
-    int matching = 0;
-    while (bfs()) {
-        for (int u = 0; u < N; ++u) {
-            if (pairU[u] == -1 && dfs(u)) matching++;
-        }
-    }
-
-    // dilworth: width = N - |matching|
-    return N - matching;
-}
-
-
-
-
-
-// build DedekindCut object
-static DedekindCut build_cut(const Poset2& P, const std::vector<int>& gens) {
-    DedekindCut C;
-
-    C.generators = gens;
-
-    C.F      = filter_of_generators(P, gens);
-    C.Iprime = Iprime_from_filter(P, C.F);
-
-    const int N = (int)P.cover_up.size();
-
-    // minimal elements of F (F is an upset)
-    std::vector<char> inF(N, 0);
-    for (int f : C.F) inF[f] = 1;
-    C.minimal_elements_F = minimal_elements_upset(P, inF);
-
-    // maximal elements of I' (I' is a downset)
-    std::vector<char> inIp(N, 0);
-    for (int x : C.Iprime) inIp[x] = 1;
-    C.maximal_elements_Iprime = maximal_elements_downset(P, inIp);
-
-    return C;
-}
-
-// key = sorted minimal elements of F
-static std::vector<int> cut_key_from_cut(const DedekindCut& C) {
-    std::vector<int> k = C.minimal_elements_F;
-    std::sort(k.begin(), k.end());
-    return k;
-}
-
-
-// width (size of longest antichain) 
-int width_longest_antichain(const Poset2& P); 
-
-
-
-// computes all cuts of the DM completions usinsg backtracking over antichains
-// fix: use earlier stopping: if we do not find new cuts for k, we can stop
-// we think that this earlier stopping is correct but have not fully proven it yet
-std::vector<DedekindCut> compute_all_cuts(const Poset2& P) {
-    const int N = (int)P.cover_up.size();
-    const int w = width_longest_antichain(P);
-    // longest antichain has size w -> all cuts can be generated by <= w generators
-    std::cout << "[dedekind_cut] poset width (longest antichain size) = " << w << "\n";
-
-    std::vector<DedekindCut> cuts;
-
-    // We key cuts by the antichain of minimal elements of the filter (minF),
-    // because this antichain uniquely determines the DM cut.
-    std::unordered_set<std::vector<int>, VecHash> seen;
-
-    // current antichain being built
-    std::vector<int> cur;
-    // number of new cuts found for current k
-    int new_this_k = 0;
-
-    // helper to check if node v is incomparable to all in cur
-    auto incomparable_to_cur = [&](int v) -> bool {
-        for (int a : cur) {
-            if (pst2::leq(P, a, v) || pst2::leq(P, v, a)) return false; // comparable
-        }
+  std::function<bool(int)> dfs = [&](int u) {
+    for (int v : adjL[u]) {
+      int u2 = pairV[v];
+      if (u2 == -1 || (dist[u2] == dist[u] + 1 && dfs(u2))) {
+        pairU[u] = v;
+        pairV[v] = u;
         return true;
-    };
-
-    // backtracking over antichains of size k
-    // start: which node indices are we allowed to use next
-    std::function<void(int,int)> backtrack_k = [&](int start, int k) {
-        if ((int)cur.size() == k) {
-
-            // --- FAST PATH: compute only key (minF) first ---
-            // if already seen minF, we know full cut would be duplicate,
-            // so skip build full cut
-            std::vector<int> key = compute_minF(P, cur);
-            std::sort(key.begin(), key.end());
-
-            // check if we have seen this cut before
-            if (!seen.insert(key).second) {
-                return; // already seen -> skip full construction
-            }
-
-            // --- SLOW PATH: only for new keys, build full cut ---
-            DedekindCut C = build_cut(P, cur);
-
-            print_cut((int)cuts.size(), C);
-            cuts.push_back(std::move(C));
-            new_this_k++;
-
-            return;
-        }
-
-        // try adding each possible next node v -> build all antichains of size k
-        for (int v = start; v < N; ++v) {
-            if (!incomparable_to_cur(v)) continue;
-            cur.push_back(v);
-            backtrack_k(v + 1, k);
-            cur.pop_back();
-        }
-    };
-
-    // backtrack for k = 1 to w  and print new cuts found
-    for (int k = 1; k <= w; ++k) {
-        std::cout << "\n=== k = " << k << " generators (antichains) ===\n";
-        new_this_k = 0;
-        cur.clear();
-        backtrack_k(0, k);
-        std::cout << "New cuts for k=" << k << ": " << new_this_k << "\n";
-
-        // fix: use earlier stopping: if we do not find new cuts for k, we can stop
-        // we think that this earlier stopping is correct but have not fully proven it yet
-        if (new_this_k == 0) break;
+      }
     }
+    dist[u] = -1;
+    return false;
+  };
 
-    std::cout << "[dedekind_cut] total Dedekind cuts found: " << cuts.size() << "\n";
-    return cuts;
+  int matching = 0;
+  while (bfs()) {
+    for (int u = 0; u < N; ++u) {
+      if (pairU[u] == -1 && dfs(u)) matching++;
+    }
+  }
+
+  // Dilworth: width = N - |matching|
+  return N - matching;
 }
 
+// -------------------------
+// enumerate all cuts
+// -------------------------
 
-} // namespace pst2
+std::vector<DedekindCut> compute_all_cuts(const PosetView& P) {
+  const int N = P.n;
+  const int w = width_longest_antichain(P);
+  std::cout << "[dedekind_cut] poset width (longest antichain size) = " << w << "\n";
+
+  std::vector<DedekindCut> cuts;
+
+  // Key cuts by min(F), which uniquely identifies the DM cut.
+  std::unordered_set<std::vector<int>, VecHash> seen;
+
+  std::vector<int> cur;
+  int new_this_k = 0;
+
+  auto incomparable_to_cur = [&](int v) -> bool {
+    for (int a : cur) {
+      if (leq(P, a, v) || leq(P, v, a)) return false;
+    }
+    return true;
+  };
+
+  std::function<void(int,int)> backtrack_k = [&](int start, int k) {
+    if ((int)cur.size() == k) {
+      // FAST: compute key only
+      std::vector<int> key = cut_key_minF(P, cur);
+
+      if (!seen.insert(key).second) return;
+
+      // SLOW: build full cut only if new
+      DedekindCut C = build_cut(P, cur);
+      print_cut((int)cuts.size(), C);
+      cuts.push_back(std::move(C));
+      new_this_k++;
+      return;
+    }
+
+    for (int v = start; v < N; ++v) {
+      if (!incomparable_to_cur(v)) continue;
+      cur.push_back(v);
+      backtrack_k(v + 1, k);
+      cur.pop_back();
+    }
+  };
+
+  for (int k = 1; k <= w; ++k) {
+    std::cout << "\n=== k = " << k << " generators (antichains) ===\n";
+    new_this_k = 0;
+    cur.clear();
+    backtrack_k(0, k);
+    std::cout << "New cuts for k=" << k << ": " << new_this_k << "\n";
+
+    // early stop if no new cuts found
+    if (new_this_k == 0) break;
+  }
+
+  std::cout << "[dedekind_cut] total Dedekind cuts found: " << cuts.size() << "\n";
+  return cuts;
+}
+
+} // namespace dm
+

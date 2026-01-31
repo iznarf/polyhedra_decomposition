@@ -1,232 +1,331 @@
 #include "dedekind_cut_ui.h"
-#include "dedekind_cut.h"
-#include "dm_vis.h"
-#include "dedekind_poset.h"
-#include "poset2.h"
 
-#include "node_coloring.h"
-#include "vis_poset.h"
-#include "compare_nodes.h"
-#include "compare_cuts.h"
+#include "poset_view.h"
+#include "poset_utils.h"
+#include "meet_join.h"
+#include "poset_interval.h"
+
+#include "dedekind_cut.h"   
+
+#include "poset_vis.h"     
+
+#include "poset.h"          
+#include "poset2.h"        
 
 #include <imgui.h>
+
+#include <polyscope/polyscope.h>
+#include <polyscope/point_cloud.h>
+
 #include <glm/glm.hpp>
+
+#include <algorithm>
 #include <cstdlib>
+#include <string>
 #include <vector>
-#include <algorithm> 
+
+
+
+extern pst::Poset1  g_P1; // global poset1 
+extern pst2::Poset2 g_P2; // global poset2 
+
 
 namespace viz_poset {
 
+
+// ------------------------------------------------------------
+// helpers
+// ------------------------------------------------------------
 static int parse_int(const char* s) { return (s && *s) ? std::atoi(s) : 0; }
 
-void dedekind_cut_ui() {
+static std::string overlay_base_name(int whichPoset) {
+    return (whichPoset == 1) ? "P1 Dedekind cut" : "P2 Dedekind cut";
+}
 
+static const std::vector<glm::vec3>& base_positions(int whichPoset) {
+    return (whichPoset == 1) ? pst_vis::g_gridPos_P1 : pst_vis::g_gridPos_P2;
+}
 
-    static std::vector<pst2::DedekindCut> allCuts;
-    static pst2::DedekindPoset g_DM;  
-    static bool have_all =false;
+static void remove_pc_if_exists(const std::string& name) {
+    if (polyscope::hasPointCloud(name)) polyscope::removeStructure(name);
+}
 
-
-
-    if (ImGui::CollapsingHeader("dedekind single cut", 0)) {
-
-        // ------------------------------------------------------------
-        // Cut visualizer (x,y -> generated cut)
-        // ------------------------------------------------------------
-        ImGui::BulletText("I  ideal of {x,y} : green");
-        ImGui::BulletText("F  filter : black");
-        ImGui::BulletText("I' : pink");
-        ImGui::BulletText("{x,y} generators : yellow");
-        ImGui::Separator();
-
-        static char bufA[32] = "0";
-        static char bufB[32] = "0";
-        static int  show_mode = 2;          // 0=I, 1=F, 2=(I',F)
-        static bool have_cut  = false;
-
-        static int lastA = 0, lastB = 0;
-        static std::vector<int> cachedI, cachedF, cachedIp;
-
-        auto recompute = [&]() {
-            int nodeA = parse_int(bufA);
-            int nodeB = parse_int(bufB);
-
-            lastA = nodeA; lastB = nodeB;
-
-            const auto& P2 = get_poset2();
-            std::vector<int> gens = { nodeA, nodeB };
-
-            cachedI  = pst2::ideal_generated_by(P2, gens);
-            cachedF  = pst2::filter_of_generators(P2, gens);
-            cachedIp = pst2::Iprime_from_filter(P2, cachedF);
-
-
-            have_cut = true;
-        };
-
-        ImGui::InputText("x", bufA, sizeof(bufA));
-        ImGui::InputText("y", bufB, sizeof(bufB));
-
-        ImGui::RadioButton("show I", &show_mode, 0); ImGui::SameLine();
-        ImGui::RadioButton("show F", &show_mode, 1); ImGui::SameLine();
-        ImGui::RadioButton("show (I',F)", &show_mode, 2);
-
-        if (ImGui::Button("compute")) {
-            recompute();
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("clear")) {
-            have_cut = false;
-            reset_node_coloring();
-        }
-
-        if (have_cut) {
-            reset_node_coloring();
-
-            glm::vec3 green2 (0.30f, 1.00f, 0.40f);
-            glm::vec3 green3 (0.10f, 0.80f, 0.20f);
-
-            glm::vec3 pink2  (1.00f, 0.40f, 0.80f);
-            glm::vec3 pink3  (1.00f, 0.20f, 0.70f);
-
-            glm::vec3 black2 (0.05f, 0.05f, 0.05f);
-            glm::vec3 black3 (0.00f, 0.00f, 0.00f);
-
-            glm::vec3 yellow2(1.00f, 0.90f, 0.10f);
-            glm::vec3 yellow3(1.00f, 0.70f, 0.05f);
-
-            auto color_list = [&](const std::vector<int>& nodes, glm::vec3 c2, glm::vec3 c3) {
-                for (int v : nodes) color_node(v, c2, c3);
-            };
-
-            if (show_mode == 0) {
-                color_list(cachedI, green2, green3);
-            } else if (show_mode == 1) {
-                color_list(cachedF, black2, black3);
-            } else {
-                color_list(cachedIp, pink2, pink3);
-                color_list(cachedF,  black2, black3);
-            }
-
-            color_node(lastA, yellow2, yellow3);
-            color_node(lastB, yellow2, yellow3);
-
-            ImGui::Text("Sizes: |I|=%d  |F|=%d  |I'|=%d", (int)cachedI.size(), (int)cachedF.size(), (int)cachedIp.size());
-    
-            
-        }
-    }
-    ImGui::Separator();
-
-    // ------------------------------------------------------------
-    // DM lattice (compute + show/hide)
-    // ------------------------------------------------------------
-
-    if (ImGui::CollapsingHeader("dedekind completion in poset2", 0)) {
-        static bool dm_graph_built = false;
-        static int  dm_node        = 0;
-        static bool color_base_from_dm = true;
-
-        
-
-            if (ImGui::Button("compute completion")) {
-                const auto& P2 = get_poset2();
-
-                // compute once
-                allCuts = pst2::compute_all_cuts(P2);
-
-                // build DM poset (do NOT redeclare g_DM here!)
-                g_DM = pst2::build_dedekind_poset(P2, allCuts);
-                pst2::check_complete_lattice(g_DM, true);
-                have_all = !g_DM.cuts.empty();
-
-                viz_dm::build_and_register_dm_graph(g_DM);
-                dm_graph_built = true;
-
-                dm_node = 0;
-                viz_dm::set_selected_dm_node(dm_node);
-                viz_dm::set_dm_enabled(true);
-            }
-
-
-            if (!have_all) {
-                ImGui::TextUnformatted("(no cuts computed yet)");
-            } else {
-                ImGui::Text("Total cuts: %d", (int)g_DM.cuts.size());
-                ImGui::SliderInt("dm cut", &dm_node, 0, (int)g_DM.cuts.size() - 1);
-                viz_dm::set_selected_dm_node(dm_node);
-
-
-                if (dm_graph_built) {
-                    if (ImGui::Button(viz_dm::dm_enabled() ? "hide dm lattice" : "show dm lattice")) {
-                        viz_dm::set_dm_enabled(!viz_dm::dm_enabled());
-                    }
-                }
-
-                // turn on/off coloring from dm selection
-                if (ImGui::Checkbox("color poset from selected cut", &color_base_from_dm)) {
-                    if (!color_base_from_dm) {
-                        reset_node_coloring();
-                        // optional, if you want to restore your default poset visibility rules:
-                        // viz_poset::apply_poset_visibility_from_masks();
-                    }
-                }
-
-
-                if (const pst2::DedekindCut* Cp = viz_dm::selected_cut()) {
-                const auto& C = *Cp;
-
-                ImGui::Text("sizes: |F|=%d |I'|=%d  |minF|=%d |maxI'|=%d",
-                    (int)C.F.size(), (int)C.Iprime.size(),
-                    (int)C.minimal_elements_F.size(),
-                    (int)C.maximal_elements_Iprime.size());
-
-                // --- show elements (like you asked) ---
-                ImGui::TextUnformatted("min(F):");
-                for (int x : C.minimal_elements_F) { ImGui::SameLine(); ImGui::Text("%d", x); }
-
-                ImGui::TextUnformatted("max(I'):");
-                for (int x : C.maximal_elements_Iprime) { ImGui::SameLine(); ImGui::Text("%d", x); }
-
-                ImGui::TextUnformatted("max(I'): white, min(F): yellow, I': pink, F: black");
-
-                // --- coloring (match the other section's style) ---
-                if (color_base_from_dm) {
-                    reset_node_coloring();
-
-                    // same palette as your generator cut UI
-                    glm::vec3 pink2  (1.00f, 0.40f, 0.80f);
-                    glm::vec3 pink3  (1.00f, 0.20f, 0.70f);
-
-                    glm::vec3 black2 (0.05f, 0.05f, 0.05f);
-                    glm::vec3 black3 (0.00f, 0.00f, 0.00f);
-
-                    glm::vec3 yellow2(1.00f, 0.90f, 0.10f);
-                    glm::vec3 yellow3(1.00f, 0.70f, 0.05f);
-
-                    glm::vec3 white2(1.00f, 1.00f, 1.00f);
-                    glm::vec3 white3(1.00f, 1.00f, 1.00f);
-
-
-
-                    // base sets
-                    for (int v : C.Iprime) color_node(v, pink2, pink3);
-                    for (int v : C.F)      color_node(v, black2, black3);
-
-                    // highlight extrema (like "generators" highlight)
-                    for (int v : C.minimal_elements_F)        color_node(v, yellow2, yellow3);
-                    for (int v : C.maximal_elements_Iprime)  color_node(v, white2, white3);
-                }
-            }
-        }
-    }
-    ImGui::Separator();
-    viz_poset::compare_cuts_ui(g_DM);
-
+static void clear_cut_overlay(int whichPoset) {
+    const std::string base = overlay_base_name(whichPoset);
+    remove_pc_if_exists(base + " gens");
+    remove_pc_if_exists(base + " I");
+    remove_pc_if_exists(base + " F");
+    remove_pc_if_exists(base + " Iprime");
+    remove_pc_if_exists(base + " minF");
+    remove_pc_if_exists(base + " maxIprime");
 }
 
 
-   
+static void register_role_pc(int whichPoset,
+                             const std::string& role,
+                             const std::vector<int>& nodes,
+                             glm::vec3 color,
+                             float radius)
+{
+    const auto& pos = base_positions(whichPoset);
+    if (pos.empty() || nodes.empty()) return;
+
+    std::vector<glm::vec3> sub;
+    sub.reserve(nodes.size());
+    for (int v : nodes) {
+        if (0 <= v && v < (int)pos.size()) sub.push_back(pos[v]);
+    }
+    if (sub.empty()) return;
+
+    const std::string name = overlay_base_name(whichPoset) + " " + role;
+    remove_pc_if_exists(name);
+
+    auto* pc = polyscope::registerPointCloud(name, sub);
+    pc->setPointRadius(radius, false);
+    pc->setPointColor(color);
+    pc->setEnabled(true);
+}
+
+// ------------------------------------------------------------
+// set computations using PosetView
+// ------------------------------------------------------------
+
+// we only need this function for visualization
+// Ideal generated by gens: I = { x | x <= g for some g in gens } (down-closure of gens)
+static std::vector<int> ideal_generated_by(const PosetView& P, const std::vector<int>& gens) {
+    pst::Bitset I(P.n);
+
+    if (P.reachability_down) {
+        // reachability_down[g] contains {x | x <= g}
+        for (int g : gens) {
+            if (g < 0 || g >= P.n) continue;
+            I |= (*P.reachability_down)[g];
+        }
+    } else {
+        for (int x = 0; x < P.n; ++x) {
+            for (int g : gens) {
+                if (g < 0 || g >= P.n) continue;
+                if (leq(P, x, g)) { I.set(x); break; }
+            }
+        }
+    }
+
+    return pst_interval::nodes_from_bitset(I);
+}
+
+
+// Filter generated by gens: F = { x | g <= x for ALL g in gens } (common upper bounds)
+static std::vector<int> filter_common_upper_bounds(const PosetView& P, const std::vector<int>& gens) {
+    pst::Bitset F = meet_join::common_upper_bounds(P, gens);
+    return pst_interval::nodes_from_bitset(F);
+}
+
+// ------------------------------------------------------------
+// UI 
+// ------------------------------------------------------------
+void dedekind_cut_ui() {
+
+    ImGui::SetNextItemOpen(false, ImGuiCond_Once);
+    if (!ImGui::CollapsingHeader("Dedekind cut", 0)) {
+        return;
+    }
+
+    ImGui::TextUnformatted("Cut generator: computes the Dedekind cut (I',F) generated by {x,y}.");
+
+    // -------------------------
+    // Choose poset
+    // -------------------------
+    static int whichPoset = 2; // 1=P1, 2=P2
+    ImGui::RadioButton("P1", &whichPoset, 1); ImGui::SameLine();
+    ImGui::RadioButton("P2", &whichPoset, 2);
+
+    // clear overlays when switching poset
+    static int prevWhich = whichPoset;
+    if (prevWhich != whichPoset) {
+        clear_cut_overlay(prevWhich);
+        prevWhich = whichPoset;
+    }
+
+    PosetView V = (whichPoset == 1) ? view_of(g_P1) : view_of(g_P2);
+
+    const auto& pos = base_positions(whichPoset);
+    const bool ready = ((int)pos.size() == V.n);
+
+    if (!ready) {
+        ImGui::Separator();
+        ImGui::TextUnformatted("Not ready: register/visualize the poset grid first.");
+        ImGui::BeginDisabled(true);
+    }
+
+    // -------------------------
+    // State: last computed cut (for toggling + displaying ids)
+    // -------------------------
+    static bool have_cut = false;
+    static int last_a = 0;
+    static int last_b = 0;
+
+    static dm_completion::DedekindCut lastCut;
+    static std::vector<int> lastI; // ideal
+
+    // -------------------------
+    // Inputs
+    // -------------------------
+    ImGui::Separator();
+
+    static char bufA[32] = "0";
+    static char bufB[32] = "0";
+    ImGui::InputText("x", bufA, IM_ARRAYSIZE(bufA));
+    ImGui::InputText("y", bufB, IM_ARRAYSIZE(bufB));
+
+    const int a = parse_int(bufA);
+    const int b = parse_int(bufB);
+
+    auto valid = [&](int v) { return 0 <= v && v < V.n; };
+    if (!valid(a) || !valid(b)) {
+        ImGui::Text("Valid node ids: 0 .. %d", V.n - 1);
+    }
+
+    // -------------------------
+    // Toggles (live visibility)
+    // -------------------------
+    static bool show_gens     = true;
+    static bool show_I        = true;
+    static bool show_F        = true;
+    static bool show_Iprime   = true;
+    static bool show_minF     = true;
+    static bool show_maxIprim = true;
+
+    ImGui::Separator();
+    ImGui::TextUnformatted("Show:");
+    ImGui::Checkbox("gens (yellow)", &show_gens); ImGui::SameLine();
+    ImGui::Checkbox("I (green)", &show_I); ImGui::SameLine();
+    ImGui::Checkbox("F (black)", &show_F); 
+    ImGui::Checkbox("I' (pink)", &show_Iprime); ImGui::SameLine();
+    ImGui::Checkbox("min(F) (purple)", &show_minF); ImGui::SameLine();
+    ImGui::Checkbox("max(I') (white)", &show_maxIprim);
+
+    // Helper: enable/disable an existing overlay point cloud
+    auto set_enabled = [&](const char* role, bool on) {
+        std::string name = overlay_base_name(whichPoset) + " " + role;
+        if (polyscope::hasPointCloud(name)) {
+            polyscope::getPointCloud(name)->setEnabled(on);
+        }
+    };
+
+    // Apply visibility every frame (after you have created overlays once)
+    set_enabled("gens", show_gens);
+    set_enabled("I", show_I);
+    set_enabled("F", show_F);
+    set_enabled("Iprime", show_Iprime);
+    set_enabled("minF", show_minF);
+    set_enabled("maxIprime", show_maxIprim);
+
+
+    // -------------------------
+    // Legend
+    // -------------------------
+
+    auto legend_row = [](const char* label, glm::vec3 c) {
+        ImGui::ColorButton(
+            label,
+            ImVec4(c.r, c.g, c.b, 1.0f),
+            ImGuiColorEditFlags_NoTooltip |
+            ImGuiColorEditFlags_NoDragDrop |
+            ImGuiColorEditFlags_NoPicker,
+            ImVec2(18, 18)
+        );
+        ImGui::SameLine();
+        ImGui::TextUnformatted(label);
+    };
+
+
+    // -------------------------
+    // Actions
+    // -------------------------
+    ImGui::Separator();
+
+    if (ImGui::Button("show cut")) {
+        clear_cut_overlay(whichPoset);
+
+        last_a = a;
+        last_b = b;
+
+        std::vector<int> gens = { a, b };
+
+        // compute cut + ideal
+        lastCut = dm_completion::build_cut(V, gens);
+        lastI   = ideal_generated_by(V, gens);
+
+        have_cut = true;
+
+      
+
+        // register overlays (all of them once; visibility controlled by checkboxes)
+        register_role_pc(whichPoset, "gens",      lastCut.generators,              glm::vec3(1.f, 0.9f, 0.1f), 0.017f);
+        register_role_pc(whichPoset, "I",         lastI,                           glm::vec3(0.30f, 1.00f, 0.40f), 0.014f);
+        register_role_pc(whichPoset, "F",         lastCut.F,                       glm::vec3(0.10f, 0.10f, 0.10f), 0.014f);
+        register_role_pc(whichPoset, "Iprime",    lastCut.Iprime,                  glm::vec3(1.00f, 0.40f, 0.80f), 0.014f);
+        register_role_pc(whichPoset, "minF",      lastCut.minimal_elements_F,      glm::vec3(0.6f, 0.2f, 0.8f), 0.017f);
+        register_role_pc(whichPoset, "maxIprime", lastCut.maximal_elements_Iprime, glm::vec3(1.f, 1.f, 1.f),    0.017f);
+
+        // apply current visibility states immediately
+        set_enabled("gens", show_gens);
+        set_enabled("I", show_I);
+        set_enabled("F", show_F);
+        set_enabled("Iprime", show_Iprime);
+        set_enabled("minF", show_minF);
+        set_enabled("maxIprime", show_maxIprim);
+    }
+
+    ImGui::SameLine();
+    if (ImGui::Button("clear")) {
+        clear_cut_overlay(whichPoset);
+        have_cut = false;
+    }
+
+    // -------------------------
+    // Show node IDs for min(F) and max(I')
+    // -------------------------
+    ImGui::Separator();
+    if (have_cut) {
+        ImGui::Text("gens: {%d, %d}", last_a, last_b);
+
+        ImGui::Text("min(F) node ids:");
+        if (lastCut.minimal_elements_F.empty()) {
+            ImGui::TextUnformatted("  (empty)");
+        } else {
+            // show as a single wrapped line
+            std::string s;
+            for (int i = 0; i < (int)lastCut.minimal_elements_F.size(); ++i) {
+                s += std::to_string(lastCut.minimal_elements_F[i]);
+                if (i + 1 < (int)lastCut.minimal_elements_F.size()) s += ", ";
+            }
+            ImGui::TextWrapped("%s", s.c_str());
+        }
+
+        ImGui::Text("max(I') node ids:");
+        if (lastCut.maximal_elements_Iprime.empty()) {
+            ImGui::TextUnformatted("  (empty)");
+        } else {
+            std::string s;
+            for (int i = 0; i < (int)lastCut.maximal_elements_Iprime.size(); ++i) {
+                s += std::to_string(lastCut.maximal_elements_Iprime[i]);
+                if (i + 1 < (int)lastCut.maximal_elements_Iprime.size()) s += ", ";
+            }
+            ImGui::TextWrapped("%s", s.c_str());
+        }
+    } else {
+        ImGui::TextUnformatted("No cut computed yet.");
+    }
+
+    // end disabled region
+    if (!ready) {
+        ImGui::EndDisabled();
+        return;
+    }
+}
+
+
 
 } // namespace viz_poset
 
