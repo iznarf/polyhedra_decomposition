@@ -77,7 +77,7 @@ static void build_completion_vis() {
   //   P1 -> red, P2 -> green
   const glm::vec3 oldColor = (g_selectedPoset == 0)
       ? glm::vec3(1.f, 0.f, 0.f)   // P1 red
-      : glm::vec3(0.f, 1.f, 0.f);  // P2 green
+      : glm::vec3(13.0f / 255.0f, 100.0f / 255.0f, 13.0f / 255.0f);  // P2 green
 
   // NEW completion nodes always blue
   const glm::vec3 newColor = glm::vec3(0.f, 0.f, 1.f);

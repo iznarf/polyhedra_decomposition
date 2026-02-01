@@ -91,7 +91,7 @@ namespace pst_vis_ui {
 
         if (ImGui::Button("Visualize poset 2")) {
             if (g_has_P1 && g_has_P2) {
-                pst_vis::register_poset2(g_in, g_P1, g_P2, glm::vec3(0.f, 0.f, 0.f), 0.2f, 0.2f, glm::vec3(0.0f, 1.0f, 0.0f));
+                pst_vis::register_poset2(g_in, g_P1, g_P2, glm::vec3(0.f, 0.f, 0.f), 0.2f, 0.2f, glm::vec3(13.0f / 255.0f, 100.0f / 255.0f, 13.0f / 255.0f));
                 showP2_2D = true;
                 showP2_3D = true;
                 showP2_grid = true;
