@@ -32,3 +32,5 @@ C:/Users/franz/Desktop/polyhedra_decomposition/build-msvc/flip_algorithm/CMakeFi
 C:/Users/franz/Desktop/polyhedra_decomposition/build-msvc/flip_algorithm/CMakeFiles/INSTALL.dir
 C:/Users/franz/Desktop/polyhedra_decomposition/build-msvc/poset_visualization/CMakeFiles/poset_visualization.dir
 C:/Users/franz/Desktop/polyhedra_decomposition/build-msvc/poset_visualization/CMakeFiles/INSTALL.dir
+C:/Users/franz/Desktop/polyhedra_decomposition/build-msvc/completion/CMakeFiles/completion.dir
+C:/Users/franz/Desktop/polyhedra_decomposition/build-msvc/completion/CMakeFiles/INSTALL.dir

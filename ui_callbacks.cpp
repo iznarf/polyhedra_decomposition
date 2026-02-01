@@ -17,7 +17,7 @@
 void combined_ui_callback() {
 
     // ------------------------------------------------------------
-    // Flip algorithm (grouped)
+    // Flip algorithm 
     // ------------------------------------------------------------
     if (ImGui::CollapsingHeader("FLIP ALGORITHM")) {
 

@@ -26,6 +26,8 @@ add_subdirectory(flip_algorithm)
 
 add_subdirectory(poset_visualization)
 
+add_subdirectory(completion)
+
 add_executable(main
     main.cpp
     input.cpp
@@ -40,12 +42,6 @@ add_executable(main
     moebius.cpp
     moebius_ui.cpp
     compare_nodes.cpp
-    dedekind_cut.cpp
-    dedekind_cut_ui.cpp
-    dedekind_poset.cpp
-    dedekind_completion.cpp
-    dm_vis.cpp
-
 )
 
 target_include_directories(main PRIVATE
@@ -56,12 +52,17 @@ target_include_directories(main PRIVATE
     ${CMAKE_SOURCE_DIR}/poset_visualization
 )
 
+target_include_directories(main PRIVATE
+    ${CMAKE_SOURCE_DIR}/completion
+)
+
 target_include_directories(main PRIVATE ${portable-file-dialogs_SOURCE_DIR})
 
 
 target_link_libraries(main PRIVATE
     flip_algorithm
     poset_visualization
+    completion
     polyscope
     CGAL::CGAL
 )

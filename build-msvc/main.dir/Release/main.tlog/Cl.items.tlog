@@ -11,8 +11,3 @@ C:\Users\franz\Desktop\polyhedra_decomposition\meet_join_ui.cpp;C:\Users\franz\D
 C:\Users\franz\Desktop\polyhedra_decomposition\moebius.cpp;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\main.dir\Release\moebius.obj
 C:\Users\franz\Desktop\polyhedra_decomposition\moebius_ui.cpp;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\main.dir\Release\moebius_ui.obj
 C:\Users\franz\Desktop\polyhedra_decomposition\compare_nodes.cpp;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\main.dir\Release\compare_nodes.obj
-C:\Users\franz\Desktop\polyhedra_decomposition\dedekind_cut.cpp;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\main.dir\Release\dedekind_cut.obj
-C:\Users\franz\Desktop\polyhedra_decomposition\dedekind_cut_ui.cpp;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\main.dir\Release\dedekind_cut_ui.obj
-C:\Users\franz\Desktop\polyhedra_decomposition\dedekind_poset.cpp;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\main.dir\Release\dedekind_poset.obj
-C:\Users\franz\Desktop\polyhedra_decomposition\dedekind_completion.cpp;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\main.dir\Release\dedekind_completion.obj
-C:\Users\franz\Desktop\polyhedra_decomposition\dm_vis.cpp;C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\main.dir\Release\dm_vis.obj

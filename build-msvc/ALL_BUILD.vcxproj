@@ -173,6 +173,10 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </ProjectReference>
+    <ProjectReference Include="C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\completion\completion.vcxproj">
+      <Project>{23FCBDDF-C5AC-3E4F-B4C4-DE96474349CD}</Project>
+      <Name>completion</Name>
+    </ProjectReference>
     <ProjectReference Include="C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\flip_algorithm\flip_algorithm.vcxproj">
       <Project>{29DD3F31-8DA0-3DD2-A5C4-0A3E465D7DEC}</Project>
       <Name>flip_algorithm</Name>
