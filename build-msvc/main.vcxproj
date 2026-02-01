@@ -414,6 +414,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\dedekind_cut_ui.cpp" />
     <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\dedekind_poset.cpp" />
     <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\dedekind_completion.cpp" />
+    <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\dm_vis.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\ZERO_CHECK.vcxproj">

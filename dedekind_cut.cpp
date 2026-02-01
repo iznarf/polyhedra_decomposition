@@ -25,21 +25,39 @@ struct VecHash {
 // -------------------------
 // printing
 // -------------------------
+// idx is the cut index -> id in the poset then 
 void print_cut(int idx, const DedekindCut& C) {
   std::cout << "  [" << idx << "] gens={";
   for (int i = 0; i < (int)C.generators.size(); ++i) {
-    std::cout << C.generators[i] << (i + 1 < (int)C.generators.size() ? "," : "");
+    std::cout << C.generators[i]
+              << (i + 1 < (int)C.generators.size() ? "," : "");
   }
+
   std::cout << "}  minF={";
   for (int i = 0; i < (int)C.minimal_elements_F.size(); ++i) {
-    std::cout << C.minimal_elements_F[i] << (i + 1 < (int)C.minimal_elements_F.size() ? "," : "");
+    std::cout << C.minimal_elements_F[i]
+              << (i + 1 < (int)C.minimal_elements_F.size() ? "," : "");
   }
+
   std::cout << "}  maxI'={";
   for (int i = 0; i < (int)C.maximal_elements_Iprime.size(); ++i) {
-    std::cout << C.maximal_elements_Iprime[i] << (i + 1 < (int)C.maximal_elements_Iprime.size() ? "," : "");
+    std::cout << C.maximal_elements_Iprime[i]
+              << (i + 1 < (int)C.maximal_elements_Iprime.size() ? "," : "");
   }
-  std::cout << "}  |F|=" << C.F.size() << " |I'|=" << C.Iprime.size() << "\n";
+
+  std::cout << "}  |F|=" << C.F.size()
+            << " |I'|=" << C.Iprime.size() << "\n";
+
+  // aligned exactly under '[' of [idx]
+  std::cout << "  I'={";
+  for (int i = 0; i < (int)C.Iprime.size(); ++i) {
+    std::cout << C.Iprime[i]
+              << (i + 1 < (int)C.Iprime.size() ? "," : "");
+  }
+  std::cout << "}\n";
 }
+
+
 
 // -------------------------
 // core helpers 

@@ -44,6 +44,7 @@ add_executable(main
     dedekind_cut_ui.cpp
     dedekind_poset.cpp
     dedekind_completion.cpp
+    dm_vis.cpp
 
 )
 

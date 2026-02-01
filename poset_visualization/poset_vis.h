@@ -31,6 +31,32 @@ extern float g_gridZSpacing_P2;
 // example: show all P1 2D meshes 
 void set_trivis_enabled(const pst_vis::TriVisResult& R, bool show2d, bool show3d);
 
+
+
+void register_poset_as_grid(const std::string& name,
+                            int number_of_nodes,
+                            const std::vector<int>& levels,
+                            glm::vec3 center,
+                            float xSpacing,
+                            float zSpacing,
+                            glm::vec3 color);
+                            
+
+// register poset nodes as a colored grid (per-node colors), returns computed positions
+std::vector<glm::vec3> register_poset_as_grid_colored(
+    const std::string& name,
+    int number_of_nodes,
+    const std::vector<int>& levels,
+    const glm::vec3& center,
+    float xSpacing,
+    float zSpacing,
+    const std::vector<glm::vec3>& colors,
+    float pointRadius = 0.01f
+);
+
+
+void register_cover_up_as_edges(const std::string& name, const std::vector<glm::vec3>& pos, const std::vector<std::vector<int>>& cover_up, glm::vec3 color);
+
 // register P1 poset: triangulation, grid, edges
 void register_poset1(const df::InputData& D, const pst::Poset1& P1,const glm::vec3& center, float xSpacing, float zSpacing, glm::vec3 color);
 

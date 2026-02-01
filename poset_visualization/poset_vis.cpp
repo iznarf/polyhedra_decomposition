@@ -68,10 +68,8 @@ void register_cover_up_as_edges(const std::string& name, const std::vector<glm::
 
 
 
-// -------------------------------------------------------------
 
-
-static std::vector<glm::vec3> compute_grid_pos(const std::vector<int>& levels,glm::vec3 center,float xSpacing,float zSpacing){
+std::vector<glm::vec3> compute_grid_pos(const std::vector<int>& levels,glm::vec3 center,float xSpacing,float zSpacing){
     auto byLevel = pst_vis::group_nodes_by_level(levels);
     return pst_vis::grid_for_poset_nodes(byLevel, (int)levels.size(), center, xSpacing, zSpacing);
 }
@@ -205,6 +203,56 @@ void register_poset2(const df::InputData& D, const pst::Poset1& P1, const pst2::
 
     register_cover_up_as_edges("P2 edges", pos, P2.cover_up, color);
 }
+
+// ---------------------------------------------------------------------
+// register poset as a colored grid (per-node colors), returns computed positions
+// this is for the completion: new nodes are dark blue, old nodes are in the color scheme used elsewhere
+std::vector<glm::vec3> register_poset_as_grid_colored(
+    const std::string& name,
+    int number_of_nodes,
+    const std::vector<int>& levels,
+    const glm::vec3& center,
+    float xSpacing,
+    float zSpacing,
+    const std::vector<glm::vec3>& colors,
+    float pointRadius
+) {
+    if ((int)levels.size() != number_of_nodes) {
+        std::cerr << "[poset_vis] levels.size() != number_of_nodes\n";
+        return {};
+    }
+    if ((int)colors.size() != number_of_nodes) {
+        std::cerr << "[poset_vis] colors.size() != number_of_nodes\n";
+        return {};
+    }
+
+    // same placement logic as everywhere else:
+    // levels -> group by level -> grid positions
+    auto byLevel = group_nodes_by_level(levels);
+    auto pos = grid_for_poset_nodes(byLevel, number_of_nodes, center, xSpacing, zSpacing);
+
+    if (polyscope::hasPointCloud(name))
+        polyscope::removeStructure(name);
+
+    auto* pc = polyscope::registerPointCloud(name, pos);
+    pc->setPointRadius(pointRadius, false);
+
+    // scalar quantities
+    pc->addScalarQuantity("level", levels);
+
+    std::vector<double> nodeIds;
+    nodeIds.reserve(number_of_nodes);
+    for (int i = 0; i < number_of_nodes; ++i) nodeIds.push_back((double)i);
+    pc->addScalarQuantity("node id", nodeIds);
+
+    // per-node colors
+    auto* cq = pc->addColorQuantity("old/new", colors);
+    cq->setEnabled(true);
+
+    return pos;
+}
+
+
 
 
 

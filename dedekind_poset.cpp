@@ -67,7 +67,7 @@ DedekindPoset build_dedekind_poset(const PosetView& P, std::vector<dm_completion
     D.reachability_up    = pst::compute_reachability(out, D.topo_up);
     D.cover_up = pst::transitive_reduction(out, D.reachability_up);
 
-    // build cover_dn from cover_up
+    // build cover_down from cover_up
     for (int u = 0; u < M; ++u) {
         for (int v : D.cover_up[u]) {
             if (0 <= v && v < M) D.cover_down[v].push_back(u);
