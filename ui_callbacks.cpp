@@ -10,6 +10,7 @@
 #include "compare_nodes.h"
 #include "dedekind_cut_ui.h"
 #include "dedekind_completion.h"
+#include "dedekind_envelope_ui.h"
 
 
 #include <imgui.h>
@@ -87,6 +88,11 @@ void combined_ui_callback() {
 
         ImGui::PushID("DedekindCompletion");
         dedekind_completion_ui();
+        ImGui::PopID();
+
+        ImGui::Separator();
+        ImGui::PushID("DedekindEnvelope");
+        dm_completion::dedekind_envelope_ui();
         ImGui::PopID();
         
     }

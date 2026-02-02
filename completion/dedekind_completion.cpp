@@ -20,7 +20,7 @@
 extern pst::Poset1  g_P1;
 extern pst2::Poset2 g_P2;
 
-static dm_completion::DedekindPoset g_completion;
+dm_completion::DedekindPoset g_completion;
 static bool g_hasCompletion = false;
 static std::string g_status;
 
@@ -28,7 +28,7 @@ static int  g_selectedPoset = 0; // 0=P1, 1=P2
 static bool g_showCompletionNodes = false;
 static bool g_showCompletionEdges = false;
 
-// match your other poset spacing defaults
+// match other poset spacing defaults
 static float g_compXSpacing = 0.2f;
 static float g_compZSpacing = 0.2f;
 

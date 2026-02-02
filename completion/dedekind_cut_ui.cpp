@@ -212,7 +212,7 @@ void dedekind_cut_ui() {
         }
     };
 
-    // Apply visibility every frame (after you have created overlays once)
+    // Apply visibility every frame 
     set_enabled("gens", show_gens);
     set_enabled("I", show_I);
     set_enabled("F", show_F);
