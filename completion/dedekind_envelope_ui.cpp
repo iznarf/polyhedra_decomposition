@@ -254,7 +254,7 @@ void dedekind_envelope_ui() {
 
     if (0 <= cut_id && cut_id < C) {
         // get node ids in max (I')    
-        const auto& nodes = g_completion.cuts[cut_id].maximal_elements_Iprime;
+        const auto& nodes = g_completion.cuts[cut_id].minimal_elements_F;
 
         // build 2D and 3D meshes from P1 step history 
         build_cut_node_meshes_from_P1_history(nodes, "Cut " + std::to_string(cut_id));
@@ -271,9 +271,10 @@ void dedekind_envelope_ui() {
         // compute upper envelope
         // this is reconstructed as triangle mesh with per triangle tags
         env_max::Mesh out;
-        if (env_max::compute_upper_envelope(tris, out)) {
+        if (env_max::compute_lower_envelope(tris, out)) {
             register_envelope_meshes("envelope 2D"," envelope 3D",out);
         }
+
     }
   }
 

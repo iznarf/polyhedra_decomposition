@@ -11,6 +11,19 @@
 #include <CGAL/Triangulation_face_base_with_info_2.h>
 #include <CGAL/Polygon_2.h>
 
+
+#include <polyscope/polyscope.h>
+#include <polyscope/curve_network.h>
+
+#include <glm/glm.hpp>
+#include <array>
+#include <map>
+#include <vector>
+#include <string>
+
+
+
+
 #include <map>
 #include <queue>
 #include <stdexcept>
@@ -121,7 +134,7 @@ static P3 eval_on_triangle_plane(const EK::Triangle_3& tri, const P2& p){
   return P3(x, y, z);
 }
 
-// Map 2D exact point -> output vertex index
+// Map 2D exact point -> output vertex index to use them as keys in map 
 struct Less_xy {
   EK::Less_xy_2 less;
   bool operator()(const P2& a, const P2& b) const { return less(a, b); }
@@ -144,6 +157,58 @@ static int get_or_add_vertex(const P2& p2,
     return idx;
 }
 
+
+// Helpers to visualize envelope results in polyscope
+static int get_or_add_2d_point_vertex(
+    const P2& p,
+    std::map<P2, int, Less_xy>& vmap,
+    std::vector<glm::vec3>& V,
+    float y_plane,
+    float x_offset) {
+    auto it = vmap.find(p);
+    if (it != vmap.end()) return it->second;
+
+    const float x = (float)CGAL::to_double(p.x());
+    const float z = (float)CGAL::to_double(p.y());
+
+    const int idx = (int)V.size();
+    V.push_back(glm::vec3(x + x_offset, y_plane, z));
+    vmap.emplace(p, idx);
+    return idx;
+}
+
+
+// Visualize envelope diagram as planar edges in the x-z plane
+static void register_envelope_diagram_edges_2d(
+    const std::string& name,
+    const Envelope_diagram_2& diag,
+    glm::vec3 color = glm::vec3(0,0,0),
+    float radius = 0.0015f,
+    float y_plane = 0.0f,
+    float x_offset = 0.0f) {
+    std::vector<glm::vec3> V;
+    std::vector<std::array<int, 2>> E;
+    std::map<P2, int, Less_xy> vmap;
+
+    for (auto he = diag.halfedges_begin(); he != diag.halfedges_end(); ++he) {
+        if (!he->is_fictitious() && he < he->twin()) {
+            const P2 s = he->source()->point();
+            const P2 t = he->target()->point();
+
+            const int i0 = get_or_add_2d_point_vertex(s, vmap, V, y_plane, x_offset);
+            const int i1 = get_or_add_2d_point_vertex(t, vmap, V, y_plane, x_offset);
+
+            if (i0 != i1) E.push_back({i0, i1});
+        }
+    }
+
+    if (polyscope::hasCurveNetwork(name)) polyscope::removeStructure(name);
+    auto* cn = polyscope::registerCurveNetwork(name, V, E);
+    cn->setColor(color);
+    cn->setRadius(radius, false);
+    cn->setEnabled(true);
+}
+
 } // namespace
 
 
@@ -154,7 +219,7 @@ static int get_or_add_vertex(const P2& p2,
 // out.F = list of triangle faces as indices into out.V
 // out.tri_tag = per triangle face tag {mesh_id, face_id} indicating from which input triangle it was induced
 
-bool compute_upper_envelope(const std::vector<InputTriangle>& tris, Mesh& out){
+bool compute_lower_envelope(const std::vector<InputTriangle>& tris, Mesh& out){
     out = Mesh{};
     if (tris.empty()) return true;
 
@@ -181,8 +246,13 @@ bool compute_upper_envelope(const std::vector<InputTriangle>& tris, Mesh& out){
         // result is a planar subdivision whose faces are labeled by the triangle that has maximum height on that region
         // diagram now contains the planar subdivision of the upper envelope projection with all faces labeled by their inducing triangle surface
         Envelope_diagram_2 diag;
-        CGAL::upper_envelope_3(surfaces.begin(), surfaces.end(), diag);
-        
+        CGAL::lower_envelope_3(surfaces.begin(), surfaces.end(), diag);
+
+
+        // show planar subdivision edges
+        register_envelope_diagram_edges_2d("envelope diagram", diag,glm::vec3(1,0,0),0.005f,0.0f, 2.0f);
+
+
         // 3) For each bounded face: triangulate its 2D region and lift on inducing triangle
         // iterate over all envelope regions, take boundary polygon and read which input triangle it is 
 
@@ -212,6 +282,9 @@ bool compute_upper_envelope(const std::vector<InputTriangle>& tris, Mesh& out){
         // we store it by static_cast to the base
         const BaseTraits::Xy_monotone_surface_3& base_xys = xys;
         const EK::Triangle_3 base_tri = base_xys; // relies on conversion provided by traits
+
+
+
 
         // triangulate polygon via constrained delaunay triangulation 
         // CHANGE: use Tri2, not CDT 
@@ -256,5 +329,6 @@ bool compute_upper_envelope(const std::vector<InputTriangle>& tris, Mesh& out){
         return false;
     }
 }
+
 
 } // namespace env_max

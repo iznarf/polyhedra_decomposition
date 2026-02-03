@@ -206,7 +206,7 @@ void register_poset2(const df::InputData& D, const pst::Poset1& P1, const pst2::
 
 // ---------------------------------------------------------------------
 // register poset as a colored grid (per-node colors), returns computed positions
-// this is for the completion: new nodes are dark blue, old nodes are in the color scheme used elsewhere
+// this is for the completion: new nodes are dark blue, old nodes are in the color used elsewhere
 std::vector<glm::vec3> register_poset_as_grid_colored(
     const std::string& name,
     int number_of_nodes,

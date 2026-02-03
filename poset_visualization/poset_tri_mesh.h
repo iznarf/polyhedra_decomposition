@@ -1,7 +1,7 @@
 #pragma once
 
-#include "input.h"   // <-- IMPORTANT (df::InputData, df::Tri2)
-#include "poset.h"   // <-- IMPORTANT (pst::Poset1)
+#include "input.h"   
+#include "poset.h"   
 
 #include <polyscope/surface_mesh.h>
 #include <glm/vec3.hpp>

@@ -46,6 +46,7 @@ struct InputTriangle {
 
 // Compute the upper envelope mesh of the given triangles.
 // Returns true on success.
-bool compute_upper_envelope(const std::vector<InputTriangle>& tris, Mesh& out);
+bool compute_lower_envelope(const std::vector<InputTriangle>& tris, Mesh& out);
+
 
 } // namespace env_max
