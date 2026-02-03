@@ -4,9 +4,12 @@
 
 #include <array>
 #include <vector>
+#include <string>
+#include <glm/glm.hpp>
 
 
 namespace env_max {
+
 
 // ---------------------------
 // output mesh
@@ -41,6 +44,16 @@ struct InputTriangle {
 // Returns true on success.
 bool compute_lower_envelope(const std::vector<InputTriangle>& tris, Mesh& out);
 
+bool compute_and_register_lower_envelope_diagram_edges_2d(
+    const std::string& name,
+    const std::vector<InputTriangle>& tris,
+    glm::vec3 color,
+    float radius,
+    float y_plane,
+    float x_offset,
+    float z_offset,
+    float scale
+);
 
 
 

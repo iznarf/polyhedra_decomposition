@@ -410,7 +410,6 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\moebius.cpp" />
     <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\moebius_ui.cpp" />
     <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\compare_nodes.cpp" />
-    <ClCompile Include="C:\Users\franz\Desktop\polyhedra_decomposition\envelope.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\ZERO_CHECK.vcxproj">

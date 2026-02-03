@@ -42,7 +42,6 @@ add_executable(main
     moebius.cpp
     moebius_ui.cpp
     compare_nodes.cpp
-    envelope.cpp
 )
 
 target_include_directories(main PRIVATE

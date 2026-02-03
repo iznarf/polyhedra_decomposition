@@ -5,6 +5,7 @@
 #include "dedekind_poset.h"
 
 #include "poset_vis.h"
+#include "completion_vis.h"   // <--- NEW
 
 #include <imgui.h>
 #include <glm/glm.hpp>
@@ -16,6 +17,8 @@
 #include <string>
 #include <vector>
 #include <iostream>
+
+extern df::InputData g_in;   // <--- NEW: needed for completion_vis::build
 
 extern pst::Poset1  g_P1;
 extern pst2::Poset2 g_P2;
@@ -32,11 +35,9 @@ bool g_hasCompletion_P2 = false;
 static std::string g_status_P1;
 static std::string g_status_P2;
 
-// which completion are we currently VISUALIZING in this UI?
+// which completion are we currently COMPUTING in this UI?
 // 0 = P1, 1 = P2
 static int  g_selectedPoset = 0;
-static bool g_showCompletionNodes = false;
-static bool g_showCompletionEdges = false;
 
 // match other poset spacing defaults
 static float g_compXSpacing = 0.2f;
@@ -44,6 +45,13 @@ static float g_compZSpacing = 0.2f;
 
 // fixed center for completion visualization
 static constexpr glm::vec3 center = glm::vec3(0.f, 0.f, 0.f);
+
+// ------------------------------------------------------------
+// visualization toggles (separate for P1 completion and P2 completion)
+// ------------------------------------------------------------
+static bool g_vis_grid[2]  = {false, false};
+static bool g_vis_edges[2] = {false, false};
+static bool g_vis_2d[2]    = {false, false};
 
 // ------------------------------
 // views
@@ -69,89 +77,12 @@ static dm_completion::DedekindPoset& current_completion() {
   return (g_selectedPoset == 0) ? g_completion_P1 : g_completion_P2;
 }
 
-static const dm_completion::DedekindPoset& current_completion_const() {
-  return (g_selectedPoset == 0) ? g_completion_P1 : g_completion_P2;
-}
-
 static bool& current_hasCompletion_flag() {
   return (g_selectedPoset == 0) ? g_hasCompletion_P1 : g_hasCompletion_P2;
 }
 
 static std::string& current_status_string() {
   return (g_selectedPoset == 0) ? g_status_P1 : g_status_P2;
-}
-
-static std::string completion_nodes_name() {
-  return (g_selectedPoset == 0) ? "P1 completion nodes" : "P2 completion nodes";
-}
-static std::string completion_edges_name() {
-  return (g_selectedPoset == 0) ? "P1 completion edges" : "P2 completion edges";
-}
-
-// ------------------------------
-// cleanup
-// ------------------------------
-static void remove_completion_vis() {
-  const char* nodeNames[] = {"P1 completion nodes", "P2 completion nodes"};
-  const char* edgeNames[] = {"P1 completion edges", "P2 completion edges"};
-  for (auto* n : nodeNames) if (polyscope::hasPointCloud(n))   polyscope::removeStructure(n);
-  for (auto* e : edgeNames) if (polyscope::hasCurveNetwork(e)) polyscope::removeStructure(e);
-}
-
-// ------------------------------
-// build vis for CURRENT selected poset
-// ------------------------------
-static void build_completion_vis_for_selected() {
-
-  const bool has = (g_selectedPoset == 0) ? g_hasCompletion_P1 : g_hasCompletion_P2;
-  if (!has) return;
-
-  const auto& D = current_completion_const();
-  const int M = (int)D.cuts.size();
-  if (M <= 0) return;
-
-  // OLD color matches selected input poset:
-  //   P1 -> red, P2 -> green
-  const glm::vec3 oldColor = (g_selectedPoset == 0)
-      ? glm::vec3(1.f, 0.f, 0.f)   // P1 red
-      : glm::vec3(13.0f / 255.0f, 100.0f / 255.0f, 13.0f / 255.0f);  // P2 green
-
-  // NEW completion nodes always blue
-  const glm::vec3 newColor = glm::vec3(0.f, 0.f, 1.f);
-
-  // build per-node colors using rule: |max(I')| == 1  <=> old/original
-  std::vector<glm::vec3> colors;
-  colors.reserve((size_t)M);
-
-  for (int i = 0; i < M; ++i) {
-    const auto& maxIp = D.cuts[i].maximal_elements_Iprime;
-    const bool isOld = ((int)maxIp.size() == 1);
-    colors.push_back(isOld ? oldColor : newColor);
-  }
-
-  const std::string node_names = completion_nodes_name();
-  const std::string edge_names = completion_edges_name();
-
-  // nodes (grid)
-  std::vector<glm::vec3> pos =
-      pst_vis::register_poset_as_grid_colored(
-          node_names,
-          M,
-          D.levels,
-          center,
-          g_compXSpacing,
-          g_compZSpacing,
-          colors,
-          0.01f);
-
-  // edges in black
-  pst_vis::register_cover_up_as_edges(edge_names, pos, D.cover_up, glm::vec3(0.f, 0.f, 0.f));
-
-  // toggles
-  if (polyscope::hasPointCloud(node_names))
-    polyscope::getPointCloud(node_names)->setEnabled(g_showCompletionNodes);
-  if (polyscope::hasCurveNetwork(edge_names))
-    polyscope::getCurveNetwork(edge_names)->setEnabled(g_showCompletionEdges);
 }
 
 // ============================================================
@@ -164,20 +95,11 @@ void dedekind_completion_ui() {
 
   ImGui::SeparatorText("Dedekind completion");
 
-  ImGui::TextUnformatted("Input poset:");
-  int beforeSel = g_selectedPoset;
+  ImGui::TextUnformatted("Input poset for computing completion:");
   ImGui::RadioButton("P1", &g_selectedPoset, 0);
   ImGui::SameLine();
   ImGui::RadioButton("P2", &g_selectedPoset, 1);
   ImGui::Spacing();
-
-  // switching which completion you're looking at:
-  // do NOT delete the other completion anymore — only hide visuals
-  if (beforeSel != g_selectedPoset) {
-    g_showCompletionNodes = false;
-    g_showCompletionEdges = false;
-    remove_completion_vis(); // remove both, we'll rebuild selected when needed
-  }
 
   if (ImGui::Button("Compute completion")) {
 
@@ -203,40 +125,100 @@ void dedekind_completion_ui() {
     status += "Max level: " + std::to_string(D.maxLevel) + "\n";
   }
 
-  // show the status of the currently selected completion
-  std::string& status = current_status_string();
-  if (!status.empty()) {
-    ImGui::Separator();
-    ImGui::TextUnformatted(status.c_str());
-  }
+  // show both status blocks (nice when you compute both)
+  if (!g_status_P1.empty() || !g_status_P2.empty()) {
+    ImGui::SeparatorText("Status");
 
-  const bool hasSelected = (g_selectedPoset == 0) ? g_hasCompletion_P1 : g_hasCompletion_P2;
-  if (!hasSelected) return;
+    if (!g_status_P1.empty()) {
+      ImGui::TextUnformatted("P1 completion:");
+      ImGui::TextUnformatted(g_status_P1.c_str());
+    }
+    if (!g_status_P2.empty()) {
+      ImGui::TextUnformatted("P2 completion:");
+      ImGui::TextUnformatted(g_status_P2.c_str());
+    }
+  }
 
   ImGui::SeparatorText("Completion visualization");
 
-  /*
-  ImGui::SliderFloat("x spacing", &g_compXSpacing, 0.02f, 1.0f, "%.3f");
-  ImGui::SliderFloat("z spacing", &g_compZSpacing, 0.02f, 1.0f, "%.3f");
-  */
+  // ------------------------------------------------------------------
+  // P1 completion controls
+  // ------------------------------------------------------------------
+  ImGui::TextUnformatted("P1 completion:");
+  ImGui::BeginDisabled(!g_hasCompletion_P1);
+  if (ImGui::Button("Visualize completion of P1")) {
+    // build everything for P1 completion
+    completion_vis::build(
+      0,
+      g_in,
+      g_P1,
+      g_P2,
+      g_completion_P1,
+      center,
+      g_compXSpacing,
+      g_compZSpacing
+    );
 
-  if (ImGui::Button("Show completion")) {
-    remove_completion_vis(); // remove both old ones to avoid duplicates
-    g_showCompletionNodes = true;
-    g_showCompletionEdges = true;
-    build_completion_vis_for_selected();
+    // default enable grid+edges; keep 2D as user set
+    g_vis_grid[0]  = true;
+    g_vis_edges[0] = true;
+    // g_vis_2d[0] unchanged
+    completion_vis::set_enabled(0, g_vis_grid[0], g_vis_edges[0], g_vis_2d[0]);
   }
+  ImGui::EndDisabled();
 
-  ImGui::Checkbox("Show completion nodes", &g_showCompletionNodes);
-  ImGui::SameLine();
-  ImGui::Checkbox("Show completion edges", &g_showCompletionEdges);
+  bool changedP1 = false;
+  ImGui::BeginDisabled(!g_hasCompletion_P1);
+  changedP1 |= ImGui::Checkbox("P1 grid", &g_vis_grid[0]); ImGui::SameLine();
+  changedP1 |= ImGui::Checkbox("P1 edges", &g_vis_edges[0]); ImGui::SameLine();
+  changedP1 |= ImGui::Checkbox("P1 2D meshes", &g_vis_2d[0]);
+  if (changedP1) completion_vis::set_enabled(0, g_vis_grid[0], g_vis_edges[0], g_vis_2d[0]);
 
-  // live-enable/disable without rebuild
-  const std::string node_names = completion_nodes_name();
-  const std::string edge_names = completion_edges_name();
-  if (polyscope::hasPointCloud(node_names))
-    polyscope::getPointCloud(node_names)->setEnabled(g_showCompletionNodes);
-  if (polyscope::hasCurveNetwork(edge_names))
-    polyscope::getCurveNetwork(edge_names)->setEnabled(g_showCompletionEdges);
+  if (ImGui::Button("Clear P1 completion")) {
+    completion_vis::clear(0);
+  }
+  ImGui::EndDisabled();
+
+  ImGui::Separator();
+
+  // ------------------------------------------------------------------
+  // P2 completion controls
+  // ------------------------------------------------------------------
+  ImGui::TextUnformatted("P2 completion:");
+  ImGui::BeginDisabled(!g_hasCompletion_P2);
+  if (ImGui::Button("Visualize completion of P2")) {
+    completion_vis::build(
+      1,
+      g_in,
+      g_P1,
+      g_P2,
+      g_completion_P2,
+      center,
+      g_compXSpacing,
+      g_compZSpacing
+    );
+
+    g_vis_grid[1]  = true;
+    g_vis_edges[1] = true;
+    completion_vis::set_enabled(1, g_vis_grid[1], g_vis_edges[1], g_vis_2d[1]);
+  }
+  ImGui::EndDisabled();
+
+  bool changedP2 = false;
+  ImGui::BeginDisabled(!g_hasCompletion_P2);
+  changedP2 |= ImGui::Checkbox("P2 grid", &g_vis_grid[1]); ImGui::SameLine();
+  changedP2 |= ImGui::Checkbox("P2 edges", &g_vis_edges[1]); ImGui::SameLine();
+  changedP2 |= ImGui::Checkbox("P2 2D meshes", &g_vis_2d[1]);
+  if (changedP2) completion_vis::set_enabled(1, g_vis_grid[1], g_vis_edges[1], g_vis_2d[1]);
+
+  if (ImGui::Button("Clear P2 completion")) {
+    completion_vis::clear(1);
+  }
+  ImGui::EndDisabled();
+
+  // Optional: clear both
+  ImGui::Separator();
+  if (ImGui::Button("Clear ALL completion visuals")) {
+    completion_vis::clear_all();
+  }
 }
-

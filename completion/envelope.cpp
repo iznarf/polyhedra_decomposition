@@ -178,27 +178,58 @@ static int get_or_add_2d_point_vertex(
 }
 
 
-// Visualize envelope diagram as planar edges in the x-z plane
 void register_envelope_diagram_edges_2d(
     const std::string& name,
     const Envelope_diagram_2& diag,
-    glm::vec3 color = glm::vec3(0,0,0),
-    float radius = 0.0015f,
-    float y_plane = 0.0f,
-    float x_offset = 0.0f) {
+    glm::vec3 color,
+    float radius,
+    float y_plane,
+    float x_offset,
+    float z_offset,
+    float scale)
+{
     std::vector<glm::vec3> V;
     std::vector<std::array<int, 2>> E;
     std::map<P2, int, Less_xy> vmap;
 
+    auto get_vid = [&](const P2& p) -> int {
+        auto it = vmap.find(p);
+        if (it != vmap.end()) return it->second;
+
+        const double x = CGAL::to_double(p.x());
+        const double z = CGAL::to_double(p.y()); // (x,y) in diagram == (x,z) in world
+
+        const int idx = (int)V.size();
+        V.push_back(glm::vec3((float)x, y_plane, (float)z)); // store UNTRANSFORMED first
+        vmap.emplace(p, idx);
+        return idx;
+    };
+
+    // halfedges -> edges
     for (auto he = diag.halfedges_begin(); he != diag.halfedges_end(); ++he) {
-        if (!he->is_fictitious() && he < he->twin()) {
-            const P2 s = he->source()->point();
-            const P2 t = he->target()->point();
+        if (he->is_fictitious()) continue;
+        if (!(he < he->twin())) continue; // keep one direction
 
-            const int i0 = get_or_add_2d_point_vertex(s, vmap, V, y_plane, x_offset);
-            const int i1 = get_or_add_2d_point_vertex(t, vmap, V, y_plane, x_offset);
+        const P2 s = he->source()->point();
+        const P2 t = he->target()->point();
 
-            if (i0 != i1) E.push_back({i0, i1});
+        const int a = get_vid(s);
+        const int b = get_vid(t);
+        if (a != b) E.push_back({a, b});
+    }
+
+    // center in XZ, then scale, then translate to (x_offset, z_offset)
+    if (!V.empty()) {
+        glm::vec2 c(0.f);
+        for (auto& p : V) c += glm::vec2(p.x, p.z);
+        c /= (float)V.size();
+
+        for (auto& p : V) {
+            glm::vec2 q = glm::vec2(p.x, p.z) - c;
+            q *= scale;
+            p.x = q.x + x_offset;
+            p.z = q.y + z_offset;
+            p.y = y_plane;
         }
     }
 
@@ -209,7 +240,104 @@ void register_envelope_diagram_edges_2d(
     cn->setEnabled(true);
 }
 
-} // namespace
+}
+
+
+
+bool compute_and_register_lower_envelope_diagram_edges_2d(
+    const std::string& name,
+    const std::vector<InputTriangle>& tris,
+    glm::vec3 color,
+    float radius,
+    float y_plane,
+    float x_offset,
+    float z_offset,
+    float scale
+) {
+    if (tris.empty()) {
+        if (polyscope::hasCurveNetwork(name)) polyscope::removeStructure(name);
+        return true;
+    }
+
+    try {
+        // 1) build CGAL surfaces with tags
+        std::vector<Surface_3> surfaces;
+        surfaces.reserve(tris.size());
+
+        for (const auto& t : tris) {
+            const P3 a(EK::FT(t.p0[0]), EK::FT(t.p0[1]), EK::FT(t.p0[2]));
+            const P3 b(EK::FT(t.p1[0]), EK::FT(t.p1[1]), EK::FT(t.p1[2]));
+            const P3 c(EK::FT(t.p2[0]), EK::FT(t.p2[1]), EK::FT(t.p2[2]));
+            EK::Triangle_3 tri(a, b, c);
+            surfaces.emplace_back(tri, t.tag);
+        }
+
+        // 2) compute lower envelope diagram (planar subdivision)
+        Envelope_diagram_2 diag;
+        CGAL::lower_envelope_3(surfaces.begin(), surfaces.end(), diag);
+
+        // 2.5) compute centroid of all diagram edge endpoints (in diagram coords)
+        double cx = 0.0, cy = 0.0;
+        int cnt = 0;
+        for (auto he = diag.halfedges_begin(); he != diag.halfedges_end(); ++he) {
+            if (!he->is_fictitious() && he < he->twin()) {
+                const P2 s = he->source()->point();
+                const P2 t = he->target()->point();
+
+                cx += CGAL::to_double(s.x()); cy += CGAL::to_double(s.y()); cnt++;
+                cx += CGAL::to_double(t.x()); cy += CGAL::to_double(t.y()); cnt++;
+            }
+        }
+        if (cnt > 0) { cx /= (double)cnt; cy /= (double)cnt; }
+
+        // 3) convert diagram edges to a Polyscope curve network in the XZ plane
+        std::vector<glm::vec3> V;
+        std::vector<std::array<int, 2>> E;
+        std::map<P2, int, Less_xy> vmap;
+
+        auto get_or_add_vertex = [&](const P2& p) -> int {
+            auto it = vmap.find(p);
+            if (it != vmap.end()) return it->second;
+
+            const double px = CGAL::to_double(p.x());
+            const double py = CGAL::to_double(p.y());
+
+            // center -> scale -> translate into grid cell
+            const float x = (float)((px - cx) * (double)scale) + x_offset;
+            const float z = (float)((py - cy) * (double)scale) + z_offset;
+
+            const int idx = (int)V.size();
+            V.emplace_back(x, y_plane, z);
+            vmap.emplace(p, idx);
+            return idx;
+        };
+
+        for (auto he = diag.halfedges_begin(); he != diag.halfedges_end(); ++he) {
+            if (!he->is_fictitious() && he < he->twin()) {
+                const P2 s = he->source()->point();
+                const P2 t = he->target()->point();
+
+                const int i0 = get_or_add_vertex(s);
+                const int i1 = get_or_add_vertex(t);
+                if (i0 != i1) E.push_back({ i0, i1 });
+            }
+        }
+
+        // replace old
+        if (polyscope::hasCurveNetwork(name)) polyscope::removeStructure(name);
+
+        auto* cn = polyscope::registerCurveNetwork(name, V, E);
+        cn->setColor(color);
+        cn->setRadius(radius, false);
+        cn->setEnabled(true);
+
+        return true;
+    } catch (...) {
+        return false;
+    }
+}
+
+
 
 
 
@@ -250,7 +378,7 @@ bool compute_lower_envelope(const std::vector<InputTriangle>& tris, Mesh& out){
 
 
         // show planar subdivision edges
-        register_envelope_diagram_edges_2d("envelope diagram", diag,glm::vec3(1,0,0),0.005f,0.0f, 2.0f);
+        register_envelope_diagram_edges_2d("envelope diagram", diag,glm::vec3(1,0,0),0.005f,0.0f, 0.0f, 0.0f, 1.0f);
 
 
         // 3) For each bounded face: triangulate its 2D region and lift on inducing triangle
