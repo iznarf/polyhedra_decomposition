@@ -179,7 +179,7 @@ static int get_or_add_2d_point_vertex(
 
 
 // Visualize envelope diagram as planar edges in the x-z plane
-static void register_envelope_diagram_edges_2d(
+void register_envelope_diagram_edges_2d(
     const std::string& name,
     const Envelope_diagram_2& diag,
     glm::vec3 color = glm::vec3(0,0,0),

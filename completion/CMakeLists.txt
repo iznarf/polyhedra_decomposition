@@ -4,6 +4,7 @@ add_library(completion STATIC
     dedekind_cut_ui.cpp
     dedekind_cut.cpp
     dedekind_envelope_ui.cpp
+    envelope_vis.cpp
 )
 
 target_include_directories(completion PUBLIC
