@@ -5,8 +5,7 @@
 #include "dedekind_poset.h"
 
 #include "poset_vis.h"
-#include "completion_vis.h"   // <--- NEW
-
+#include "completion_vis.h"   
 #include <imgui.h>
 #include <glm/glm.hpp>
 
@@ -18,7 +17,7 @@
 #include <vector>
 #include <iostream>
 
-extern df::InputData g_in;   // <--- NEW: needed for completion_vis::build
+extern df::InputData g_in;   
 
 extern pst::Poset1  g_P1;
 extern pst2::Poset2 g_P2;
@@ -35,7 +34,7 @@ bool g_hasCompletion_P2 = false;
 static std::string g_status_P1;
 static std::string g_status_P2;
 
-// which completion are we currently COMPUTING in this UI?
+// which completion are we currently computing 
 // 0 = P1, 1 = P2
 static int  g_selectedPoset = 0;
 
@@ -216,9 +215,11 @@ void dedekind_completion_ui() {
   }
   ImGui::EndDisabled();
 
-  // Optional: clear both
+  /*
+  // clear both
   ImGui::Separator();
   if (ImGui::Button("Clear ALL completion visuals")) {
     completion_vis::clear_all();
   }
+  */
 }

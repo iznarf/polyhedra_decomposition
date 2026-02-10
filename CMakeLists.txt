@@ -42,7 +42,11 @@ add_executable(main
     moebius.cpp
     moebius_ui.cpp
     compare_nodes.cpp
+    regularity_check.cpp
 )
+
+
+target_include_directories(main PRIVATE ${CMAKE_SOURCE_DIR})
 
 target_include_directories(main PRIVATE
     ${CMAKE_SOURCE_DIR}/flip_algorithm

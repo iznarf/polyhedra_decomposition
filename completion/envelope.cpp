@@ -242,7 +242,7 @@ void register_envelope_diagram_edges_2d(
 
 }
 
-
+// currently changed to upper!! 
 
 bool compute_and_register_lower_envelope_diagram_edges_2d(
     const std::string& name,
@@ -274,7 +274,7 @@ bool compute_and_register_lower_envelope_diagram_edges_2d(
 
         // 2) compute lower envelope diagram (planar subdivision)
         Envelope_diagram_2 diag;
-        CGAL::lower_envelope_3(surfaces.begin(), surfaces.end(), diag);
+        CGAL::upper_envelope_3(surfaces.begin(), surfaces.end(), diag);
 
         // 2.5) compute centroid of all diagram edge endpoints (in diagram coords)
         double cx = 0.0, cy = 0.0;

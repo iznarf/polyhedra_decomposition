@@ -66,7 +66,7 @@ CGAL::Orientation oriented_height_sign(
 
 
 
-/*
+
 
 static inline double debug_height(double x, double y) {
     constexpr double eps = 1e-9;
@@ -101,10 +101,13 @@ P3 lift_regular(const P2_weighted& p) {
     return P3(x, y, z);
 }
 
-*/
 
 
 
+
+
+// normal lift function 
+/*
 
 P3 lift(const P2& p) {
     return P3(p.x(), p.y(), p.x()*p.x() + p.y()*p.y());
@@ -114,6 +117,23 @@ P3 lift_regular(const P2_weighted& p) {
     return P3(p.x(), p.y(), p.x()*p.x() + p.y()*p.y());
 }
 
+*/
+
+
+/*
+// moment curve lift: (t, t^2, t^3) => height function h(t)=t^3
+
+P3 lift(const P2& p) {
+    double t = p.x();           // because p = (t, t^2)
+    return P3(p.x(), p.y(), t*t*t);
+}
+
+P3 lift_regular(const P2_weighted& p) {
+    double t = p.x();           // because p = (t, t^2)
+    return P3(p.x(), p.y(), t*t*t);
+}
+
+*/
 
 
 }

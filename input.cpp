@@ -156,11 +156,52 @@ InputData make_random_input(int n_points, unsigned seed) {
     }
     */
 
+    /*
+    // six points this should be a tamari lattice
+    D.points2d = {
+        P2(-2,2),
+        P2(-1.6,0.6),
+        P2(-0.5,0),
+        P2(0.6,0.1),
+        P2(1.4,0.5),
+        P2(2,2.2)
+    };
+    */
+
+
+    /*
+    // cyclic polytope C(6,2): points on moment curve (t, t^2)
+    D.points2d = {
+        P2(-1.5,  1.5*1.5),
+        P2(-1.25,  1.25*1.25),
+        P2(-0.5,  0.5*0.5),
+        P2(0.5,  0.5*0.5),
+        P2(1.25, 1.25*1.25),
+        P2(1.5,  1.5*1.5),
+    };
+    */
+
+    
+
+
+
+
+
+
+    /* 5 point example with one insertion 
+    D.points2d = {
+        P2(-1,1),
+        P2(1,1),
+        P2(-1,-1),
+        P2(1,-1),
+        P2(-0.25,0.3)
+    };
+    */
     
 
     
-    /*
     
+    // smallest non regular example
     D.points2d = {
         P2(-2,1), //lift to z = 2
         P2(2,1),   //lift to z = 2
@@ -169,9 +210,9 @@ InputData make_random_input(int n_points, unsigned seed) {
         P2(-0.8,1.7),   //lift to z = 1
         P2(1,1.5)     //lift to z = 1
     };
-
     
-    */
+    
+    
 
     // 2) make an global index array [0,...,n-1]
     std::vector<std::size_t> global_indices(D.points2d.size());
@@ -296,7 +337,7 @@ InputData make_random_input(int n_points, unsigned seed) {
     D.tri_lower.insert(lower_pairs.begin(), lower_pairs.end());
 
     
-    /*
+    
     // make lower triangulation be the (unweighted) copy of the regular triangulation
     df::Convert_vertex_RT_to_Tri2 cv;
     df::Convert_face_RT_to_Tri2   cf;
@@ -311,7 +352,7 @@ InputData make_random_input(int n_points, unsigned seed) {
     D.tri_lower.set_infinite_vertex(inf_v);
     CGAL_assertion(D.tri_lower.is_valid());
     
-    */
+    
     
     return D;
 }
@@ -526,7 +567,10 @@ bool lifted_triangulations_intersect(const InputData& D)
 InputData make_random_valid_input(int n_points, unsigned seed_start)
 {
     unsigned seed = seed_start;
+    //InputData D = make_random_input(n_points, seed);
+    //return D;
 
+    
     while (true) {
         InputData D = make_random_input(n_points, seed);
 
@@ -535,19 +579,19 @@ InputData make_random_valid_input(int n_points, unsigned seed_start)
         } else {
             std::cout << "[check] vertices ARE in convex position\n";
         }
-
+        
         if (!lifted_triangulations_intersect(D)) {
             std::cout << "[input] using seed " << seed
                       << " (lifted triangulations are non-intersecting)\n";
 
             return D;
         }
-
-
+        
         std::cout << "[input] seed " << seed
                   << " gives intersecting lifts, trying next seed...\n";
         ++seed;
     }
+    
 }
 
 } // namespace df

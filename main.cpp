@@ -26,6 +26,7 @@
 #include "compare.h"
 #include "poset2.h"
 #include "dedekind_cut.h"
+#include "regularity_check.h"
 
 
 static void glfw_error_silencer(int error, const char* description) {
@@ -52,7 +53,7 @@ int main() {
     // INPUT DATA GENERATION ------------------------------------------------------------
 
     // number of vertices in triangulation
-    int n_points = 7;
+    int n_points = 6;
     // random seed to start point generation
     unsigned seed0 = 1516235435;
     g_in = df::make_random_valid_input(n_points, seed0);
@@ -112,6 +113,10 @@ int main() {
 
     g_P1 = pst::build_poset1(poset_nodes);
     g_has_P1 = true;
+
+ 
+
+    regcheck::check_poset_regularity_wsl(in, g_P1, 1e6, "wsl", true);
 
 
     // register poset for visualization
