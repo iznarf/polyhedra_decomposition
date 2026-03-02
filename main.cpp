@@ -28,6 +28,12 @@
 #include "dedekind_cut.h"
 #include "regularity_check.h"
 
+#include "input_ear_star.h"
+#include "ear_star_vis.h"
+#include "poset_ear_star.h"
+#include "poset_ear_star_vis.h"
+#include "ear_star_tri_word.h"
+
 
 static void glfw_error_silencer(int error, const char* description) {
     // do nothing
@@ -115,8 +121,9 @@ int main() {
     g_has_P1 = true;
 
  
+    // check regularity of all nodes in P1 by calling M2 via WSL and print summary table
 
-    regcheck::check_poset_regularity_wsl(in, g_P1, 1e6, "wsl", true);
+    //regcheck::check_poset_regularity_wsl(in, g_P1, 1e6, "wsl", true);
 
 
     // register poset for visualization
@@ -176,6 +183,88 @@ int main() {
     // register poset2 edge network for visualization
     //viz_poset::register_poset2_cover_edges(P2);
 
+    // ------------------------------------------------------------------------------------------------------
+
+    // EAR STAR BIJECTIONN TEST
+
+    // make input struct for ear star: convex n-gon with one point inside
+    
+    int n_boundary = 5; 
+
+    InputData_ear_star in_ear_star = make_input_ear_star(n_boundary, 1.0);
+
+    // build points2d array indexed by global id (0..n plus star=n)
+    df::vertex_id max_id = 0;
+    for (auto const& lp : in_ear_star.points) {
+        max_id = std::max(max_id, lp.id);
+    }
+
+    std::vector<df::P2> points2d(max_id + 1);
+    for (auto const& lp : in_ear_star.points) {
+        points2d.at(lp.id) = lp.p;
+    }
+
+    // visualize triangulation
+    register_triangulation_as_mesh_ear_star(in_ear_star.tri_start, points2d, "triangulation");
+
+
+    // build ear star poset
+
+
+    df::vertex_id star_id = in_ear_star.points.back().id;
+    df::P2 star_point     = in_ear_star.points.back().p;
+
+    // Build flip poset
+    pst_es::FlipPoset P =
+        pst_es::build_flip_poset(
+            in_ear_star.tri_start,
+            star_id,
+            star_point
+        );
+
+    std::cout << "-----------------------------------\n";
+    std::cout << "Number of triangulations found: "
+            << P.nodes.size() << "\n";
+    std::cout << "-----------------------------------\n";
+
+    // Print all signatures
+    for (std::size_t i = 0; i < P.nodes.size(); ++i) {
+        std::cout << "Triangulation " << i << ":\n";
+
+        for (auto const& e : P.nodes[i].sig.edges) {
+            std::cout << "  (" << e[0] << "," << e[1] << ")\n";
+        }
+
+        std::cout << "\n";
+    }
+
+    // poset ear star visualization: register every triangulation in the poset as a separate mesh in polyscope, laid out on a grid by translating the vertex positions
+    pst_es_viz::register_poset_triangulations_grid(
+        in_ear_star.tri_start,
+        P,
+        points2d,
+        star_id,
+        star_point,
+        "earstar",
+        2.0  // spacing 
+    );
+
+
+
+
+   
+
+    earstar::print_words_for_poset(
+        in_ear_star.tri_start,
+        P,
+        n_boundary,
+        star_id,
+        star_point
+    );
+
+
+
+    // -----------------------------------------------------------------------------------------------------
     polyscope::state::userCallback = combined_ui_callback;
 
     polyscope::show();

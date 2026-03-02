@@ -23,8 +23,6 @@
 
 namespace df {
 
-    // simple cartesian kernel with double would be better 
-    //using K  = CGAL::Simple_cartesian<double>; // cartesian kernel
     using K  = CGAL::Exact_predicates_inexact_constructions_kernel;
     //using K = CGAL::Exact_predicates_exact_constructions_kernel;
     using P2 = K::Point_2;

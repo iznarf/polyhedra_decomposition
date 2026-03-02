@@ -64,10 +64,10 @@ CGAL::Orientation oriented_height_sign(
 
 
 
+/*
 
 
-
-
+// lift for non-regular example 6 points 
 static inline double debug_height(double x, double y) {
     constexpr double eps = 1e-9;
     auto eq = [eps](double a, double b) { return std::abs(a - b) < eps; };
@@ -101,13 +101,13 @@ P3 lift_regular(const P2_weighted& p) {
     return P3(x, y, z);
 }
 
-
+*/ 
 
 
 
 
 // normal lift function 
-/*
+
 
 P3 lift(const P2& p) {
     return P3(p.x(), p.y(), p.x()*p.x() + p.y()*p.y());
@@ -117,10 +117,14 @@ P3 lift_regular(const P2_weighted& p) {
     return P3(p.x(), p.y(), p.x()*p.x() + p.y()*p.y());
 }
 
-*/
+
+
+
+
 
 
 /*
+
 // moment curve lift: (t, t^2, t^3) => height function h(t)=t^3
 
 P3 lift(const P2& p) {

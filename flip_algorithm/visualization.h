@@ -19,6 +19,7 @@ void register_regular_triangulation_as_mesh(const df::Tri2Regular& tri,
                                     const std::string& name_lifted);
 
 
+
 // collect global vertex IDs in the same order as used for Polyscope registration
 std::vector<df::vertex_id> present_ids(const df::Tri2& t);
 

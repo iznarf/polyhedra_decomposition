@@ -157,6 +157,7 @@ InputData make_random_input(int n_points, unsigned seed) {
     */
 
     /*
+    
     // six points this should be a tamari lattice
     D.points2d = {
         P2(-2,2),
@@ -166,8 +167,8 @@ InputData make_random_input(int n_points, unsigned seed) {
         P2(1.4,0.5),
         P2(2,2.2)
     };
+    
     */
-
 
     /*
     // cyclic polytope C(6,2): points on moment curve (t, t^2)
@@ -179,8 +180,8 @@ InputData make_random_input(int n_points, unsigned seed) {
         P2(1.25, 1.25*1.25),
         P2(1.5,  1.5*1.5),
     };
+    
     */
-
     
 
 
@@ -199,7 +200,7 @@ InputData make_random_input(int n_points, unsigned seed) {
     */
     
 
-    
+    /*
     
     // smallest non regular example
     D.points2d = {
@@ -211,7 +212,7 @@ InputData make_random_input(int n_points, unsigned seed) {
         P2(1,1.5)     //lift to z = 1
     };
     
-    
+    */
     
 
     // 2) make an global index array [0,...,n-1]
@@ -591,6 +592,7 @@ InputData make_random_valid_input(int n_points, unsigned seed_start)
                   << " gives intersecting lifts, trying next seed...\n";
         ++seed;
     }
+    
     
 }
 

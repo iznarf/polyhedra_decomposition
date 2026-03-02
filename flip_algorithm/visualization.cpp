@@ -94,8 +94,7 @@ std::vector<std::array<int,3>> faces_from_triangles_regular(const df::Tri2Regula
 
 
 // we use this function to give each vertex the global index as a scalar quantity in polyscope
-static void add_global_id_quantity(polyscope::SurfaceMesh* mesh,
-                                   const std::vector<df::vertex_id>& ids) {
+void add_global_id_quantity(polyscope::SurfaceMesh* mesh, const std::vector<df::vertex_id>& ids) {
     // polyscope scalar quantities are doubles, so just cast
     std::vector<double> values;
     values.reserve(ids.size());

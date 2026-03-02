@@ -28,6 +28,8 @@ add_subdirectory(poset_visualization)
 
 add_subdirectory(completion)
 
+add_subdirectory(ear_star_algorithm)
+
 add_executable(main
     main.cpp
     input.cpp
@@ -60,6 +62,11 @@ target_include_directories(main PRIVATE
     ${CMAKE_SOURCE_DIR}/completion
 )
 
+target_include_directories(main PRIVATE
+    ${CMAKE_SOURCE_DIR}/ear_star_algorithm
+)
+
+
 target_include_directories(main PRIVATE ${portable-file-dialogs_SOURCE_DIR})
 
 
@@ -67,6 +74,7 @@ target_link_libraries(main PRIVATE
     flip_algorithm
     poset_visualization
     completion
+    ear_star_algorithm
     polyscope
     CGAL::CGAL
 )

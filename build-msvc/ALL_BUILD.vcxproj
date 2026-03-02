@@ -177,6 +177,10 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <Project>{23FCBDDF-C5AC-3E4F-B4C4-DE96474349CD}</Project>
       <Name>completion</Name>
     </ProjectReference>
+    <ProjectReference Include="C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\ear_star_algorithm\ear_star_algorithm.vcxproj">
+      <Project>{4736B90C-5D0B-3513-A24E-8B3AD8ECB4CD}</Project>
+      <Name>ear_star_algorithm</Name>
+    </ProjectReference>
     <ProjectReference Include="C:\Users\franz\Desktop\polyhedra_decomposition\build-msvc\flip_algorithm\flip_algorithm.vcxproj">
       <Project>{29DD3F31-8DA0-3DD2-A5C4-0A3E465D7DEC}</Project>
       <Name>flip_algorithm</Name>

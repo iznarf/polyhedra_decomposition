@@ -26,6 +26,9 @@
 // fix: do not run Macaulay2 for every triangulation but maybe pass all triangulations in one script 
 // no urgent fix, just improvement 
 
+// we use WL (windows subsystem for linux) to run M2 
+// so we have to convert windows paths into WSL paths and run M2 via WSL command line
+
 namespace regcheck {
 
 namespace {
@@ -216,8 +219,8 @@ static bool check_one_node_wsl_m2(
     if (!werr.empty()) { err = werr; return false; }
 
     // convert to WSL path
-    // if script is in CWD, we can ask Windows for full path via relative, but simplest:
-    // assume CWD is shared (/mnt/c/...) and relative path works; still WSL runs in its own CWD
+    // if script is in cwd, we can ask Windows for full path via relative, but simplest:
+    // assume current working directory is shared (/mnt/c/...) and relative path works; still WSL runs in its own CWD
     // therefore we use absolute Windows path if possible
     // we use: /mnt/c + current dir is not known
     // write script into same folder where we launch .exe
