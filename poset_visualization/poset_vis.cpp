@@ -23,16 +23,19 @@ namespace pst_vis {
 
 pst_vis::TriVisResult g_triVis_P1;   //global for poset1 visualizations
 pst_vis::TriVisResult g_triVis_P2;  //global for poset2 visualizations
+pst_vis::TriVisResult g_triVis_P1_flips; // global for poset1 just flips visualization
 
 
 std::vector<glm::vec3> g_gridPos_P1; // global for poset1 grid positions
 std::vector<glm::vec3> g_gridPos_P2; // global for poset2 grid positions
+std::vector<glm::vec3> g_gridPos_P1_flips; // global for poset1 just flips grid positions
 
 float g_gridXSpacing_P1 = 0.2f;
 float g_gridZSpacing_P1 = 0.2f;
 float g_gridXSpacing_P2 = 0.2f;
 float g_gridZSpacing_P2 = 0.2f;
-
+float g_gridXSpacing_P1_flips = 0.2f;
+float g_gridZSpacing_P1_flips = 0.2f;
 
 
 
@@ -253,6 +256,40 @@ std::vector<glm::vec3> register_poset_as_grid_colored(
 }
 
 
+// ------------------------------------------------------------------------------------------
+
+// just flip poset registration
+
+void register_poset1_flips(const df::InputData& D,
+                           const pst::Poset_just_flips& P,
+                           const glm::vec3& center,
+                           float xSpacing, float zSpacing,
+                           glm::vec3 color)
+{
+    std::cout << "[poset_vis] register_poset1_flips called." << "\n";
+
+    // grid
+    register_poset_as_grid("P1 flips grid nodes",
+                           (int)P.levels.size(),
+                           P.levels,
+                           center, xSpacing, zSpacing,
+                           color);
+
+    // triangulations 
+    remove_triangulation_vis(g_triVis_P1_flips);
+    register_poset_as_triangulation_P1("P1 flips node ", D, P, g_triVis_P1_flips);
+    auto pos = compute_grid_pos(P.levels, center, xSpacing, zSpacing);
+    pst_vis::g_gridPos_P1_flips = pos;
+
+    pst_vis::g_gridXSpacing_P1_flips = xSpacing;
+    pst_vis::g_gridZSpacing_P1_flips = zSpacing;
+
+    float meshScale = 0.08f;
+    apply_triangulation_centers(g_triVis_P1_flips, pos, meshScale);
+
+    // edges
+    register_cover_up_as_edges("P1 flips edges", pos, P.cover_up, color);
+}
 
 
 

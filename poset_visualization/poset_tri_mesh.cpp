@@ -87,6 +87,71 @@ void register_poset_as_triangulation_P1(const std::string& name_prefix,
     out.meshes3d[node_idx] = m3;
   }
 }
+
+void register_poset_as_triangulation_P1(const std::string& name_prefix,
+                                        const df::InputData& D,
+                                        const pst::Poset_just_flips& P,
+                                        TriVisResult& out)
+{
+  remove_triangulation_vis(out);
+
+  const int n = (int)P.nodes.size();
+  if (n <= 0) return;
+
+  out.meshes2d.assign(n, nullptr);
+  out.meshes3d.assign(n, nullptr);
+  out.centers.assign(n, glm::vec3(0.f));
+
+  out.pivot2.assign(n, glm::vec3(0.f));
+  out.pivot3.assign(n, glm::vec3(0.f));
+
+  const float TRI_SCALE_PLAN  = 0.7f;
+  const float TRI_SCALE_LIFT  = 0.7f;
+  const float LIFT_HEIGHT_SCL = 0.5f;
+
+  for (int node_idx = 0; node_idx < n; ++node_idx) {
+    // build triangulation for node 
+    df::Tri2 tri = D.tri_poset_just_flips;
+    pst::replay_history_poset(tri, P.nodes[node_idx].history, D);
+
+    // convert to polyscope mesh
+    auto ids      = viz::present_ids(tri);
+    auto to_local = viz::make_local_index(ids);
+    auto faces    = viz_helpers::faces_from_triangles(tri, to_local);
+
+    auto V2 = viz_helpers::make_planar_poset_vertices(ids, D.points2d, 0.f, 0.f, TRI_SCALE_PLAN);
+    auto V3 = viz_helpers::make_lifted_poset_vertices(ids, D.points2d, 0.f, 0.f, TRI_SCALE_LIFT, LIFT_HEIGHT_SCL);
+
+    out.pivot3[node_idx] = viz_helpers::bbox_center(V3);
+    out.pivot2[node_idx] = viz_helpers::bbox_center(V2);
+
+    std::string name2d = name_prefix + std::to_string(node_idx) + " 2D";
+    std::string name3d = name_prefix + std::to_string(node_idx) + " 3D";
+
+    auto* m2 = polyscope::registerSurfaceMesh(name2d, V2, faces);
+    viz_helpers::add_node_id_quantity(m2, node_idx);
+    viz_helpers::add_global_id_quantity(m2, ids);
+    m2->setEnabled(true);
+    m2->setSurfaceColor(glm::vec3(0.6f, 0.8f, 1.0f));
+    m2->setEdgeWidth(1.0f);
+    m2->setEdgeColor(glm::vec3(0, 0, 0));
+
+    auto* m3 = polyscope::registerSurfaceMesh(name3d, V3, faces);
+    viz_helpers::add_node_id_quantity(m3, node_idx);
+    viz_helpers::add_global_id_quantity(m3, ids);
+    m3->setEnabled(true);
+    m3->setSurfaceColor(glm::vec3(0.2f, 0.4f, 0.8f));
+    m3->setTransparency(0.6f);
+    m3->setEdgeWidth(1.0f);
+    m3->setEdgeColor(glm::vec3(0, 0, 0));
+
+    out.meshes2d[node_idx] = m2;
+    out.meshes3d[node_idx] = m3;
+  }
+}
+
+
+
 void apply_triangulation_centers(TriVisResult& R,
                                  const std::vector<glm::vec3>& centers,
                                  float uniformScale)
@@ -126,9 +191,6 @@ void apply_triangulation_centers(TriVisResult& R,
         }
     }
 }
-
-
-
 
 
 } // namespace pst_vis

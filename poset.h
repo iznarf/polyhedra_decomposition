@@ -52,6 +52,25 @@ namespace pst {
     // builds Poset1 structure from node list
     Poset1 build_poset1(const std::vector<Node>& nodes);
 
+    // ------------------------------------------------------------------------------------------
+
+
+    // Build poset of edge flips, starting from D.tri_lower (all points present)
+    void build_poset_just_flips(const df::InputData& D, std::vector<Node>& nodes);
+
+    struct Poset_just_flips {
+        std::vector<Node> nodes; // all poset nodes for just flips
+        std::vector<std::vector<int>> cover_down; // edges of down flip poset
+        std::vector<std::vector<int>> cover_up;   // edges of up flip poset
+        std::vector<int> topo_up;                  // topo: node indices in topological order from cover up
+        std::vector<int> topo_down;                // topo: node indices in topological order
+        std::vector<pst::Bitset> reachability_down; // reachability bitsets for down edges: for runtime leq queries
+        std::vector<pst::Bitset> reachability_up;   // reachability bit
+        std::vector<int> levels;                   // level[u] = length of longest chain from minimal element to u in cover up
+    };
+
+    Poset_just_flips build_poset_just_flips1(const std::vector<Node>& nodes);
+
     // -----------------------------------------------------------------------------------------
 
 

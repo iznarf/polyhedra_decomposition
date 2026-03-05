@@ -21,26 +21,29 @@ extern df::InputData g_in;
 
 extern pst::Poset1  g_P1;
 extern pst2::Poset2 g_P2;
+extern pst::Poset_just_flips g_P1_flips;
 
 // ------------------------------------------------------------
-// store completion results for BOTH posets
+// store completion results for all posets
 // ------------------------------------------------------------
 dm_completion::DedekindPoset g_completion_P1;
 dm_completion::DedekindPoset g_completion_P2;
+dm_completion::DedekindPoset g_completion_P1_flips;
 bool g_hasCompletion_P1 = false;
 bool g_hasCompletion_P2 = false;
-
+bool g_hasCompletion_P1_flips = false; 
 // status strings (separate so switching doesn't delete the other one)
 static std::string g_status_P1;
 static std::string g_status_P2;
+static std::string g_status_P1_flips;
 
 // which completion are we currently computing 
-// 0 = P1, 1 = P2
+// 0 = P1, 1 = P2, 2 = P1 flips
 static int  g_selectedPoset = 0;
 
 // match other poset spacing defaults
-static float g_compXSpacing = 0.2f;
-static float g_compZSpacing = 0.2f;
+static float g_compXSpacing = 0.3f;
+static float g_compZSpacing = 0.3f;
 
 // fixed center for completion visualization
 static constexpr glm::vec3 center = glm::vec3(0.f, 0.f, 0.f);
@@ -48,9 +51,9 @@ static constexpr glm::vec3 center = glm::vec3(0.f, 0.f, 0.f);
 // ------------------------------------------------------------
 // visualization toggles (separate for P1 completion and P2 completion)
 // ------------------------------------------------------------
-static bool g_vis_grid[2]  = {false, false};
-static bool g_vis_edges[2] = {false, false};
-static bool g_vis_2d[2]    = {false, false};
+static bool g_vis_grid[3]  = {false, false, false};
+static bool g_vis_edges[3] = {false, false, false};
+static bool g_vis_2d[3]    = {false, false, false};
 
 // ------------------------------
 // views
@@ -69,19 +72,19 @@ static PosetView view_of_completion(const dm_completion::DedekindPoset& D) {
 }
 
 static PosetView current_input_view() {
-  return (g_selectedPoset == 0) ? view_of(g_P1) : view_of(g_P2);
+  return (g_selectedPoset == 0) ? view_of(g_P1) : (g_selectedPoset == 1) ? view_of(g_P2) : view_of(g_P1_flips);
 }
 
 static dm_completion::DedekindPoset& current_completion() {
-  return (g_selectedPoset == 0) ? g_completion_P1 : g_completion_P2;
+  return (g_selectedPoset == 0) ? g_completion_P1 : (g_selectedPoset == 1) ? g_completion_P2 : g_completion_P1_flips;
 }
 
 static bool& current_hasCompletion_flag() {
-  return (g_selectedPoset == 0) ? g_hasCompletion_P1 : g_hasCompletion_P2;
+  return (g_selectedPoset == 0) ? g_hasCompletion_P1 : (g_selectedPoset == 1) ? g_hasCompletion_P2 : g_hasCompletion_P1_flips;
 }
 
 static std::string& current_status_string() {
-  return (g_selectedPoset == 0) ? g_status_P1 : g_status_P2;
+  return (g_selectedPoset == 0) ? g_status_P1 : (g_selectedPoset == 1) ? g_status_P2 : g_status_P1_flips;
 }
 
 // ============================================================
@@ -99,6 +102,7 @@ void dedekind_completion_ui() {
   ImGui::SameLine();
   ImGui::RadioButton("P2", &g_selectedPoset, 1);
   ImGui::Spacing();
+  ImGui::RadioButton("P1 just flips", &g_selectedPoset, 2);
 
   if (ImGui::Button("Compute completion")) {
 
@@ -125,7 +129,7 @@ void dedekind_completion_ui() {
   }
 
   // show both status blocks (nice when you compute both)
-  if (!g_status_P1.empty() || !g_status_P2.empty()) {
+  if (!g_status_P1.empty() || !g_status_P2.empty() || !g_status_P1_flips.empty()) {
     ImGui::SeparatorText("Status");
 
     if (!g_status_P1.empty()) {
@@ -135,6 +139,10 @@ void dedekind_completion_ui() {
     if (!g_status_P2.empty()) {
       ImGui::TextUnformatted("P2 completion:");
       ImGui::TextUnformatted(g_status_P2.c_str());
+    }
+    if (!g_status_P1_flips.empty()) {
+      ImGui::TextUnformatted("P1 just flips completion:");
+      ImGui::TextUnformatted(g_status_P1_flips.c_str());
     }
   }
 
@@ -152,6 +160,7 @@ void dedekind_completion_ui() {
       g_in,
       g_P1,
       g_P2,
+      g_P1_flips,
       g_completion_P1,
       center,
       g_compXSpacing,
@@ -191,6 +200,7 @@ void dedekind_completion_ui() {
       g_in,
       g_P1,
       g_P2,
+      g_P1_flips,
       g_completion_P2,
       center,
       g_compXSpacing,
@@ -215,11 +225,43 @@ void dedekind_completion_ui() {
   }
   ImGui::EndDisabled();
 
-  /*
-  // clear both
+  // ------------------------------------------------------------------
+
+  // P1 just flips completion controls
   ImGui::Separator();
-  if (ImGui::Button("Clear ALL completion visuals")) {
-    completion_vis::clear_all();
+
+  ImGui::TextUnformatted("P1 just flips completion:");
+  ImGui::BeginDisabled(!g_hasCompletion_P1_flips);
+  if (ImGui::Button("Visualize P1 just flips completion")) {
+    completion_vis::build(
+      2,
+      g_in,
+      g_P1,
+      g_P2,
+      g_P1_flips,
+      g_completion_P1_flips,
+      center,
+      g_compXSpacing,
+      g_compZSpacing
+    );
+
+    g_vis_grid[2]  = true;
+    g_vis_edges[2] = true;
+    completion_vis::set_enabled(2, g_vis_grid[2], g_vis_edges[2], g_vis_2d[2]);
   }
-  */
+  ImGui::EndDisabled();
+
+  bool changedP1Flips = false;
+  ImGui::BeginDisabled(!g_hasCompletion_P1_flips);
+  changedP1Flips |= ImGui::Checkbox("P1 just flips grid", &g_vis_grid[2]); ImGui::SameLine();
+  changedP1Flips |= ImGui::Checkbox("P1 just flips edges", &g_vis_edges[2]); ImGui::SameLine();
+  changedP1Flips |= ImGui::Checkbox("P1 just flips 2D meshes", &g_vis_2d[2]);
+  if (changedP1Flips) completion_vis::set_enabled(2, g_vis_grid[2], g_vis_edges[2], g_vis_2d[2]);
+
+  if (ImGui::Button("Clear P1 just flips completion")) {
+    completion_vis::clear(2);
+  }
+  ImGui::EndDisabled();
+
+
 }

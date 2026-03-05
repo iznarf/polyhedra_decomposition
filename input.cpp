@@ -145,7 +145,7 @@ InputData make_random_input(int n_points, unsigned seed) {
     // 1) random points with interior points
 
     
-    D.points2d = sample_points_in_disk(n_points, 1.0, rng);
+    //D.points2d = sample_points_in_disk(n_points, 1.0, rng);
 
     /*
     //print 2d points list
@@ -156,9 +156,9 @@ InputData make_random_input(int n_points, unsigned seed) {
     }
     */
 
-    /*
     
-    // six points this should be a tamari lattice
+    /*
+    //six points not on moment curve 
     D.points2d = {
         P2(-2,2),
         P2(-1.6,0.6),
@@ -171,7 +171,7 @@ InputData make_random_input(int n_points, unsigned seed) {
     */
 
     /*
-    // cyclic polytope C(6,2): points on moment curve (t, t^2)
+    // cyclic polytope C(6,2): points on moment curve (t, t^2) with one interior point 
     D.points2d = {
         P2(-1.5,  1.5*1.5),
         P2(-1.25,  1.25*1.25),
@@ -179,17 +179,16 @@ InputData make_random_input(int n_points, unsigned seed) {
         P2(0.5,  0.5*0.5),
         P2(1.25, 1.25*1.25),
         P2(1.5,  1.5*1.5),
+
+        //P2(0.12, 0.4) // interior point: two mins but completion is just adding max
+        P2(-0.15, 0.7) // interior point: for this one completion just adds one node 
     };
     
     */
-    
 
 
-
-
-
-
-    /* 5 point example with one insertion 
+    /*
+    //5 point example with one insertion 
     D.points2d = {
         P2(-1,1),
         P2(1,1),
@@ -198,8 +197,28 @@ InputData make_random_input(int n_points, unsigned seed) {
         P2(-0.25,0.3)
     };
     */
-    
 
+    /*
+    D.points2d = {
+        P2(-2,1),
+        P2(2,1),
+        P2(0,2),
+        P2(-1.5,-2),
+        P2(1.5,-2),
+
+        P2(-1.3, -1.0) // interior point
+    };
+    */
+
+    D.points2d = {
+        P2(-2,-1),
+        P2(2,-1),
+        P2(0,-2),
+        P2(-1.5,1),
+        P2(1.5,1),
+
+        P2(-1.4, 0.4) // interior point
+    };
     /*
     
     // smallest non regular example
@@ -303,23 +322,6 @@ InputData make_random_input(int n_points, unsigned seed) {
     CGAL_assertion(D.tri_upper.is_valid());
 
 
-
-
-
-    D.tri_current.clear();
-    D.tri_current = D.tri_upper;
-    //D.tri_current.insert(hull_pairs.begin(), hull_pairs.end());
-
-    // we need this for applying then all recorded flips
-    D.tri_replay.clear();
-    D.tri_replay = D.tri_upper;
-    //D.tri_replay.insert(hull_pairs.begin(), hull_pairs.end());
-
-    // we need this for building the poset
-    D.tri_poset.clear();
-    D.tri_poset = D.tri_upper;
-    //D.tri_poset.insert(hull_pairs.begin(), hull_pairs.end());
-
     using vertex_handle = Tri2::Vertex_handle;
     
     // indices of all points 
@@ -352,8 +354,26 @@ InputData make_random_input(int n_points, unsigned seed) {
 
     D.tri_lower.set_infinite_vertex(inf_v);
     CGAL_assertion(D.tri_lower.is_valid());
-    
-    
+  
+    D.tri_current.clear();
+    D.tri_current = D.tri_upper;
+
+
+    // we need this for applying then all recorded flips
+    D.tri_replay.clear();
+    D.tri_replay = D.tri_upper;
+   
+
+    // we need this for building the poset
+    D.tri_poset.clear();
+    D.tri_poset = D.tri_upper;
+
+    D.tri_poset_just_flips.clear();
+    D.tri_poset_just_flips = D.tri_lower;
+
+    D.tri_replay_just_flips.clear();
+    D.tri_replay_just_flips  = D.tri_lower;   
+   
     
     return D;
 }
@@ -568,9 +588,10 @@ bool lifted_triangulations_intersect(const InputData& D)
 InputData make_random_valid_input(int n_points, unsigned seed_start)
 {
     unsigned seed = seed_start;
-    //InputData D = make_random_input(n_points, seed);
-    //return D;
+    InputData D = make_random_input(n_points, seed);
+    return D;
 
+    /*
     
     while (true) {
         InputData D = make_random_input(n_points, seed);
@@ -593,7 +614,7 @@ InputData make_random_valid_input(int n_points, unsigned seed_start)
         ++seed;
     }
     
-    
+    */
 }
 
 } // namespace df

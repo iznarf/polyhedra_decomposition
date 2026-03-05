@@ -82,3 +82,26 @@ inline PosetView view_of(const pst2::Poset2& P) {
     return v;
 }
 
+inline PosetView view_of(const pst::Poset_just_flips& P) {
+    PosetView v;
+    v.n = static_cast<int>(P.levels.size());
+
+    v.ctx = &P;
+    v.leq = [](const void* ctx, int a, int b) -> bool {
+        auto& P = *static_cast<const pst::Poset_just_flips*>(ctx);
+        // a <= b  <=>  a is in down-closure of b
+        return P.reachability_down[b].test(a);
+    };
+
+    v.cover_up   = &P.cover_up;
+    v.cover_down = &P.cover_down;
+
+    v.topo_up   = &P.topo_up;
+    v.topo_down = &P.topo_down;
+
+    v.reachability_down = &P.reachability_down;
+    v.reachability_up   = &P.reachability_up;
+
+    v.levels = &P.levels;
+    return v;
+}

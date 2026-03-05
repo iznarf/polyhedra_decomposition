@@ -69,6 +69,10 @@ namespace df {
         Tri2Regular tri_regular; // regular triangulation of point set A
         Tri2Regular tri_far_regular; // regular triangulation of convex hull of A 
 
+        Tri2    tri_poset_just_flips; // base triangulation for poset computation which just contains flips without insertions and deletions 
+        Tri2  tri_replay_just_flips; // triangulation for applying the recorded flips without insertions and deletions
+       
+
         std::vector<std::pair<vertex_id, vertex_id>> hull_edges; // this is just for checking if input is valid
         std::vector<StepRecord> step_history;  // sequence of all flips: edge flips and insertions
     };

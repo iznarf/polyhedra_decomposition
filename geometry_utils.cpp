@@ -106,29 +106,32 @@ P3 lift_regular(const P2_weighted& p) {
 
 
 
-// normal lift function 
+// lift function 
 
 
 P3 lift(const P2& p) {
+    if (p.x() == -1.4 && p.y() == 0.4) { // lift inner point to -5.0
+        return P3(p.x(), p.y(), -5.0);
+    }
     return P3(p.x(), p.y(), p.x()*p.x() + p.y()*p.y());
 }
 
 P3 lift_regular(const P2_weighted& p) {
     return P3(p.x(), p.y(), p.x()*p.x() + p.y()*p.y());
 }
-
-
-
-
 
 
 
 /*
 
 // moment curve lift: (t, t^2, t^3) => height function h(t)=t^3
-
 P3 lift(const P2& p) {
     double t = p.x();           // because p = (t, t^2)
+    
+    if (p.x() == 0.14 && p.y() == 0.5) { // lift inner point to -10.0
+        return P3(p.x(), p.y(), -10.0);
+    }
+    
     return P3(p.x(), p.y(), t*t*t);
 }
 
@@ -137,8 +140,8 @@ P3 lift_regular(const P2_weighted& p) {
     return P3(p.x(), p.y(), t*t*t);
 }
 
-*/
 
+*/
 
 }
 

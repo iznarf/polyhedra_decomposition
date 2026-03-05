@@ -24,8 +24,10 @@
 
 extern pst::Poset1  g_P1;
 extern pst2::Poset2 g_P2;
+extern pst::Poset_just_flips g_P1_flips;
 extern bool g_has_P1;
 extern bool g_has_P2;
+extern bool g_has_P1_flips;
 
 namespace viz_poset {
 
@@ -33,7 +35,9 @@ namespace {
 
 // ---------- Overlay names ----------
 static std::string overlayBase(int whichPoset) {
-  return (whichPoset == 1) ? "P1 meet/join" : "P2 meet/join";
+  if (whichPoset == 1) return "P1 meet/join";
+  if (whichPoset == 2) return "P2 meet/join";
+  return "P1 flips meet/join"; // whichPoset == 3
 }
 
 // ---------- Helpers ----------
@@ -66,7 +70,10 @@ static void register_set_overlay(int whichPoset,
   // Cover edges induced inside mask (global ids)
   std::vector<std::pair<int,int>> edgesGlobal = pst_interval::induced_cover_up_edges(V, mask);
 
-  const auto& allPos = (whichPoset == 1) ? pst_vis::g_gridPos_P1 : pst_vis::g_gridPos_P2;
+  const auto& allPos =
+    (whichPoset == 1) ? pst_vis::g_gridPos_P1 :
+    (whichPoset == 2) ? pst_vis::g_gridPos_P2 :
+                        pst_vis::g_gridPos_P1_flips;
   if ((int)allPos.size() != V.n) {
     std::cout << "[meet_join_ui] ERROR: grid positions not ready. Visualize poset first.\n";
     return;
@@ -120,7 +127,10 @@ static void register_inputs_overlay(int whichPoset,
                                     int x, int y,
                                     glm::vec3 colorInputs)
 {
-  const auto& allPos = (whichPoset == 1) ? pst_vis::g_gridPos_P1 : pst_vis::g_gridPos_P2;
+  const auto& allPos =
+    (whichPoset == 1) ? pst_vis::g_gridPos_P1 :
+    (whichPoset == 2) ? pst_vis::g_gridPos_P2 :
+                        pst_vis::g_gridPos_P1_flips;
   if ((int)allPos.size() != V.n) return;
 
   std::vector<glm::vec3> pts;
@@ -146,7 +156,10 @@ static void register_candidates_overlay(int whichPoset,
                                         const std::string& suffix,
                                         glm::vec3 color)
 {
-  const auto& allPos = (whichPoset == 1) ? pst_vis::g_gridPos_P1 : pst_vis::g_gridPos_P2;
+  const auto& allPos =
+    (whichPoset == 1) ? pst_vis::g_gridPos_P1 :
+    (whichPoset == 2) ? pst_vis::g_gridPos_P2 :
+                        pst_vis::g_gridPos_P1_flips;
   if ((int)allPos.size() != V.n) return;
 
   std::vector<glm::vec3> pts;
@@ -210,8 +223,10 @@ void meet_join_ui() {
 
   const bool canP1 = g_has_P1;
   const bool canP2 = g_has_P2;
+  const bool canP1flips = g_has_P1_flips;
 
   ImGui::TextUnformatted("Target poset:");
+
   ImGui::BeginDisabled(!canP1);
   ImGui::RadioButton("P1", &which, 1);
   ImGui::EndDisabled();
@@ -222,22 +237,30 @@ void meet_join_ui() {
   ImGui::RadioButton("P2", &which, 2);
   ImGui::EndDisabled();
 
-  if ((which == 1 && !canP1) || (which == 2 && !canP2)) {
+  ImGui::SameLine();
+
+  ImGui::BeginDisabled(!canP1flips);
+  ImGui::RadioButton("P1 just flips", &which, 3);
+  ImGui::EndDisabled();
+
+  if ((which == 1 && !canP1) || (which == 2 && !canP2) || (which == 3 && !canP1flips)) {
     ImGui::TextUnformatted("Selected poset not available.");
     return;
   }
 
   // view
   PosetView V;
-  if (which == 1) V = view_of(g_P1);
-  else            V = view_of(g_P2);
+  if (which == 1)      V = view_of(g_P1);
+  else if (which == 2) V = view_of(g_P2);
+  else                 V = view_of(g_P1_flips);
 
   const int N = V.n;
 
   // base ready?
   bool baseReady = false;
-  if (which == 1) baseReady = ((int)pst_vis::g_gridPos_P1.size() == N);
-  else            baseReady = ((int)pst_vis::g_gridPos_P2.size() == N);
+  if (which == 1)      baseReady = ((int)pst_vis::g_gridPos_P1.size() == N);
+  else if (which == 2) baseReady = ((int)pst_vis::g_gridPos_P2.size() == N);
+  else                 baseReady = ((int)pst_vis::g_gridPos_P1_flips.size() == N);
 
   if (!baseReady) {
     ImGui::TextUnformatted("Grid not ready: click 'Visualize poset 1/2' first.");

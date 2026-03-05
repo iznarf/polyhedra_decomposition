@@ -665,9 +665,8 @@ namespace pst {
     // builds the conforming flip poset from upper to lower triangulation
     void build_poset(const df::InputData& D, std::vector<Node>& nodes) {
         df::Tri2 tri_root  = D.tri_poset;
-        //df::Tri2 tri_root  = D.tri_current;
-        df::Tri2 tri_lower = D.tri_lower;
-
+       
+    
         // clear any old content and reserve some space
         nodes.clear();
         nodes.reserve(600); // arbitrary initial guess
@@ -689,7 +688,8 @@ namespace pst {
 
                 // reconstruct triangulation for this node
                 df::Tri2 tri = D.tri_poset;
-                //df::Tri2 tri = D.tri_current;
+                df::Tri2 tri_lower = D.tri_lower;
+                
                 replay_history_poset(tri, current_node.history, D);
 
 
@@ -709,6 +709,7 @@ namespace pst {
                                         nodes, sig_to_node);
                 }
 
+                
                 // try all possible vertex insertions from current triangulation
                 for (df::vertex_id v : missing_vertices) {
                     df::Tri2 tri_child = tri;
@@ -722,6 +723,7 @@ namespace pst {
                     apply_vertex_deletion_poset(v, current_idx, tri_child, D, nodes, sig_to_node);
                 }
 
+                
                 ++current_idx;
                
         }
@@ -972,4 +974,211 @@ namespace pst {
         std::cout << "[poset] no conforming down path found from node " << source_idx << " to node " << target_idx << "\n";
         return false;
     }  
+
+
+// -----------------------------------------------------------------------------------------------------------------
+
+// just flip poset
+
+// local helpers: dedup edges without changing Node
+static bool has_int(const std::vector<int>& xs, int v) {
+    return std::find(xs.begin(), xs.end(), v) != xs.end();
 }
+
+static int apply_edge_flip_just_flips(df::vertex_id ia, df::vertex_id ib,
+                                      int current_idx,
+                                      df::Tri2& tri,
+                                      std::vector<Node>& nodes,
+                                      std::unordered_map<TriSignature, int>& sig_to_node)
+{
+    // 1) find edge by endpoint infos
+    df::Tri2::Face_handle fh;
+    int ei = -1;
+    bool found = false;
+
+    for (auto e = tri.finite_edges_begin(); e != tri.finite_edges_end(); ++e) {
+        auto f = e->first;
+        int  i = e->second;
+
+        auto va = f->vertex(tri.cw(i));
+        auto vb = f->vertex(tri.ccw(i));
+
+        df::vertex_id ja = va->info();
+        df::vertex_id jb = vb->info();
+
+        if ((ja == ia && jb == ib) || (ja == ib && jb == ia)) {
+            fh = f;
+            ei = i;
+            found = true;
+            break;
+        }
+    }
+    if (!found) {
+        std::cerr << "[flip] ERROR: edge (" << ia << "," << ib << ") not found\n";
+        return -1;
+    }
+
+    // 2) skip boundary/infinite
+    if (tri.is_infinite(fh) || tri.is_infinite(fh->neighbor(ei))) {
+        return -1;
+    }
+
+    // 3) extract quad and compute up/down sign BEFORE flip
+    auto va = fh->vertex(tri.cw(ei));
+    auto vb = fh->vertex(tri.ccw(ei));
+    auto vc = fh->vertex(ei);
+    auto gh = fh->neighbor(ei);
+    int  j  = tri.mirror_index(fh, ei);
+    auto vd = gh->vertex(j);
+
+    df::vertex_id a_id = va->info();
+    df::vertex_id b_id = vb->info();
+    df::vertex_id c_id = vc->info();
+    df::vertex_id d_id = vd->info();
+
+    const df::P2& a2 = va->point();
+    const df::P2& b2 = vb->point();
+    const df::P2& c2 = vc->point();
+    const df::P2& d2 = vd->point();
+
+    df::P3 a3 = df::lift(a2);
+    df::P3 b3 = df::lift(b2);
+    df::P3 c3 = df::lift(c2);
+    df::P3 d3 = df::lift(d2);
+
+    CGAL::Orientation orient =
+        df::oriented_height_sign(a2, b2, c2, d2, a3, b3, c3, d3);
+
+    if (orient == CGAL::COLLINEAR) return -1;
+
+    // 4) flip
+    tri.flip(fh, ei);
+
+    // 5) build step record
+    df::StepRecord step;
+    step.kind = (orient == CGAL::NEGATIVE)
+        ? df::StepKind::EdgeFlip_down
+        : df::StepKind::EdgeFlip_up;
+
+    step.a = a_id; step.b = b_id;
+    step.c = c_id; step.d = d_id;
+
+    // 6) signature + dedup NODE
+    TriSignature sig = make_signature(tri);
+
+    int idx;
+    auto it = sig_to_node.find(sig);
+
+    if (it == sig_to_node.end()) {
+        idx = (int)nodes.size();
+
+        Node child;
+        child.history   = nodes[current_idx].history;
+        child.history.push_back(step);
+        child.signature = std::move(sig);
+
+        // dedup parent list (new node -> just add once)
+        child.parents.push_back(current_idx);
+
+        nodes.push_back(std::move(child));
+        sig_to_node.emplace(nodes[idx].signature, idx);
+
+    } else {
+        idx = it->second;
+
+        // dedup parent edge (current_idx is a parent of idx)
+        if (!has_int(nodes[idx].parents, current_idx)) {
+            nodes[idx].parents.push_back(current_idx);
+        }
+    }
+
+    // dedup child edge (current_idx -> idx)
+    // IMPORTANT: children and child_steps must stay aligned, so dedup BEFORE pushing
+    if (!has_int(nodes[current_idx].children, idx)) {
+        nodes[current_idx].children.push_back(idx);
+        nodes[current_idx].child_steps.push_back(step);
+    }
+
+    return idx;
+}
+
+void build_poset_just_flips(const df::InputData& D, std::vector<Node>& nodes)
+{
+    // base triangulation: all points already present
+    df::Tri2 tri_root = D.tri_poset_just_flips;
+
+    nodes.clear();
+    nodes.reserve(600);
+
+    Node root;
+    root.history.clear();
+    root.signature = make_signature(tri_root);
+    nodes.push_back(std::move(root));
+
+    std::unordered_map<TriSignature, int> sig_to_node;
+    sig_to_node.emplace(nodes[0].signature, 0);
+
+    for (int current_idx = 0; current_idx < (int)nodes.size(); ++current_idx) {
+
+        // reconstruct triangulation at node current_idx from the SAME base
+        df::Tri2 tri = D.tri_poset_just_flips;
+        replay_history_poset(tri, nodes[current_idx].history, D);
+
+        auto flip_edges = find_flip_edges(tri);
+
+        for (const auto& e : flip_edges) {
+            df::Tri2 tri_child = tri;
+            apply_edge_flip_just_flips(e[0], e[1], current_idx,
+                                       tri_child, nodes, sig_to_node);
+        }
+    }
+
+    std::cout << "[poset] finished building JUST-FLIPS poset\n";
+}
+
+Poset_just_flips build_poset_just_flips1(const std::vector<Node>& nodes)
+{
+    Poset_just_flips P;
+    P.nodes = std::move(nodes); 
+
+    const int n = (int)nodes.size();
+    P.cover_down.assign(n, {});
+    P.cover_up.assign(n, {});
+
+    for (int u = 0; u < n; ++u) {
+        const auto& ch = nodes[u].children;
+        const auto& st = nodes[u].child_steps;
+
+        // children and child_steps are aligned by construction (and deduped)
+        for (int k = 0; k < (int)ch.size(); ++k) {
+            int v = ch[k];
+            const auto kind = st[k].kind;
+
+            if (kind == df::StepKind::EdgeFlip_down) {
+                P.cover_down[u].push_back(v);
+                P.cover_up[v].push_back(u);
+            } else if (kind == df::StepKind::EdgeFlip_up) {
+                P.cover_up[u].push_back(v);
+                P.cover_down[v].push_back(u);
+            }
+        }
+    }
+
+    
+    pst::sort_unique_adjacency(P.cover_down);
+    pst::sort_unique_adjacency(P.cover_up);
+
+    P.topo_down = pst::topo_sort_kahn(P.cover_down);
+    P.topo_up   = pst::topo_sort_kahn(P.cover_up);
+
+    P.reachability_down = pst::compute_reachability(P.cover_down, P.topo_down);
+    P.reachability_up   = pst::compute_reachability(P.cover_up, P.topo_up);
+
+    P.levels = pst_vis::compute_levels_longest_from_roots_cover_up(P.cover_up);
+
+    return P;
+}
+
+
+
+} // namespace pst

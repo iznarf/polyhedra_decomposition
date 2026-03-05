@@ -26,6 +26,12 @@ void register_poset_as_triangulation_P1(const std::string& name_prefix,
                                         const df::InputData& D,
                                         const pst::Poset1& P1,
                                         TriVisResult& out);
+
+void register_poset_as_triangulation_P1(const std::string& name_prefix,
+                                        const df::InputData& D,
+                                        const pst::Poset_just_flips& P,
+                                        TriVisResult& out);
+                                                                                
 void apply_triangulation_centers(TriVisResult& R,
                                  const std::vector<glm::vec3>& centers,
                                  float uniformScale);

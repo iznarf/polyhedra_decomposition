@@ -6,17 +6,19 @@
 namespace df { struct InputData; }
 namespace pst { struct Poset1; }
 namespace pst2 { struct Poset2; }
+namespace pst { struct Poset_just_flips; }
 
 namespace dm_completion { struct DedekindPoset; }
 
 namespace completion_vis {
 
 // Build grid + edges + 2D overlay (triangulations for old nodes, diagrams for new nodes)
-// which: 0 = P1 completion, 1 = P2 completion
+// which: 0 = P1 completion, 1 = P2 completion, 2 = P1 just flips completion
 void build(int which,
            const df::InputData& D,
            const pst::Poset1& P1,
            const pst2::Poset2& P2,
+           const pst::Poset_just_flips& P1_flips,
            const dm_completion::DedekindPoset& C,
            const glm::vec3& center,
            float xSpacing,

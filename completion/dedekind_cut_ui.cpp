@@ -28,6 +28,7 @@
 
 extern pst::Poset1  g_P1; // global poset1 
 extern pst2::Poset2 g_P2; // global poset2 
+extern pst::Poset_just_flips g_P1_flips; // global poset1 just flips
 
 
 namespace viz_poset {
@@ -39,11 +40,15 @@ namespace viz_poset {
 static int parse_int(const char* s) { return (s && *s) ? std::atoi(s) : 0; }
 
 static std::string overlay_base_name(int whichPoset) {
-    return (whichPoset == 1) ? "P1 Dedekind cut" : "P2 Dedekind cut";
+    if (whichPoset == 1) return "P1 Dedekind cut";
+    if (whichPoset == 2) return "P2 Dedekind cut";
+    return "P1 just flips Dedekind cut"; // whichPoset == 3
 }
 
 static const std::vector<glm::vec3>& base_positions(int whichPoset) {
-    return (whichPoset == 1) ? pst_vis::g_gridPos_P1 : pst_vis::g_gridPos_P2;
+    if (whichPoset == 1) return pst_vis::g_gridPos_P1;
+    if (whichPoset == 2) return pst_vis::g_gridPos_P2;
+    return pst_vis::g_gridPos_P1_flips; // whichPoset == 3
 }
 
 static void remove_pc_if_exists(const std::string& name) {
@@ -135,9 +140,10 @@ void dedekind_cut_ui() {
     // -------------------------
     // Choose poset
     // -------------------------
-    static int whichPoset = 2; // 1=P1, 2=P2
+    static int whichPoset = 1; // 1=P1, 2=P2, 3=P1_flips
     ImGui::RadioButton("P1", &whichPoset, 1); ImGui::SameLine();
-    ImGui::RadioButton("P2", &whichPoset, 2);
+    ImGui::RadioButton("P2", &whichPoset, 2); ImGui::SameLine();
+    ImGui::RadioButton("P1 just flips", &whichPoset, 3);
 
     // clear overlays when switching poset
     static int prevWhich = whichPoset;
@@ -146,7 +152,10 @@ void dedekind_cut_ui() {
         prevWhich = whichPoset;
     }
 
-    PosetView V = (whichPoset == 1) ? view_of(g_P1) : view_of(g_P2);
+    PosetView V =
+        (whichPoset == 1) ? view_of(g_P1) :
+        (whichPoset == 2) ? view_of(g_P2) :
+                            view_of(g_P1_flips);
 
     const auto& pos = base_positions(whichPoset);
     const bool ready = ((int)pos.size() == V.n);

@@ -40,8 +40,10 @@ static void glfw_error_silencer(int error, const char* description) {
 }
 
 pst::Poset1  g_P1;
+pst::Poset_just_flips g_P1_flips;
 pst2::Poset2 g_P2;
 bool g_has_P1 = false;
+bool g_has_P1_flips = false;
 bool g_has_P2 = false;
 
 
@@ -120,7 +122,7 @@ int main() {
     g_P1 = pst::build_poset1(poset_nodes);
     g_has_P1 = true;
 
- 
+    
     // check regularity of all nodes in P1 by calling M2 via WSL and print summary table
 
     //regcheck::check_poset_regularity_wsl(in, g_P1, 1e6, "wsl", true);
@@ -167,6 +169,16 @@ int main() {
 
     // -----------------------------------------------------------------------------------------------------
     
+    // JUST FLIP POSET 
+
+
+    std::vector<pst::Node> poset_nodes_flips;
+    pst::build_poset_just_flips(in, poset_nodes_flips);
+
+    g_P1_flips = pst::build_poset_just_flips1(std::move(poset_nodes_flips));
+    g_has_P1_flips = true;
+
+    // --------------------------------------------------------------------------------------
     // POSET2 COMPUTATION
 
     // builds the poset2 structure from the input data and poset1
@@ -185,7 +197,8 @@ int main() {
 
     // ------------------------------------------------------------------------------------------------------
 
-    // EAR STAR BIJECTIONN TEST
+    /*
+    // EAR STAR TRIANGULATION -> WORD TEST
 
     // make input struct for ear star: convex n-gon with one point inside
     
@@ -209,7 +222,6 @@ int main() {
 
 
     // build ear star poset
-
 
     df::vertex_id star_id = in_ear_star.points.back().id;
     df::P2 star_point     = in_ear_star.points.back().p;
@@ -249,11 +261,6 @@ int main() {
         2.0  // spacing 
     );
 
-
-
-
-   
-
     earstar::print_words_for_poset(
         in_ear_star.tri_start,
         P,
@@ -262,7 +269,7 @@ int main() {
         star_point
     );
 
-
+    */
 
     // -----------------------------------------------------------------------------------------------------
     polyscope::state::userCallback = combined_ui_callback;
